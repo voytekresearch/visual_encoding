@@ -6,6 +6,7 @@ Notes:
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+import pandas as pd
 from neurodsp.spectral import compute_spectrum
 from neurodsp.plts.spectral import plot_power_spectra
 from fooof import FOOOF
@@ -52,9 +53,41 @@ def main():
     plot_power_spectra([freq_lfp[:200], freq_e[:200], freq_i[:200]],
                     [psd_lfp[:200], psd_e[:200], psd_i[:200]],
                     ['LFP', 'Excitatory', 'Inhibitory'])
+    # fig2 = plt.figure()
     plt.savefig('plot2.png')
+    plt.figure().clear()
+    plt.cla()
+    plt.clf()
+    
 
     #############################
+    EI_ratios= np.arange(2, 6.01, 0.2)
+    center_freqs = np.arange(20, 160.1, 5)
+    PSDs, freq_lfp = batchsim_PSDs(EI_ratios= np.arange(2, 6.01, 0.2), num_trs = 5)
+    slopes = batchfit_PSDs(PSDs, freq_lfp, EI_ratios = EI_ratios, num_trs = 5, freq_range = [30, 50])
+    rhos = batchcorr_PSDs(PSDs, freq_lfp, EI_ratios = EI_ratios, center_freqs = center_freqs, 
+                    win_len = 20, num_trs = 5)
+
+    df = pd.DataFrame(slopes, columns = ['Trial1','Trial2','Trial3','Trial4','Trial5'])
+    df['EIRatio'] = 1./EI_ratios
+    df_plot = df.melt('EIRatio')
+    ax = sns.lineplot(data=df_plot, x = 'EIRatio', y = 'value', marker='o', color = 'black')
+    ax.set_xscale('log', base=2)
+    ax.set_xlabel('g_E : g_I Ratio')
+    ax.set_ylabel('Slope (30-50Hz)')
+    ax.set_title('EI Ratio, PSD Slope Correlation Plot')
+    fig4 = ax.get_figure()
+    fig4.savefig('plot4.png')
+    ax.clear()
+    df2 = pd.DataFrame(rhos, columns = ['Trial1','Trial2','Trial3','Trial4','Trial5'])
+    df2['CenterFreq'] = center_freqs
+    df2_plot = df2.melt('CenterFreq')
+    ax2 = sns.lineplot(data=df2_plot, x = 'CenterFreq', y = 'value', marker='o', color = 'black')
+    ax2.set_xlabel('Fit Center Frequency (+-10 Hz)')
+    ax2.set_ylabel('Spearman Correlation')
+    ax2.set_title('Spearman Correlation - Fitting Window Plot')
+    fig5 = ax2.get_figure()
+    fig5.savefig('plot5.png')
 
     LFP_E, LFP_I, t = sim_field(2) # EI ratio = 1 : 2
     LFP2 = LFP_E + LFP_I
@@ -69,6 +102,8 @@ def main():
                     [psd_2[:1000], psd_6[:1000]],
                     ['EI ratio = 1:2', 'EI ratio = 1:6'])
     plt.savefig('plot3.png')
+
+    #############################
 
     # Save any group level files
     fig1.savefig('plot1.png')
