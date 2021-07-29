@@ -41,13 +41,13 @@ def main():
 
     # PSD
     # PSD Excitatory
-    freq_e, psd_e = compute_spectrum(LFP_E, fs, method='welch', avg_type='median', nperseg=fs*2)
+    freq_e, psd_e = compute_spectrum(LFP_E, fs, method='welch', avg_type='median', nperseg=fs, noverlap=int(fs/2))
 
     # PSD Inhibitory
-    freq_i, psd_i = compute_spectrum(LFP_I, fs, method='welch', avg_type='median', nperseg=fs*2)
+    freq_i, psd_i = compute_spectrum(LFP_I, fs, method='welch', avg_type='median', nperseg=fs, noverlap=int(fs/2))
 
     # PSD LFP
-    freq_lfp, psd_lfp = compute_spectrum(LFP, fs, method='welch', avg_type='median', nperseg=fs*2)
+    freq_lfp, psd_lfp = compute_spectrum(LFP, fs, method='welch', avg_type='median', nperseg=fs, noverlap=int(fs/2))
 
     # Plot the power spectra
     plot_power_spectra([freq_lfp[:200], freq_e[:200], freq_i[:200]],
@@ -94,9 +94,9 @@ def main():
     LFP_E, LFP_I, _ = sim_field(6) # EI ratio = 1 : 6
     LFP6 = LFP_E + LFP_I
     # PSD Excitatory
-    freq_2, psd_2 = compute_spectrum(LFP2, fs, method='welch', avg_type='median', nperseg=fs*2)
+    freq_2, psd_2 = compute_spectrum(LFP2, fs, method='welch', avg_type='median', nperseg=fs, noverlap=int(fs/2))
     # PSD Inhibitory
-    freq_6, psd_6 = compute_spectrum(LFP6, fs, method='welch', avg_type='median', nperseg=fs*2)
+    freq_6, psd_6 = compute_spectrum(LFP6, fs, method='welch', avg_type='median', nperseg=fs, noverlap=int(fs/2))
     # Plot the power spectra
     plot_power_spectra([freq_2[:1000], freq_6[:1000]],
                     [psd_2[:1000], psd_6[:1000]],

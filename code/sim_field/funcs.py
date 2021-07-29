@@ -85,13 +85,13 @@ def batchsim_PSDs (EI_ratios= np.arange(2, 6.01, 0.2), num_trs = 5, t = 2 * 60, 
         GABA_tau = np.array([0.5, 10.])/1000.  GABA_A Conductance Rise, Decay Time in Seconds
     """
     fs = int(1/dt) # sampling rate
-    PSDs = np.zeros([1001, len(EI_ratios), num_trs])
+    PSDs = np.zeros([int(fs/2 + 1), len(EI_ratios), num_trs])
     for i in range(len(EI_ratios)):
         for tr in range(num_trs):
             LFP_E, LFP_I, _ = sim_field(EI_ratios[i], t = t, FR_E = FR_E, FR_I = FR_I, N_E = N_E, N_I = N_I, tk = tk,
                                 AMPA_tau = AMPA_tau, GABA_tau = GABA_tau, Vr = Vr, Ee = Ee, Ei = Ei, dt=dt)
             LFP = LFP_E + LFP_I
-            freq_lfp, psd_lfp = compute_spectrum(LFP, fs, method='welch', avg_type='median', nperseg=fs*2)
+            freq_lfp, psd_lfp = compute_spectrum(LFP, fs, method='welch', avg_type='median', nperseg=fs, noverlap=int(fs/2))
             PSDs[:,i,tr] = psd_lfp
     return PSDs, freq_lfp
 
