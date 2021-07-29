@@ -54,7 +54,7 @@ def main():
                     [psd_lfp[:200], psd_e[:200], psd_i[:200]],
                     ['LFP', 'Excitatory', 'Inhibitory'])
     # fig2 = plt.figure()
-    plt.savefig('plot2.png')
+    plt.savefig('1D.png')
     plt.figure().clear()
     plt.cla()
     plt.clf()
@@ -77,7 +77,7 @@ def main():
     ax.set_ylabel('Slope (30-50Hz)')
     ax.set_title('EI Ratio, PSD Slope Correlation Plot')
     fig4 = ax.get_figure()
-    fig4.savefig('plot4.png')
+    fig4.savefig('1F.png')
     ax.clear()
     df2 = pd.DataFrame(rhos, columns = ['Trial1','Trial2','Trial3','Trial4','Trial5'])
     df2['CenterFreq'] = center_freqs
@@ -87,7 +87,7 @@ def main():
     ax2.set_ylabel('Spearman Correlation')
     ax2.set_title('Spearman Correlation - Fitting Window Plot')
     fig5 = ax2.get_figure()
-    fig5.savefig('plot5.png')
+    fig5.savefig('1G.png')
 
     LFP_E, LFP_I, t = sim_field(2) # EI ratio = 1 : 2
     LFP2 = LFP_E + LFP_I
@@ -101,12 +101,12 @@ def main():
     plot_power_spectra([freq_2[:1000], freq_6[:1000]],
                     [psd_2[:1000], psd_6[:1000]],
                     ['EI ratio = 1:2', 'EI ratio = 1:6'])
-    plt.savefig('plot3.png')
+    plt.savefig('1E.png')
 
     #############################
 
     # Save any group level files
-    fig1.savefig('plot1.png')
+    fig1.savefig('1C.png')
 
     
 
