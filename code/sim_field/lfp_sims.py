@@ -101,13 +101,17 @@ def corr_EIRatio_and_slope():
     # Plot Figure 1, F.
     df = pd.DataFrame(slopes, 
                       columns=['Trial1','Trial2','Trial3','Trial4','Trial5'])
-    df['EIRatio'] = 1./EI_RATIO
+    df['EIRatio'] = EI_RATIO
     df_plot = df.melt('EIRatio')
     ax = sns.lineplot(data=df_plot, x='EIRatio', y='value', marker='o', 
                       color='black')
     ax.set_xlabel('g_E : g_I Ratio')
     ax.set_ylabel('Slope (30-50Hz)')
     ax.set_title('EI Ratio, PSD Slope Correlation Plot')
+    ax.set_xlim(EI_RATIO[-1], EI_RATIO[0])
+    ax.set_xticks([EI_RATIO_1E[0], EI_RATIO_1C, EI_RATIO_1E[1]])
+    ax.set_xticklabels(['1:%.0f' %EI_RATIO_1E[0], '1:%.0f' %EI_RATIO_1C, 
+                        '1:%.0f' %EI_RATIO_1E[1]])
     fig_1f = ax.get_figure()
     fig_1f.savefig('1F.png')
     plt.close('all')
