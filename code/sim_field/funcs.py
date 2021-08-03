@@ -115,3 +115,61 @@ def batchcorr_PSDs(PSDs, freq_lfp, EI_ratios = np.arange(2, 6.01, 0.2), center_f
             rhos[f,tr] = stats.spearmanr(1./EI_ratios, slopes[:,tr]).correlation
     return rhos
 
+def sim_lfp(ei_ratio, n_seconds=2*60, fs=1000, n_neurons=[8000, 2000], 
+            firing_rate=[2, 5], tau_r=[0.0001, 0.0005], tau_d=[0.002, 0.01]):
+      
+    """Simulate LFP using neuroDSP functionality.
+
+    Parameters
+    ----------
+    n_seconds : float
+        Simulation time, in seconds.
+    fs : float
+        Sampling rate of simulated signal, in Hz.
+    n_neurons : 1x2 array, default: (8000 2000)
+        Number of neurons in each population. (excitatory inhibitory)
+    firing_rate : 1x2 array, default: (2 5)
+        Firing rate of neurons in each population. (excitatory inhibitory)
+    tau_r : 1x2 array, default: (0.0001 0.0005)
+        Rise time of synaptic kernel, in seconds. (excitatory inhibitory)
+    tau_d : 1x2 array, default: (0.002 0.01)
+        Decay time of synaptic kernel, in seconds. (excitatory inhibitory)
+
+    Returns
+    -------
+    lfp : 1d array
+        Simulated local field potential
+    lfp_e : 1d array
+        Simulated local field potential
+    lfp_i : 1d array
+        Simulated local field potential
+
+
+    Examples
+    --------
+    >>> sig = sim_lfp(n_seconds=120, fs=1000)
+    """
+    
+    # imports 
+    from neurodsp.sim.aperiodic import sim_synaptic_current
+    from neurodsp.sim.transients import sim_synaptic_kernel
+
+    # simulate excitatory and inhibitory currents
+    lfp_e = sim_synaptic_current(n_seconds, fs, n_neurons=n_neurons[0], 
+                                 firing_rate=firing_rate[0], tau_r=tau_r[0], 
+                                 tau_d=tau_d[0], t_ker=None)
+    lfp_i = sim_synaptic_current(n_seconds, fs, n_neurons=n_neurons[1], 
+                                 firing_rate=firing_rate[1], tau_r=tau_r[1], 
+                                 tau_d=tau_d[1], t_ker=None)
+    
+    # compute desired E:I ratio  
+    kernel_e = sim_synaptic_kernel(5*tau_d[0], fs, tau_r[0], tau_d[0])
+    kernel_i = sim_synaptic_kernel(5*tau_d[1], fs, tau_r[1], tau_d[1])
+    boost = ei_ratio / ((n_neurons[1]*firing_rate[1]*sum(kernel_i)) / 
+                        (n_neurons[0] * firing_rate[0] * sum(kernel_e)))
+    lfp_i = lfp_i * boost
+
+    # compute lfp
+    lfp = lfp_e + lfp_i
+    
+    return lfp, lfp_e, lfp_i
