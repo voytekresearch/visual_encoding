@@ -7,9 +7,9 @@ Notes:
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 from neurodsp.spectral import compute_spectrum
 from neurodsp.plts.spectral import plot_power_spectra
-from fooof import FOOOF
 import sys
 sys.path.append('./')
 from funcs import *
@@ -84,11 +84,23 @@ def simulate_lfp():
     
     
 def corr_EIRatio_and_slope():
-    PSDs, freq_lfp = batchsim_PSDs(EI_ratios=EI_RATIO, num_trs=N_SIMS)
-    slopes = batchfit_PSDs(PSDs, freq_lfp, EI_ratios = EI_RATIO, num_trs=N_SIMS, freq_range=F_RANGE_FIT)
+    # analysis
+    PSDs, freq = batchsim_PSDs(EI_ratios=EI_RATIO, num_trs=N_SIMS)
+    slopes = batchfit_PSDs(PSDs, freq, EI_ratios = EI_RATIO, num_trs=N_SIMS, freq_range=F_RANGE_FIT)
     rhos = batchcorr_PSDs(PSDs, freq, EI_ratios = EI_RATIO, center_freqs=F_RANGE_CENTER, 
                     win_len=F_RANGE_WIDTH, num_trs=N_SIMS)  
     
+    # Figure 1, E.
+    # Plot power spectra for two different E:I ratios
+    psd_0 = np.squeeze(PSDs[:, EI_RATIO==EI_RATIO_1E[0]].mean(axis=2))
+    psd_1 = np.squeeze(PSDs[:, EI_RATIO==EI_RATIO_1E[1]].mean(axis=2))
+    plot_power_spectra([freq, freq], [psd_0, psd_1],
+                       ['EI ratio = 1:%d' %EI_RATIO_1E[0], 
+                        'EI ratio = 1:%d' %EI_RATIO_1E[1]]) 
+    plt.savefig('1E.png')
+    plt.close('all')
+    
+    # Figure 1, F.
     df = pd.DataFrame(slopes, columns = ['Trial1','Trial2','Trial3','Trial4','Trial5'])
     df['EIRatio'] = 1./EI_RATIO
     df_plot = df.melt('EIRatio')
@@ -100,6 +112,8 @@ def corr_EIRatio_and_slope():
     fig4 = ax.get_figure()
     fig4.savefig('1F.png')
     ax.clear()
+    
+    # Figure 1, G.
     df2 = pd.DataFrame(rhos, columns = ['Trial1','Trial2','Trial3','Trial4','Trial5'])
     df2['CenterFreq'] = F_RANGE_CENTER
     df2_plot = df2.melt('CenterFreq')
@@ -109,21 +123,6 @@ def corr_EIRatio_and_slope():
     ax2.set_title('Spearman Correlation - Fitting Window Plot')
     fig5 = ax2.get_figure()
     fig5.savefig('1G.png')
-
-   
-    LFP_E, LFP_I, t = sim_field(EI_RATIO_1E[0]) # EI ratio = 1 : 2
-    LFP2 = LFP_E + LFP_I
-    LFP_E, LFP_I, _ = sim_field(EI_RATIO_1E[1]) # EI ratio = 1 : 6
-    LFP6 = LFP_E + LFP_I
-    # PSD Excitatory
-    freq_2, psd_2 = compute_spectrum(LFP2, FS, method='welch', avg_type='median', nperseg=FS, noverlap=int(FS/2))
-    # PSD Inhibitory
-    freq_6, psd_6 = compute_spectrum(LFP6, FS, method='welch', avg_type='median', nperseg=FS, noverlap=int(FS/2))
-    # Plot the power spectra
-    plot_power_spectra([freq_2[:1000], freq_6[:1000]],
-                    [psd_2[:1000], psd_6[:1000]],
-                    ['EI ratio = 1:2', 'EI ratio = 1:6'])
-    plt.savefig('1E.png')
 
 
 if __name__ == "__main__":
