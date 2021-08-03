@@ -36,7 +36,16 @@ F_RANGE_WIDTH = 20 # width of freq range (for batch fitting)
 ###################################################################################################
 
 def main():
-
+    # simulate LFP for a given E:I ratio
+    simulate_lfp()
+    
+    # simulate LFPs for a range of E:I ratio
+    # and correlate E:I ratio with resulting PSD slope
+    # correlate E:I ratio and slope across a range of fitting freq. ranges
+    PSDs, freq = corr_EIRatio_and_slope()
+    
+def simulate_lfp():
+    
     # Initialize any output variables to save out
     LFP_E, LFP_I, t = sim_field(EI_RATIO_1C)
     LFP = LFP_E + LFP_I
@@ -50,6 +59,8 @@ def main():
     ax = sns.lineplot(x = t[:5000], y = LFP[:5000], color='black', ax = axes[1]) # used arbitrary length of 5000 to save time
     ax.set_xlim(0,0.2)
     ax.legend(labels=["LFP"])
+    
+    fig1.savefig('1C.png')
 
     # PSD
     # PSD Excitatory
@@ -71,14 +82,13 @@ def main():
     plt.cla()
     plt.clf()
     
-
-    #############################
-
+    
+def corr_EIRatio_and_slope():
     PSDs, freq_lfp = batchsim_PSDs(EI_ratios=EI_RATIO, num_trs=N_SIMS)
     slopes = batchfit_PSDs(PSDs, freq_lfp, EI_ratios = EI_RATIO, num_trs=N_SIMS, freq_range=F_RANGE_FIT)
-    rhos = batchcorr_PSDs(PSDs, freq_lfp, EI_ratios = EI_RATIO, center_freqs=F_RANGE_CENTER, 
-                    win_len=F_RANGE_WIDTH, num_trs=N_SIMS)
-
+    rhos = batchcorr_PSDs(PSDs, freq, EI_ratios = EI_RATIO, center_freqs=F_RANGE_CENTER, 
+                    win_len=F_RANGE_WIDTH, num_trs=N_SIMS)  
+    
     df = pd.DataFrame(slopes, columns = ['Trial1','Trial2','Trial3','Trial4','Trial5'])
     df['EIRatio'] = 1./EI_RATIO
     df_plot = df.melt('EIRatio')
@@ -100,6 +110,7 @@ def main():
     fig5 = ax2.get_figure()
     fig5.savefig('1G.png')
 
+   
     LFP_E, LFP_I, t = sim_field(EI_RATIO_1E[0]) # EI ratio = 1 : 2
     LFP2 = LFP_E + LFP_I
     LFP_E, LFP_I, _ = sim_field(EI_RATIO_1E[1]) # EI ratio = 1 : 6
@@ -113,13 +124,6 @@ def main():
                     [psd_2[:1000], psd_6[:1000]],
                     ['EI ratio = 1:2', 'EI ratio = 1:6'])
     plt.savefig('1E.png')
-
-    #############################
-
-    # Save any group level files
-    fig1.savefig('1C.png')
-
-    
 
 
 if __name__ == "__main__":
