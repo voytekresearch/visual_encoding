@@ -71,7 +71,7 @@ def sim_field (EI_ratio, t = 2 * 60, FR_E = 2, FR_I = 5, N_E = 8000, N_I = 2000,
 
 def batchsim_PSDs (EI_ratios= np.arange(2, 6.01, 0.2), num_trs = 5, t = 2 * 60, FR_E = 2, FR_I = 5, N_E = 8000, N_I = 2000, tk = 1,
              AMPA_tau = np.array([0.1, 2.])/1000., GABA_tau = np.array([0.5, 10.])/1000.,
-             Vr = -65, Ee = 0, Ei = -80, dt=0.001, method='custom'):
+             Vr = -65, Ee = 0, Ei = -80, dt=0.001, method='neurodsp'):
     """ Simulate PSD multiple times with an array of different EI_Ratios
         num_trs = 5 Number of trials for each EI ratio
         FR_E = 2 Firing Rate -- Excitatory
@@ -181,8 +181,8 @@ def sim_lfp(ei_ratio, n_seconds=2*60, fs=1000, n_neurons=[8000, 2000],
     # compute desired E:I ratio  
     kernel_e = sim_synaptic_kernel(5*tau_d[0], fs, tau_r[0], tau_d[0])
     kernel_i = sim_synaptic_kernel(5*tau_d[1], fs, tau_r[1], tau_d[1])
-    boost = ei_ratio / ((n_neurons[1]*firing_rate[1]*sum(kernel_i)) / 
-                        (n_neurons[0] * firing_rate[0] * sum(kernel_e)))
+    boost = ei_ratio / ((n_neurons[1]*firing_rate[1]*sum(kernel_e)) / 
+                        (n_neurons[0] * firing_rate[0] * sum(kernel_i)))
     g_i = g_i * boost
 
     # detrend conductance time-series
