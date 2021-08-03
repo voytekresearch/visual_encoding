@@ -31,7 +31,6 @@ F_RANGE_FIT = [30, 50] # frequency range for slope fit (for batch of EI ratios)
 F_RANGE_CENTER = np.arange(20, 160.1, 5) # center of freq range (for batch fitting)
 F_RANGE_WIDTH = 20 # width of freq range (for batch fitting)
 
-
 ###################################################################################################
 ###################################################################################################
 
@@ -53,37 +52,28 @@ def simulate_lfp():
     LFP_E, LFP_I, t = sim_field(EI_RATIO_1C)
     LFP = LFP_E + LFP_I
 
-    fig1, axes = plt.subplots(2, 1, figsize=(6, 6), sharex=True)
-    ax = sns.lineplot(x = t[:5000], y = LFP_E[:5000], ax = axes[0]) # used arbitrary length of 5000 to save time
-    sns.lineplot(x = t[:5000], y = LFP_I[:5000], ax = axes[0])
-    ax.set_xlim(0,0.2)
+    # Compute power spectrum of LFP and E/I conductance
+    _, psd_e = compute_spectrum(LFP_E, FS, method='welch', avg_type='median', nperseg=FS, noverlap=int(FS/2))
+    _, psd_i = compute_spectrum(LFP_I, FS, method='welch', avg_type='median', nperseg=FS, noverlap=int(FS/2))
+    freq, psd_lfp = compute_spectrum(LFP, FS, method='welch', avg_type='median', nperseg=FS, noverlap=int(FS/2))
+
+    # Figure 1, C. 
+    # Plot time-series 
+    samples_2_plot = int(np.floor(FS)) # ~1 seconds
+    fig_1c, axes = plt.subplots(2, 1, figsize=(6, 6), sharex=True)
+    ax = sns.lineplot(x=t[:samples_2_plot], y=LFP_E[:samples_2_plot], ax = axes[0])
+    sns.lineplot(x=t[:samples_2_plot], y=LFP_I[:samples_2_plot], ax = axes[0])
     ax.legend(labels=["Excitatory","Inhibitory"])
 
-    ax = sns.lineplot(x = t[:5000], y = LFP[:5000], color='black', ax = axes[1]) # used arbitrary length of 5000 to save time
-    ax.set_xlim(0,0.2)
+    ax = sns.lineplot(x=t[:samples_2_plot], y=LFP[:samples_2_plot], ax=axes[1], color='black')
     ax.legend(labels=["LFP"])
-    
-    fig1.savefig('1C.png')
+    fig_1c.savefig('1C.png')
 
-    # PSD
-    # PSD Excitatory
-    freq_e, psd_e = compute_spectrum(LFP_E, FS, method='welch', avg_type='median', nperseg=FS, noverlap=int(FS/2))
-
-    # PSD Inhibitory
-    freq_i, psd_i = compute_spectrum(LFP_I, FS, method='welch', avg_type='median', nperseg=FS, noverlap=int(FS/2))
-
-    # PSD LFP
-    freq_lfp, psd_lfp = compute_spectrum(LFP, FS, method='welch', avg_type='median', nperseg=FS, noverlap=int(FS/2))
-
-    # Plot the power spectra
-    plot_power_spectra([freq_lfp[:200], freq_e[:200], freq_i[:200]],
-                    [psd_lfp[:200], psd_e[:200], psd_i[:200]],
+    # Plot Figure 1, D. 
+    # Plot power spectra
+    plot_power_spectra([freq, freq, freq], [psd_lfp, psd_e, psd_i],
                     ['LFP', 'Excitatory', 'Inhibitory'])
-    # fig2 = plt.figure()
     plt.savefig('1D.png')
-    plt.figure().clear()
-    plt.cla()
-    plt.clf()
     
     
 def corr_EIRatio_and_slope():
