@@ -113,6 +113,8 @@ def corr_EIRatio_and_slope():
     fig4 = ax.get_figure()
     fig4.savefig('1F.png')
     ax.clear()
+    
+    return PSDs, freq
  
     
 def assess_corr_across_freqs(PSDs, freq):
