@@ -89,9 +89,9 @@ def corr_EIRatio_and_slope():
     
     # Figure 1, E.
     # Plot power spectra for two different E:I ratios
-    psd_0 = np.squeeze(PSDs[:, EI_RATIO==EI_RATIO_1E[0]].mean(axis=2))
-    psd_1 = np.squeeze(PSDs[:, EI_RATIO==EI_RATIO_1E[1]].mean(axis=2))
-    plot_power_spectra([freq, freq], [psd_0, psd_1],
+    psd_0 = np.squeeze(PSDs[:, EI_RATIO==EI_RATIO_1E[0], 0])
+    psd_1 = np.squeeze(PSDs[:, EI_RATIO==EI_RATIO_1E[1], 0])
+    plot_power_spectra([freq, freq], [psd_0/sum(psd_0), psd_1/sum(psd_1)],
                        ['EI ratio = 1:%d' %EI_RATIO_1E[0], 
                         'EI ratio = 1:%d' %EI_RATIO_1E[1]]) 
     plt.savefig('1E.png')
