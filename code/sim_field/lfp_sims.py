@@ -36,13 +36,16 @@ F_RANGE_WIDTH = 20 # width of freq range (for batch fitting)
 ###################################################################################################
 
 def main():
+    
     # simulate LFP for a given E:I ratio
     simulate_lfp()
     
     # simulate LFPs for a range of E:I ratio
     # and correlate E:I ratio with resulting PSD slope
-    # correlate E:I ratio and slope across a range of fitting freq. ranges
     PSDs, freq = corr_EIRatio_and_slope()
+    
+    # correlate E:I ratio and slope across a range of fitting freq. ranges
+    assess_corr_across_freqs(PSDs, freq)
     
 def simulate_lfp():
     
@@ -87,8 +90,6 @@ def corr_EIRatio_and_slope():
     # analysis
     PSDs, freq = batchsim_PSDs(EI_ratios=EI_RATIO, num_trs=N_SIMS)
     slopes = batchfit_PSDs(PSDs, freq, EI_ratios = EI_RATIO, num_trs=N_SIMS, freq_range=F_RANGE_FIT)
-    rhos = batchcorr_PSDs(PSDs, freq, EI_ratios = EI_RATIO, center_freqs=F_RANGE_CENTER, 
-                    win_len=F_RANGE_WIDTH, num_trs=N_SIMS)  
     
     # Figure 1, E.
     # Plot power spectra for two different E:I ratios
@@ -112,7 +113,12 @@ def corr_EIRatio_and_slope():
     fig4 = ax.get_figure()
     fig4.savefig('1F.png')
     ax.clear()
+ 
     
+def assess_corr_across_freqs(PSDs, freq):
+    rhos = batchcorr_PSDs(PSDs, freq, EI_ratios = EI_RATIO, center_freqs=F_RANGE_CENTER, 
+               win_len=F_RANGE_WIDTH, num_trs=N_SIMS)  
+     
     # Figure 1, G.
     df2 = pd.DataFrame(rhos, columns = ['Trial1','Trial2','Trial3','Trial4','Trial5'])
     df2['CenterFreq'] = F_RANGE_CENTER
