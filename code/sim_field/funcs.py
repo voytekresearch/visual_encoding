@@ -130,7 +130,7 @@ def batchcorr_PSDs(PSDs, freq_lfp, EI_ratios = np.arange(2, 6.01, 0.2), center_f
 
 def sim_lfp(ei_ratio, n_seconds=2*60, fs=1000, n_neurons=[8000, 2000], 
             firing_rate=[2, 5], tau_r=[0.0001, 0.0005], tau_d=[0.002, 0.01],
-            e_reversal=[0, -80]):
+            t_ker=1, e_reversal=[0, -80]):
       
     """Simulate LFP using neuroDSP functionality.
 
@@ -173,14 +173,14 @@ def sim_lfp(ei_ratio, n_seconds=2*60, fs=1000, n_neurons=[8000, 2000],
     # simulate excitatory and inhibitory conductances
     g_e = sim_synaptic_current(n_seconds, fs, n_neurons=n_neurons[0], 
                                firing_rate=firing_rate[0], tau_r=tau_r[0], 
-                               tau_d=tau_d[0], t_ker=None)
+                               tau_d=tau_d[0], t_ker=t_ker)
     g_i = sim_synaptic_current(n_seconds, fs, n_neurons=n_neurons[1], 
                                firing_rate=firing_rate[1], tau_r=tau_r[1], 
-                               tau_d=tau_d[1], t_ker=None)
+                               tau_d=tau_d[1], t_ker=t_ker)
     
     # compute desired E:I ratio  
-    kernel_e = sim_synaptic_kernel(5*tau_d[0], fs, tau_r[0], tau_d[0])
-    kernel_i = sim_synaptic_kernel(5*tau_d[1], fs, tau_r[1], tau_d[1])
+    kernel_e = sim_synaptic_kernel(t_ker, fs, tau_r[0], tau_d[0])
+    kernel_i = sim_synaptic_kernel(t_ker, fs, tau_r[1], tau_d[1])
     boost = ei_ratio / ((n_neurons[1]*firing_rate[1]*sum(kernel_e)) / 
                         (n_neurons[0] * firing_rate[0] * sum(kernel_i)))
     g_i = g_i * boost
