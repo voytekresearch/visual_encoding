@@ -172,6 +172,10 @@ def sim_lfp(ei_ratio, n_seconds=2*60, fs=1000, n_neurons=[8000, 2000],
                         (n_neurons[0] * firing_rate[0] * sum(kernel_e)))
     g_i = g_i * boost
 
+    # detrend conductance time-series
+    g_e = signal.detrend(g_e, type = 'constant')
+    g_i = signal.detrend(g_i, type = 'constant')    
+    
     # compute excitatory and inhibitory currents
     lfp_e = g_e * (-65 - e_reversal[0])
     lfp_i = g_i * (-65 - e_reversal[1])
