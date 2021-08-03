@@ -71,7 +71,7 @@ def sim_field (EI_ratio, t = 2 * 60, FR_E = 2, FR_I = 5, N_E = 8000, N_I = 2000,
 
 def batchsim_PSDs (EI_ratios= np.arange(2, 6.01, 0.2), num_trs = 5, t = 2 * 60, FR_E = 2, FR_I = 5, N_E = 8000, N_I = 2000, tk = 1,
              AMPA_tau = np.array([0.1, 2.])/1000., GABA_tau = np.array([0.5, 10.])/1000.,
-             Vr = -65, Ee = 0, Ei = -80, dt=0.001):
+             Vr = -65, Ee = 0, Ei = -80, dt=0.001, method='custom'):
     """ Simulate PSD multiple times with an array of different EI_Ratios
         num_trs = 5 Number of trials for each EI ratio
         FR_E = 2 Firing Rate -- Excitatory
@@ -88,11 +88,23 @@ def batchsim_PSDs (EI_ratios= np.arange(2, 6.01, 0.2), num_trs = 5, t = 2 * 60, 
     PSDs = np.zeros([int(fs/2 + 1), len(EI_ratios), num_trs])
     for i in range(len(EI_ratios)):
         for tr in range(num_trs):
-            LFP_E, LFP_I, _ = sim_field(EI_ratios[i], t = t, FR_E = FR_E, FR_I = FR_I, N_E = N_E, N_I = N_I, tk = tk,
-                                AMPA_tau = AMPA_tau, GABA_tau = GABA_tau, Vr = Vr, Ee = Ee, Ei = Ei, dt=dt)
-            LFP = LFP_E + LFP_I
+            if method == 'neurodsp':
+                # simulate lfp
+                LFP,_,_ = sim_lfp(EI_ratios[i], n_seconds=t, fs=fs, 
+                                  n_neurons=[N_E,N_I], firing_rate=[FR_E,FR_I], 
+                                  tau_r=[AMPA_tau[0], GABA_tau[0]], 
+                                  tau_d=[AMPA_tau[1], GABA_tau[1]])
+                
+            else:
+                # simulate lfp
+                LFP_E, LFP_I, _ = sim_field(EI_ratios[i], t = t, FR_E = FR_E, FR_I = FR_I, N_E = N_E, N_I = N_I, tk = tk,
+                                    AMPA_tau = AMPA_tau, GABA_tau = GABA_tau, Vr = Vr, Ee = Ee, Ei = Ei, dt=dt)
+                LFP = LFP_E + LFP_I
+                
+            # compute PSD
             freq_lfp, psd_lfp = compute_spectrum(LFP, fs, method='welch', avg_type='median', nperseg=fs, noverlap=int(fs/2))
             PSDs[:,i,tr] = psd_lfp
+            
     return PSDs, freq_lfp
 
 def batchfit_PSDs(PSDs, freq_lfp, EI_ratios = np.arange(2, 6.01, 0.2), num_trs = 5, freq_range = [30, 50]):
