@@ -112,7 +112,8 @@ def batchfit_PSDs(PSDs, freq_lfp, EI_ratios = np.arange(2, 6.01, 0.2), num_trs =
     for i in range(len(EI_ratios)):
         for tr in range(num_trs):
             psd_lfp = PSDs[:,i,tr]
-            fm = FOOOF(peak_width_limits=[2, 8], aperiodic_mode='fixed')
+            fm = FOOOF(peak_width_limits=[2, 8], aperiodic_mode='fixed',
+                       max_n_peaks=0)
             fm.fit(freq_lfp, psd_lfp, freq_range)
             slopes[i, tr] = -fm.aperiodic_params_[1]
     return slopes
