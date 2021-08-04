@@ -4,6 +4,7 @@ from scipy import signal
 from scipy import stats
 from neurodsp.spectral import compute_spectrum
 from fooof import FOOOF
+from fooof import FOOOFGroup
 
 ###################################################################################################
 ###################################################################################################
@@ -107,15 +108,46 @@ def batchsim_PSDs (EI_ratios= np.arange(2, 6.01, 0.2), num_trs = 5, t = 2 * 60, 
             
     return PSDs, freq_lfp
 
-def batchfit_PSDs(PSDs, freq_lfp, EI_ratios = np.arange(2, 6.01, 0.2), num_trs = 5, freq_range = [30, 50]):
-    slopes = np.zeros([len(EI_ratios), num_trs])
-    for i in range(len(EI_ratios)):
-        for tr in range(num_trs):
-            psd_lfp = PSDs[:,i,tr]
-            fm = FOOOF(peak_width_limits=[2, 8], aperiodic_mode='fixed',
-                       max_n_peaks=0)
-            fm.fit(freq_lfp, psd_lfp, freq_range)
-            slopes[i, tr] = -fm.aperiodic_params_[1]
+## TODO: use batch FOOOF instead of using it in a loop
+# def batchfit_PSDs(PSDs, freq_lfp, EI_ratios = np.arange(2, 6.01, 0.2), num_trs = 5, freq_range = [30, 50]):
+#     slopes = np.zeros([len(EI_ratios), num_trs])
+#     for i in range(len(EI_ratios)):
+#         for tr in range(num_trs):
+#             psd_lfp = PSDs[:,i,tr]
+#             fm = FOOOF(peak_width_limits=[2, 8], aperiodic_mode='fixed', # try without peak_width_limits
+#                        max_n_peaks=0)
+#             fm.fit(freq_lfp, psd_lfp, freq_range)
+#             slopes[i, tr] = -fm.aperiodic_params_[1] # use get_params('aperiodic_params' , 'exponent')
+#     return slopes
+
+def batchfit_PSDs(PSDs, freq, freq_range = [30, 50]):
+    """Fits slopes that maintains the overall dimensions of PSDs by squeeze and unsqueeze the PSDs arrays internally
+
+    Parameters
+    ----------
+    PSDs : n dimensional array
+        A batch of Power Spectral Density with the last dimension being each PSD array
+    freq_lfp : 1-d numpy array
+        the frequency indexes all PSDs share
+    freq_range : 1x2 list, default: [30, 50]
+        the frequency range for the slope fit
+
+    Returns
+    -------
+    slopes : n-1 dimensional array
+        the shape-matched slopes of the PSDs
+
+    Examples
+    --------
+    >>> slopes = batchfit_PSDs(PSDs, freq, freq_range = [30, 50])
+    """
+    shapeT = PSDs.T.shape[:-1] # transpose shape
+    PSDs_array = PSDs.T.reshape(np.prod(PSDs.shape[1:]), len(PSDs)) # transpose then squeeze PSDs into a 2D array
+    fg = FOOOFGroup(aperiodic_mode='fixed', peak_width_limits=[2, 8], max_n_peaks=0) # fake peak_width_limit to supress warnings
+    fg.fit(freq, PSDs_array, freq_range, n_jobs = -1) # set n_job = -1 to parallelize
+    slopes_array = -fg.get_params('aperiodic_params', 'exponent')
+    slopes = slopes_array.reshape(shapeT).T # unsqueeze the slopes array
+
     return slopes
 
 def batchcorr_PSDs(PSDs, freq_lfp, EI_ratios = np.arange(2, 6.01, 0.2), center_freqs = np.arange(20, 160.1, 5), 
@@ -123,7 +155,7 @@ def batchcorr_PSDs(PSDs, freq_lfp, EI_ratios = np.arange(2, 6.01, 0.2), center_f
     rhos = np.zeros([len(center_freqs), num_trs])
     for f in range(len(center_freqs)):
         freq_range = [center_freqs[f]-win_len/2, center_freqs[f]+win_len/2]
-        slopes = batchfit_PSDs(PSDs, freq_lfp, EI_ratios, num_trs=num_trs, freq_range=freq_range)
+        slopes = batchfit_PSDs(PSDs, freq_lfp, freq_range=freq_range)
         for tr in range(num_trs):
             rhos[f,tr] = stats.spearmanr(1./EI_ratios, slopes[:,tr]).correlation
     return rhos

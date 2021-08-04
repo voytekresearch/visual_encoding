@@ -84,7 +84,7 @@ def simulate_lfp():
 def corr_EIRatio_and_slope():
     # analysis
     PSDs, freq = batchsim_PSDs(EI_ratios=EI_RATIO, num_trs=N_SIMS)
-    slopes = batchfit_PSDs(PSDs, freq, EI_ratios = EI_RATIO, num_trs=N_SIMS, 
+    slopes = batchfit_PSDs(PSDs, freq, 
                            freq_range=F_RANGE_FIT)
     
     # Figure 1, E.
