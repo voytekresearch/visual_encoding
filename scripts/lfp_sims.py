@@ -1,8 +1,14 @@
 """Template script for running analysis across a group of EEG subjects, after pre-processing.
 Notes:
 - sim_field is deprecated, sim_lfp is prefered
+- the generated figures are under figures/EISlopes/
+- the saved intermediate data are under data/simulations/
 """
 
+## IMPORTS
+import sys
+sys.path.append('../sim_field')
+from os.path import join as pjoin
 from funcs import sim_field, batchsim_PSDs, batchfit_PSDs, batchcorr_PSDs
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -10,8 +16,7 @@ import pandas as pd
 import numpy as np
 from neurodsp.spectral import compute_spectrum
 from neurodsp.plts.spectral import plot_power_spectra
-import sys
-sys.path.append('./')
+
 
 ###################################################################################################
 ###################################################################################################
@@ -31,6 +36,11 @@ F_RANGE_FIT = [30, 50]
 # center of freq range (for batch fitting)
 F_RANGE_CENTER = np.arange(20, 160.1, 5)
 F_RANGE_WIDTH = 20  # width of freq range (for batch fitting)
+
+# Set paths for the project
+BASE_PATH = "../"
+FIGURE_PATH = pjoin(BASE_PATH, "figures/EISlope/")
+DATA_PATH = pjoin(BASE_PATH, "data/simulations/")
 
 ###################################################################################################
 ###################################################################################################
@@ -75,13 +85,13 @@ def simulate_lfp():
     ax = sns.lineplot(x=t[:samples_2_plot], y=LFP[:samples_2_plot], ax=axes[1],
                       color='black')
     ax.legend(labels=["LFP"])
-    fig_1c.savefig('1C.png')
+    fig_1c.savefig(pjoin(FIGURE_PATH,'1C.png'))
 
     # Plot Figure 1, D.
     # Plot power spectra
     plot_power_spectra([freq, freq, freq], [psd, psd_e, psd_i],
                        ['LFP', 'Excitatory', 'Inhibitory'])
-    plt.savefig('1D.png')
+    plt.savefig(pjoin(FIGURE_PATH,'1D.png'))
 
 
 def corr_EIRatio_and_slope():
@@ -97,7 +107,7 @@ def corr_EIRatio_and_slope():
     plot_power_spectra([freq, freq], [psd_0/sum(psd_0), psd_1/sum(psd_1)],
                        ['EI ratio = 1:%d' % EI_RATIO_1E[0],
                         'EI ratio = 1:%d' % EI_RATIO_1E[1]])
-    plt.savefig('1E.png')
+    plt.savefig(pjoin(FIGURE_PATH,'1E.png'))
     plt.close('all')
 
     # Figure 1, F.
@@ -116,7 +126,7 @@ def corr_EIRatio_and_slope():
     ax.set_xticklabels(['1:%.0f' % EI_RATIO_1E[0], '1:%.0f' % EI_RATIO_1C,
                         '1:%.0f' % EI_RATIO_1E[1]])
     fig_1f = ax.get_figure()
-    fig_1f.savefig('1F.png')
+    fig_1f.savefig(pjoin(FIGURE_PATH,'1F.png'))
     plt.close('all')
 
     return PSDs, freq
@@ -140,7 +150,7 @@ def assess_corr_across_freqs(PSDs, freq):
     ax2.set_ylabel('Spearman Correlation')
     ax2.set_title('Spearman Correlation - Fitting Window Plot')
     fig_1g = ax2.get_figure()
-    fig_1g.savefig('1G.png')
+    fig_1g.savefig(pjoin(FIGURE_PATH,'1G.png'))
     plt.close('all')
 
 
