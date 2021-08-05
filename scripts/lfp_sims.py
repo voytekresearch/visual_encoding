@@ -53,36 +53,36 @@ def main():
 
     # simulate LFPs for a range of E:I ratio
     # and correlate E:I ratio with resulting PSD slope
-    PSDs, freq = corr_EIRatio_and_slope()
+    psd_batch, freq = corr_EIRatio_and_slope()
 
     # correlate E:I ratio and slope across a range of fitting freq. ranges
-    assess_corr_across_freqs(PSDs, freq)
+    assess_corr_across_freqs(psd_batch, freq)
 
 
 def simulate_lfp():
 
     # Initialize any output variables to save out
-    LFP_E, LFP_I, t = sim_field(EI_RATIO_1C)
-    LFP = LFP_E + LFP_I
+    lfp_e, lfp_i, t = sim_field(EI_RATIO_1C)
+    lfp = lfp_e + lfp_i
 
     # Compute power spectrum of LFP and E/I conductance
-    _, psd_e = compute_spectrum(LFP_E, FS, method='welch', avg_type='median',
+    _, psd_e = compute_spectrum(lfp_e, FS, method='welch', avg_type='median',
                                 nperseg=FS, noverlap=int(FS/2))
-    _, psd_i = compute_spectrum(LFP_I, FS, method='welch', avg_type='median',
+    _, psd_i = compute_spectrum(lfp_i, FS, method='welch', avg_type='median',
                                 nperseg=FS, noverlap=int(FS/2))
-    freq, psd = compute_spectrum(LFP, FS, method='welch', avg_type='median',
+    freq, psd = compute_spectrum(lfp, FS, method='welch', avg_type='median',
                                  nperseg=FS, noverlap=int(FS/2))
 
     # Figure 1, C.
     # Plot time-series
     samples_2_plot = int(np.floor(FS))  # ~1 seconds
     fig_1c, axes = plt.subplots(2, 1, figsize=(6, 6), sharex=True)
-    ax = sns.lineplot(x=t[:samples_2_plot], y=LFP_E[:samples_2_plot],
+    ax = sns.lineplot(x=t[:samples_2_plot], y=lfp_e[:samples_2_plot],
                       ax=axes[0])
-    sns.lineplot(x=t[:samples_2_plot], y=LFP_I[:samples_2_plot], ax=axes[0])
+    sns.lineplot(x=t[:samples_2_plot], y=lfp_i[:samples_2_plot], ax=axes[0])
     ax.legend(labels=["Excitatory", "Inhibitory"])
 
-    ax = sns.lineplot(x=t[:samples_2_plot], y=LFP[:samples_2_plot], ax=axes[1],
+    ax = sns.lineplot(x=t[:samples_2_plot], y=lfp[:samples_2_plot], ax=axes[1],
                       color='black')
     ax.legend(labels=["LFP"])
     fig_1c.savefig(pjoin(FIGURE_PATH,'1C.png'))
@@ -96,14 +96,14 @@ def simulate_lfp():
 
 def corr_EIRatio_and_slope():
     # analysis
-    PSDs, freq = batchsim_PSDs(EI_ratios=EI_RATIO, num_trs=N_SIMS)
-    slopes = batchfit_PSDs(PSDs, freq,
+    psd_batch, freq = batchsim_PSDs(ei_ratios=EI_RATIO, num_trs=N_SIMS)
+    slopes = batchfit_PSDs(psd_batch, freq,
                            freq_range=F_RANGE_FIT)
 
     # Figure 1, E.
     # Plot power spectra for two different E:I ratios
-    psd_0 = np.squeeze(PSDs[:, EI_RATIO == EI_RATIO_1E[0], 0])
-    psd_1 = np.squeeze(PSDs[:, EI_RATIO == EI_RATIO_1E[1], 0])
+    psd_0 = np.squeeze(psd_batch[:, EI_RATIO == EI_RATIO_1E[0], 0])
+    psd_1 = np.squeeze(psd_batch[:, EI_RATIO == EI_RATIO_1E[1], 0])
     plot_power_spectra([freq, freq], [psd_0/sum(psd_0), psd_1/sum(psd_1)],
                        ['EI ratio = 1:%d' % EI_RATIO_1E[0],
                         'EI ratio = 1:%d' % EI_RATIO_1E[1]])
@@ -129,13 +129,13 @@ def corr_EIRatio_and_slope():
     fig_1f.savefig(pjoin(FIGURE_PATH,'1F.png'))
     plt.close('all')
 
-    return PSDs, freq
+    return psd_batch, freq
 
 
-def assess_corr_across_freqs(PSDs, freq):
+def assess_corr_across_freqs(psd_batch, freq):
 
     # Correlate EI ratio and slope fit in different frequency ranges
-    rhos = batchcorr_PSDs(PSDs, freq, EI_ratios=EI_RATIO,
+    rhos = batchcorr_PSDs(psd_batch, freq, ei_ratios=EI_RATIO,
                           center_freqs=F_RANGE_CENTER,
                           win_len=F_RANGE_WIDTH, num_trs=N_SIMS)
 

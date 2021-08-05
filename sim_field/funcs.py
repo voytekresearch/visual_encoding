@@ -12,32 +12,28 @@ from fooof import FOOOFGroup
 ##########################################################################
 
 
-def syn_kernel(t, tau):
+def syn_kernel(n_seconds, tau):
     """ *Deprecated: check neurodsp.sim.transients.sim_synaptic_kernel*
     given a specific synaptic kernel type and time constant, this returns a
-    time series of the kernel that spans the time defined (t) in seconds
+    time series of the kernel that spans the time defined (n_seconds) in seconds
 
     Parameters
     ----------
-    t : 1d array, (e.g. t=0:0.001:5)
+    n_seconds : 1d array, (e.g. n_seconds=0:0.001:5)
         time vector in seconds
     tau : 1x2 array, [t_rise t_decay]
         Time constants of synaptic kernel, in seconds. (rise fall)
 
     Returns
     -------
-    LFP_E : 1d array
-        the excitatory component of the LFP
-    LFP_I : 1d array
-        the inhibitory component of the LFP
-    t : 1d array
-        the time vector of the LFP
+    kernel : 1d array
+        the kernel of the synaptic current
 
     Examples
     --------
-    >>> tk = np.arange(0, tk, dt)
-    >>> AMPA_tau = np.array([0.1, 2.])/1000.
-    >>> kA = syn_kernel(tk,AMPA_tau)
+    >>> t_ker = np.arange(0, t_ker, dt)
+    >>> tau_exc = np.array([0.1, 2.])/1000.
+    >>> kernel_e = syn_kernel(t_ker,tau_exc)
     """
 
     if len(tau) != 2:
@@ -46,23 +42,23 @@ def syn_kernel(t, tau):
     tpeak = tau[1] * tau[0] / (tau[1] - tau[0]) * np.log(tau[1] / tau[0])
     # the normalization factor
     normf = 1 / (-np.exp(-tpeak / tau[0]) + np.exp(-tpeak / tau[1]))
-    kernel = normf * (-np.exp(-t / tau[0]) + np.exp(-t / tau[1]))
+    kernel = normf * (-np.exp(-n_seconds / tau[0]) + np.exp(-n_seconds / tau[1]))
     return kernel
 
 
-def pois_spikes(sim_t, dt, N_neu, FR):
-    """ simulate population spiking of N neurons firing at FR each, return a
+def pois_spikes(n_seconds, dt, n_neurons, firing_rate):
+    """ simulate population spiking of N neurons firing at firing_rate each, return a
     single spike train that is the total spiking
 
     Parameters
     ----------
-    sim_t : float
+    n_seconds : float
         simulation time vector in seconds
     dt : float
         Time increment unit
-    N_neu : int
+    n_neurons : int
         number of neurons
-    FR : float
+    firing_rate : float
         average firing rate of a neuron in Hz
 
     Returns
@@ -72,168 +68,161 @@ def pois_spikes(sim_t, dt, N_neu, FR):
 
     Examples
     --------
-    >>> spk_E = pois_spikes(t=20, dt = 0.001, N_neu = 8000, FR = 2)
+    >>> spk_E = pois_spikes(n_seconds=20, dt = 0.001, n_neurons = 8000, firing_rate = 2)
     """
 
     # mu parameter for exponential distribution
-    MU = 1. / (N_neu * FR)
+    mu = 1. / (n_neurons * firing_rate)
 
     # draw ISI from exp RV
-    ISI = np.random.exponential(MU, int((sim_t + 2) / MU))
-    spk_times = np.cumsum(ISI)
-    spk_times = spk_times[spk_times <= sim_t]  # potentially inefficient
+    isi = np.random.exponential(mu, int((n_seconds + 2) / mu))
+    spk_times = np.cumsum(isi)
+    spk_times = spk_times[spk_times <= n_seconds]  # potentially inefficient
 
     # discretize
-    bins = np.arange(0, sim_t, dt) + dt / 2  # make discretizing bins
+    bins = np.arange(0, n_seconds, dt) + dt / 2  # make discretizing bins
     discretized, _ = np.histogram(spk_times, bins=bins, density=False)
     return discretized
 
 
-def sim_field(EI_ratio, t=2 * 60, FR_E=2, FR_I=5, N_E=8000, N_I=2000, tk=1,
-              AMPA_tau=np.array([0.1, 2.]) / 1000., GABA_tau=np.array([0.5, 10.]) / 1000.,
-              Vr=-65, Ee=0, Ei=-80, dt=0.001):
+def sim_field(ei_ratio, n_seconds=2 * 60, firing_rate_e=2, firing_rate_i=5, n_neurons_e=8000, n_neurons_i=2000, t_ker=1,
+              tau_exc=np.array([0.1, 2.]) / 1000., tau_inh=np.array([0.5, 10.]) / 1000.,
+              v_rest=-65, e_reversal_e=0, e_reversal_i=-80, dt=0.001):
     """ *Deprecated: use sim_lfp instead for faster speed*
     Simulate LFP using Gao 2017's model
 
     Parameters
     ----------
-    FR_E : float, default: 2
+    firing_rate_e : float, default: 2
         Firing Rate -- Excitatory
-    FR_I : float, default: 5
+    firing_rate_i: float, default: 5
         Firing Rate -- Inhibitory
-    N_E : int, default: 8000
+    n_neurons_e : int, default: 8000
         Population -- Excitatory
-    N_I : int, default: 2000
+    n_neurons_i : int, default: 2000
         Population -- Inhibitory
-    Vr : float, default: -65
+    v_rest : float, default: -65
         Resting Membrane Potential
-    Ee : float, default: 0
+    e_reversal_e : float, default: 0
         AMPA Reversal Potential -- Excitatory
-    Ei : float, default: -80
+    e_reversal_i : float, default: -80
         GABA_A Reversal Potential -- Inhibitory
-    AMPA_tau : 1x2 array, default: np.array([0.1, 2.])/1000.
+    tau_exc : 1x2 array, default: np.array([0.1, 2.])/1000.
         AMPA Conductance Rise, Decay Time in Seconds
-    GABA_tau : 1x2 array, default: np.array([0.5, 10.])/1000.
+    tau_inh : 1x2 array, default: np.array([0.5, 10.])/1000.
         GABA_A Conductance Rise, Decay Time in Seconds
-    EI_ratios : 1d array, default: np.arange(2, 6.01, 0.2)
+    ei_ratios : 1d array, default: np.arange(2, 6.01, 0.2)
         The EI Ratios to simulate
-    tk : float, default: 1
+    t_ker : float, default: 1
         kernel time, in seconds
 
     Returns
     -------
-    LFP_E : 1d array
+    lfp_e : 1d array
         the excitatory component of the LFP
-    LFP_I : 1d array
+    lfp_i : 1d array
         the inhibitory component of the LFP
-    t : 1d array
+    times : 1d array
         the time vector of the LFP
 
     Examples
     --------
-    >>> LFP_E, LFP_I, t = sim_field(EI_ratio=4)
+    >>> lfp_e, lfp_i, times = sim_field(ei_ratio=4)
     """
 
-    fs = 1 / dt  # sampling rate
-    tk = np.arange(0, tk, dt)  # PSC kernel time vector
-    t = np.arange(0, t, dt)  # simulation time vector
-    kA = syn_kernel(tk, AMPA_tau)
-    kG = syn_kernel(tk, GABA_tau)
-    boost = EI_ratio / ((N_I * FR_I * sum(kG)) / (N_E * FR_E * sum(kA)))
-    spk_E = pois_spikes(t[-1] + tk[-1] + dt, dt, N_E, FR_E)
-    spk_I = pois_spikes(t[-1] + tk[-1] + dt, dt, N_I, FR_I)
-    GE = np.convolve(spk_E, kA, 'valid')  # Total Excitatory Conductance
+    t_ker = np.arange(0, t_ker, dt)  # PSC kernel time vector
+    times = np.arange(0, n_seconds, dt)  # simulation time vector
+    kernel_e = syn_kernel(t_ker, tau_exc)
+    kernel_i = syn_kernel(t_ker, tau_inh)
+    boost = ei_ratio / ((n_neurons_i * firing_rate_i* sum(kernel_i)) / (n_neurons_e * firing_rate_e * sum(kernel_e)))
+    spk_E = pois_spikes(times[-1] + t_ker[-1] + dt, dt, n_neurons_e, firing_rate_e)
+    spk_I = pois_spikes(times[-1] + t_ker[-1] + dt, dt, n_neurons_i, firing_rate_i)
+    g_e = np.convolve(spk_E, kernel_e, 'valid')  # Total Excitatory Conductance
     # Total Inhibitory Conductance
-    GI = np.convolve(spk_I, kG, 'valid') * boost
+    g_i = np.convolve(spk_I, kernel_i, 'valid') * boost
     # high-pass drift removal * potential difference
-    LFP_E = signal.detrend(GE, type='constant') * (Ee - Vr)
+    lfp_e = signal.detrend(g_e, type='constant') * (e_reversal_e - v_rest)
     # high-pass drift removal * potential difference
-    LFP_I = signal.detrend(GI, type='constant') * (Ei - Vr)
-    return LFP_E, LFP_I, t
+    lfp_i = signal.detrend(g_i, type='constant') * (e_reversal_i - v_rest)
+    return lfp_e, lfp_i, times
 
 
-def batchsim_PSDs(EI_ratios=np.arange(2, 6.01, 0.2), num_trs=5, t=2 *
-                  60, FR_E=2, FR_I=5, N_E=8000, N_I=2000, tk=1, AMPA_tau=np.array([0.1, 2.]) /
-                  1000., GABA_tau=np.array([0.5, 10.]) /
-                  1000., Vr=-
-                  65, Ee=0, Ei=-
-                  80, dt=0.001, method='neurodsp'):
-    """ Simulate PSD multiple times with an array of different EI_Ratios
+def batchsim_PSDs(ei_ratios=np.arange(2, 6.01, 0.2), num_trs=5, n_seconds=2 * 60,
+                    firing_rate=[2, 5], n_neurons=[8000, 2000], t_ker=1, tau_exc=np.array([0.1, 2.]) / 1000.,
+                    tau_inh=np.array([0.5, 10.]) / 1000., v_rest=-65, e_reversal=[0, -80], dt=0.001, method='neurodsp'):
+    """ Simulate PSD multiple times with an array of different ei_ratios
 
     Parameters
     ----------
     num_trs : int, default: 5
         Number of trials for each EI ratio
-    FR_E : float, default: 2
-        Firing Rate -- Excitatory
-    FR_I : float, default: 5
-        Firing Rate -- Inhibitory
-    N_E : int, default: 8000
+    firing_rate : 1x2 array, default: (2 5)
+        Firing rate of neurons in each population. (excitatory inhibitory)
+    n_neurons_e : int, default: 8000
         Population -- Excitatory
-    N_I : int, default: 2000
+    n_neurons_i : int, default: 2000
         Population -- Inhibitory
-    Vr : float, default: -65
+    v_rest : float, default: -65
         Resting Membrane Potential
-    Ee : float, default: 0
+    e_reversal_e : float, default: 0
         AMPA Reversal Potential -- Excitatory
-    Ei : float, default: -80
+    e_reversal_i : float, default: -80
         GABA_A Reversal Potential -- Inhibitory
-    AMPA_tau : 1x2 array, default: np.array([0.1, 2.])/1000.
+    tau_exc : 1x2 array, default: np.array([0.1, 2.])/1000.
         AMPA Conductance Rise, Decay Time in Seconds
-    GABA_tau : 1x2 array, default: np.array([0.5, 10.])/1000.
+    tau_inh : 1x2 array, default: np.array([0.5, 10.])/1000.
         GABA_A Conductance Rise, Decay Time in Seconds
-    EI_ratios : 1d array, default: np.arange(2, 6.01, 0.2)
+    ei_ratios : 1d array, default: np.arange(2, 6.01, 0.2)
         The EI Ratios to simulate
-    tk : float, default: 1
+    t_ker : float, default: 1
         kernel time, in seconds
     method: string, default: 'neurodsp'
         the method to generate the LFP
 
     Returns
     -------
-    PSDs : (fs/2+1)xlen(EI_ratios)x(num_trs) 3d array
+    psd_batch : (fs/2+1)xlen(ei_ratios)x(num_trs) 3d array
         Simulated power spectral densities
     freq_lfp : (fs/2+1)x1 array
         Frequency indexes of the power spectral densities
 
     Examples
     --------
-    >>> PSDs, freq_lfp = batchsim_PSDs(EI_ratios=np.linspace(2, 6, 21), num_trs=5)
+    >>> psd_batch, freq_lfp = batchsim_PSDs(ei_ratios=np.linspace(2, 6, 21), num_trs=5)
     """
     fs = int(1 / dt)  # sampling rate
-    PSDs = np.zeros([int(fs / 2 + 1), len(EI_ratios), num_trs])
-    for i in range(len(EI_ratios)):
+    psd_batch = np.zeros([int(fs / 2 + 1), len(ei_ratios), num_trs])
+    for i in range(len(ei_ratios)):
         for tr in range(num_trs):
             if method == 'neurodsp':
                 # simulate lfp
-                LFP, _, _ = sim_lfp(EI_ratios[i], n_seconds=t, fs=fs,
-                                    n_neurons=[N_E, N_I], firing_rate=[
-                                        FR_E, FR_I],
-                                    tau_r=[AMPA_tau[0], GABA_tau[0]],
-                                    tau_d=[AMPA_tau[1], GABA_tau[1]])
+                lfp, _, _ = sim_lfp(ei_ratios[i], n_seconds=n_seconds, fs=fs,
+                                    n_neurons=n_neurons, firing_rate=firing_rate,
+                                    tau_r=[tau_exc[0], tau_inh[0]],
+                                    tau_d=[tau_exc[1], tau_inh[1]], e_reversal=e_reversal)
 
             else:
                 # simulate lfp
-                LFP_E, LFP_I, _ = sim_field(EI_ratios[i], t=t, FR_E=FR_E, FR_I=FR_I,
-                                            N_E=N_E, N_I=N_I, tk=tk, AMPA_tau=AMPA_tau,
-                                            GABA_tau=GABA_tau, Vr=Vr, Ee=Ee, Ei=Ei, dt=dt)
-                LFP = LFP_E + LFP_I
+                lfp_e, lfp_i, _ = sim_field(ei_ratios[i], n_seconds=n_seconds, firing_rate_e=firing_rate[0], firing_rate_i=firing_rate[1],
+                                            n_neurons_e=n_neurons[0], n_neurons_i=n_neurons[1], t_ker=t_ker, tau_exc=tau_exc,
+                                            tau_inh=tau_inh, v_rest=v_rest, e_reversal_e=e_reversal[0], e_reversal_i=e_reversal[1], dt=dt)
+                lfp = lfp_e + lfp_i
 
             # compute PSD
             freq_lfp, psd_lfp = compute_spectrum(
-                LFP, fs, method='welch', avg_type='median', nperseg=fs, noverlap=int(fs / 2))
-            PSDs[:, i, tr] = psd_lfp
+                lfp, fs, method='welch', avg_type='median', nperseg=fs, noverlap=int(fs / 2))
+            psd_batch[:, i, tr] = psd_lfp
 
-    return PSDs, freq_lfp
+    return psd_batch, freq_lfp
 
 
-def batchfit_PSDs(PSDs, freq, freq_range=[30, 50]):
+def batchfit_PSDs(psd_batch, freq, freq_range=[30, 50]):
     """Fits slopes that maintains the overall dimensions of PSDs by squeeze and unsqueeze
     the PSDs arrays internally
 
     Parameters
     ----------
-    PSDs : n dimensional array
+    psd_batch : n dimensional array
         A batch of Power Spectral Density with the last dimension being each PSD array
     freq_lfp : 1d numpy array
         the frequency indexes all PSDs share
@@ -247,37 +236,36 @@ def batchfit_PSDs(PSDs, freq, freq_range=[30, 50]):
 
     Examples
     --------
-    >>> slopes = batchfit_PSDs(PSDs, freq, freq_range = [30, 50])
+    >>> slopes = batchfit_PSDs(psd_batch, freq, freq_range = [30, 50])
     """
-    shapeT = PSDs.T.shape[:-1]  # transpose shape
-    # transpose then squeeze PSDs into a 2D array
-    PSDs_array = PSDs.T.reshape(np.prod(PSDs.shape[1:]), len(PSDs))
+    shapeT = psd_batch.T.shape[:-1]  # transpose shape
+    # transpose then squeeze psd_batch into a 2D array
+    psd_array = psd_batch.T.reshape(np.prod(psd_batch.shape[1:]), len(psd_batch))
     # fake peak_width_limit to supress warnings
     fg = FOOOFGroup(aperiodic_mode='fixed',
                     peak_width_limits=[2, 8], max_n_peaks=0)
     # set n_job = -1 to parallelize
-    fg.fit(freq, PSDs_array, freq_range, n_jobs=-1)
+    fg.fit(freq, psd_array, freq_range, n_jobs=-1)
     slopes_array = -fg.get_params('aperiodic_params', 'exponent')
     slopes = slopes_array.reshape(shapeT).T  # unsqueeze the slopes array
 
     return slopes
 
 
-def batchcorr_PSDs(
-    PSDs, freq_lfp, EI_ratios=np.arange(
-        2, 6.01, 0.2), center_freqs=np.arange(
-            20, 165, 5), win_len=20, num_trs=5):
+def batchcorr_PSDs(psd_batch, freq_lfp, ei_ratios=np.arange(2, 6.01, 0.2),
+                    center_freqs=np.arange(20, 165, 5), win_len=20, num_trs=5):
     """Calculate the correlations between the aperiodic exponent slopes and
     EI-Ratios in different time windows for a few trials of PSDs.
-    Note: the PSDs should contain the PSDs for different EI-Ratios and different trials
+    Note: Has a specific use as described above
+    The psd_batch should contain the PSDs for different EI-Ratios and different trials
 
     Parameters
     ----------
-    PSDs : len(EI_ratios)x(num_trs)x(n) 3d array
+    psd_batch : len(ei_ratios)x(num_trs)x(n) 3d array
         A batch of Power Spectral Density with the last dimension being each PSD array
     freq_lfp : 1d numpy array
         the frequency indexes all PSDs share
-    EI_ratios : 1d array, default: np.arange(2, 6.01, 0.2)
+    ei_ratios : 1d array, default: np.arange(2, 6.01, 0.2)
         The EI Ratios to simulate
     center_freqs : 1d array, default: np.arange(20, 165, 5)
         the center frequencies of the time windows
@@ -289,12 +277,12 @@ def batchcorr_PSDs(
     Returns
     -------
     rhos : len(center_freqs)x(num_trs) 2d array
-        the spearman correlations between the aperiodic slopes and EI_ratios for
+        the spearman correlations between the aperiodic slopes and ei_ratios for
         each time window for each trial
 
     Examples
     --------
-    >>> rhos = batchcorr_PSDs(PSDs, freq, EI_ratios = np.linspace(2, 6, 21),
+    >>> rhos = batchcorr_PSDs(psd_batch, freq, ei_ratios = np.linspace(2, 6, 21),
                           center_freqs=np.arange(20, 160.1, 5),
                win_len=20, num_trs=5)
     """
@@ -303,10 +291,10 @@ def batchcorr_PSDs(
         freq_range = [
             center_freqs[f] - win_len / 2,
             center_freqs[f] + win_len / 2]
-        slopes = batchfit_PSDs(PSDs, freq_lfp, freq_range=freq_range)
+        slopes = batchfit_PSDs(psd_batch, freq_lfp, freq_range=freq_range)
         for tr in range(num_trs):
             rhos[f, tr] = stats.spearmanr(
-                1. / EI_ratios, slopes[:, tr]).correlation
+                1. / ei_ratios, slopes[:, tr]).correlation
     return rhos
 
 
