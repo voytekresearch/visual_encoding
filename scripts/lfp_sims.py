@@ -93,6 +93,16 @@ def simulate_lfp():
                        ['LFP', 'Excitatory', 'Inhibitory'])
     plt.savefig(pjoin(FIGURE_PATH,'1D.png'))
 
+    # Save Variables
+    # 1C
+    np.save(pjoin(DATA_PATH,'1C_lfp_e.npy'), lfp_e)
+    np.save(pjoin(DATA_PATH,'1C_lfp_i.npy'), lfp_i)
+    np.save(pjoin(DATA_PATH,'1C_lfp.npy'), lfp)
+    # 1D
+    np.save(pjoin(DATA_PATH,'1D_psd.npy'), psd)
+    np.save(pjoin(DATA_PATH,'1D_psd_e.npy'), psd_e)
+    np.save(pjoin(DATA_PATH,'1D_psd_i.npy'), psd_i)
+
 
 def corr_EIRatio_and_slope():
     # analysis
@@ -129,6 +139,14 @@ def corr_EIRatio_and_slope():
     fig_1f.savefig(pjoin(FIGURE_PATH,'1F.png'))
     plt.close('all')
 
+    # Save Variables
+    np.save(pjoin(DATA_PATH,'psd_batch.npy'), psd_batch)
+    # 1E
+    np.save(pjoin(DATA_PATH,'1E_psd_0.npy'), psd_0)
+    np.save(pjoin(DATA_PATH,'1E_psd_1.npy'), psd_1)
+    # 1F
+    np.save(pjoin(DATA_PATH,'1F_slopes.npy'), slopes)
+
     return psd_batch, freq
 
 
@@ -152,6 +170,10 @@ def assess_corr_across_freqs(psd_batch, freq):
     fig_1g = ax2.get_figure()
     fig_1g.savefig(pjoin(FIGURE_PATH,'1G.png'))
     plt.close('all')
+
+    # Save Variables
+    # 1G
+    np.save(pjoin(DATA_PATH,'1G_rhos.npy'), rhos)
 
 
 if __name__ == "__main__":
