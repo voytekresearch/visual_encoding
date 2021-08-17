@@ -3,6 +3,7 @@
 import numpy as np
 from scipy import signal
 from scipy import stats
+from scipy import linalg
 from neurodsp.spectral import compute_spectrum
 from neurodsp.sim.aperiodic import sim_synaptic_current
 from neurodsp.sim.transients import sim_synaptic_kernel
@@ -84,6 +85,61 @@ def pois_spikes(n_seconds, dt, n_neurons, firing_rate):
     discretized, _ = np.histogram(spk_times, bins=bins, density=False)
     return discretized
 
+def sim_spikes_general_2stoch(n_dt, n_neurons = 5, dt = 0.1, tau_c = 10.0, firing_rate = 20.0):
+    """ simulate population spiking of N neurons firing at firing_rate each, return a
+    spike trains roster of size (n_dt by n_neurons)
+
+    Parameters
+    ----------
+    n_dt : int
+        number of time bins where a spike could occur
+    dt : float
+        Time increment unit (in ms)
+    tau_c : float
+        Time constant TODO: ???
+    n_neurons : int
+        number of neurons
+    firing_rate : float
+        average firing rate of a neuron in Hz
+
+    Returns
+    -------
+    spikes : 2d (n_dt by n_neurons) array
+        the spike roster of n_neurons where 0 is no spike at the time bin and 1 is a spike
+
+    Examples
+    --------
+    >>> spk_roster = sim_spikes_general_2stoch(n_dt=2000, dt = 0.1, n_neurons = 5, firing_rate = 20)
+    """
+    sigma=np.sqrt(1-np.exp(-2.*dt/tau_c)) # standard deviation
+    ccvf_f=np.exp(-dt/tau_c); # f(s) part of CCVF # TODO: ???
+    # define Y(t) = (yi(t)) a vector of N independent Ornstein-Uhlenbeck processes
+    rand_processes = np.random.normal(loc=0.0, scale=1.0, size=(n_dt, n_neurons)) * \
+                        ccvf_f + np.random.normal(loc=0.0, scale=sigma, size=(n_dt, n_neurons))
+    # C = (ci,j) the matrix of correlations
+    correlations = np.zeros((n_neurons,n_neurons))
+    for i in range(correlations.shape[0]):
+        for j in range(correlations.shape[1]):
+            if j < i:
+                rand_num=np.random.uniform(low=1.0,high=101.0)
+                correlations[i,j] = rand_num
+                correlations[j,i] = rand_num
+        correlations[i,i] = firing_rate + i # TODO: ???
+    # mean firing rate of each neuron
+    firing_rates = [correlations[i,i] for i in range(n_neurons)] 
+    # Choleskey Decomposition
+    corr_rate_squared = np.copy(correlations)
+    for i in range(n_neurons):
+        corr_rate_squared[i,i] = corr_rate_squared[i,i]**2
+    c_factor = linalg.cholesky(corr_rate_squared) # Choleskey Factor L(C = LLT)
+    # instantaneus firing rates
+    inst_rates = np.zeros(rand_processes.shape)
+    for i in range(n_dt):
+        inst_rates[i] = firing_rates + c_factor.dot(rand_processes[i])
+    get_spikes = np.vectorize(lambda inst_rate : \
+                1 if np.random.uniform() < inst_rate*0.1*0.001 else 0)
+    spikes = get_spikes(inst_rates)
+    return spikes
 
 def sim_field(ei_ratio, n_seconds=2 * 60, firing_rate_e=2, firing_rate_i=5, n_neurons_e=8000, n_neurons_i=2000, t_ker=1,
               tau_exc=np.array([0.1, 2.]) / 1000., tau_inh=np.array([0.5, 10.]) / 1000.,
