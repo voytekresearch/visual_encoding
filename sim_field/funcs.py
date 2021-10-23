@@ -7,6 +7,8 @@ from scipy import linalg
 from neurodsp.spectral import compute_spectrum
 from neurodsp.sim.aperiodic import sim_synaptic_current
 from neurodsp.sim.transients import sim_synaptic_kernel
+from aperiodic import sim_random_walk
+# from neurodsp.sim import sim_random_walk
 from fooof import FOOOFGroup
 
 ##########################################################################
@@ -45,7 +47,6 @@ def syn_kernel(n_seconds, tau):
     normf = 1 / (-np.exp(-tpeak / tau[0]) + np.exp(-tpeak / tau[1]))
     kernel = normf * (-np.exp(-n_seconds / tau[0]) + np.exp(-n_seconds / tau[1]))
     return kernel
-
 
 def pois_spikes(n_seconds, dt, n_neurons, firing_rate):
     """ simulate population spiking of N neurons firing at firing_rate each, return a
@@ -141,6 +142,34 @@ def sim_spikes_general_2stoch(n_dt, n_neurons = 5, dt = 0.1, tau_c = 10.0, firin
     spikes = get_spikes(inst_rates)
     return spikes
 
+def sim_homogeneous_pool(n_neurons=5, rate=20, n_seconds=1, fs=1000,
+                         alpha=1, tau_c=1E-2):
+    """simulate population spiking of N neurons firing at firing_rate each, return a
+    spike trains roster of size (n_seconds*fs by n_neurons)"""
+
+    # simulate randon process (Ornstein-Uhlenbeck)
+    rand_process = sim_random_walk(n_seconds, fs, mu=rate, sigma=(2*tau_c*alpha)**0.5, theta=1/tau_c)
+    rand_process[rand_process < 0] = 0 # ensure all positive values
+
+    # generate spikes from OU process
+    # rate_t = (rand_process + 1) * rate
+    firing_rate = np.zeros([n_neurons, len(rand_process)])
+    spikes = np.zeros([n_neurons, len(rand_process)])
+
+    # turn rates into spikes
+    for j_bin in range(len(rand_process)):
+      firing_rate[:, j_bin] = np.random.normal(size=n_neurons, loc=rand_process[j_bin],
+                                               scale=np.sqrt(rand_process[j_bin]))
+                                      
+      for i_neuron in range(n_neurons):
+          if firing_rate[i_neuron, j_bin] / fs > np.random.uniform():
+              spikes[i_neuron, j_bin] = 1
+    
+    # define time vector
+    # time = np.arange(0, n_seconds, 1/fs)
+
+    return firing_rate, spikes
+
 def sim_field(ei_ratio, n_seconds=2 * 60, firing_rate_e=2, firing_rate_i=5, n_neurons_e=8000, n_neurons_i=2000, t_ker=1,
               tau_exc=np.array([0.1, 2.]) / 1000., tau_inh=np.array([0.5, 10.]) / 1000.,
               v_rest=-65, e_reversal_e=0, e_reversal_i=-80, dt=0.001):
@@ -201,7 +230,6 @@ def sim_field(ei_ratio, n_seconds=2 * 60, firing_rate_e=2, firing_rate_i=5, n_ne
     # high-pass drift removal * potential difference
     lfp_i = signal.detrend(g_i, type='constant') * (e_reversal_i - v_rest)
     return lfp_e, lfp_i, times
-
 
 def batchsim_PSDs(ei_ratios=np.arange(2, 6.01, 0.2), num_trs=5, n_seconds=2 * 60,
                     firing_rate=[2, 5], n_neurons=[8000, 2000], t_ker=1, tau_exc=np.array([0.1, 2.]) / 1000.,
@@ -271,7 +299,6 @@ def batchsim_PSDs(ei_ratios=np.arange(2, 6.01, 0.2), num_trs=5, n_seconds=2 * 60
 
     return psd_batch, freq_lfp
 
-
 def batchfit_PSDs(psd_batch, freq, freq_range=[30, 50]):
     """Fits slopes that maintains the overall dimensions of PSDs by squeeze and unsqueeze
     the PSDs arrays internally
@@ -306,7 +333,6 @@ def batchfit_PSDs(psd_batch, freq, freq_range=[30, 50]):
     slopes = slopes_array.reshape(shapeT).T  # unsqueeze the slopes array
 
     return slopes
-
 
 def batchcorr_PSDs(psd_batch, freq_lfp, ei_ratios=np.arange(2, 6.01, 0.2),
                     center_freqs=np.arange(20, 165, 5), win_len=20, num_trs=5):
@@ -352,7 +378,6 @@ def batchcorr_PSDs(psd_batch, freq_lfp, ei_ratios=np.arange(2, 6.01, 0.2),
             rhos[f, tr] = stats.spearmanr(
                 1. / ei_ratios, slopes[:, tr]).correlation
     return rhos
-
 
 def sim_lfp(ei_ratio, n_seconds=2 * 60, fs=1000, n_neurons=[8000, 2000],
             firing_rate=[2, 5], tau_r=[0.0001, 0.0005], tau_d=[0.002, 0.01],
