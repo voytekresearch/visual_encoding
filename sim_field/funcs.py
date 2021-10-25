@@ -170,6 +170,69 @@ def sim_homogeneous_pool(n_neurons=5, rate=20, n_seconds=1, fs=1000,
 
     return firing_rate, spikes
 
+def get_correlation_matrices(n_neurons, firing_rate, xcorr_scalar, firing_rate_std):
+    # C = (c_i,j) the matrix of covariances
+    # The diagonal would be rates scaled by diagonal coefficient alpha
+    covariances = np.zeros((n_neurons,n_neurons))
+    for i in range(covariances.shape[0]):
+        for j in range(covariances.shape[1]):
+            if j < i:
+                # rand_num=np.random.uniform(low=1.0,high=101.0)
+                rand_num = (np.random.uniform(low=0,high=1) + 1.) * xcorr_scalar
+                covariances[i,j] = rand_num
+                covariances[j,i] = rand_num
+
+    # mean firing rate of each neuron, C(i,i), diagnal coefficients
+    # variances of the processes x_i(t)
+    # firing_rates_array = np.array([(1 + .05 * i) * firing_rate for i in range(n_neurons)])
+    firing_rates_array = np.random.normal(firing_rate, firing_rate_std, n_neurons) # not sure to use uniform or normal
+    firing_rates = np.zeros((n_neurons,n_neurons)) # matrix D with d_i,i = r_i^2
+    np.fill_diagonal(firing_rates, firing_rates_array**2)
+
+    # Calcuate diagonal coefficient alpha
+    inv_firing_rates = linalg.inv(firing_rates) # D^-1
+    eig_values, _ = linalg.eig(inv_firing_rates.dot(covariances))
+    diag_coef = -np.real(eig_values).min()
+
+
+    # Choleskey Decomposition
+    # covariances with the diagnal coefficients (firing rate) squared
+    covariances = covariances + diag_coef * firing_rates * 1.01
+
+    return covariances, firing_rates_array
+
+def gen_spikes_mixture(n_seconds, covariances, firing_rates_array, fs, tau_c, alpha):
+    
+    sigma=(2*tau_c*alpha)**0.5
+    n_neurons = len(covariances)
+
+    rand_processes = np.zeros((n_neurons, int(n_seconds * fs)))
+    for i_neuron in range(n_neurons):
+        rand_processes[i_neuron] = sim_random_walk(n_seconds, fs, theta=1/tau_c, mu=0, sigma=sigma)
+
+    # compute cholesky
+    root_covariances = linalg.cholesky(covariances).T # Choleskey Factor L(C = LLT)
+
+    # dot random process and root correlation
+    LY = np.dot(root_covariances, rand_processes)
+
+    # compute firing rate
+    firing_rates = firing_rates_array
+    inst_firing_rates = firing_rates[:, np.newaxis] + LY 
+
+    # turn rates into spikes
+    spikes = np.zeros((n_neurons, n_seconds * fs))
+    for j_bin in range(n_seconds * fs):
+        for i_neuron in range(n_neurons):
+            if inst_firing_rates[i_neuron, j_bin] / fs > np.random.uniform():
+                spikes[i_neuron, j_bin] = 1
+
+    # get_spikes = np.vectorize(lambda inst_rate : \
+    #             1 if np.random.uniform() < inst_rate*dt else 0)
+    # spikes = get_spikes(inst_firing_rates)
+    
+    return spikes, inst_firing_rates
+
 def sim_field(ei_ratio, n_seconds=2 * 60, firing_rate_e=2, firing_rate_i=5, n_neurons_e=8000, n_neurons_i=2000, t_ker=1,
               tau_exc=np.array([0.1, 2.]) / 1000., tau_inh=np.array([0.5, 10.]) / 1000.,
               v_rest=-65, e_reversal_e=0, e_reversal_i=-80, dt=0.001):
