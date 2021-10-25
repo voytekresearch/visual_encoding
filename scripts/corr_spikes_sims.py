@@ -27,7 +27,7 @@ N_NEURONS = 5 # number of neurons
 
 N_SECONDS = 3600
 FS = 1000
-ALPHA = 1.
+ALPHA = 800000.
 TAU_C = 1.0E-2
 CHUNK_SIZE = 5
 
@@ -63,9 +63,15 @@ def simulate_spikes_homogeneous_pool():
     for i_chunk in range(int(N_SECONDS / CHUNK_SIZE)):
         n_timepoints = CHUNK_SIZE * FS
         firing_rate[:,i_chunk*n_timepoints:(i_chunk+1)*n_timepoints], \
-                    spikes[:,i_chunk*n_timepoints:(i_chunk+1)*n_timepoints] = \
+                    spikes[:,i_chunk*n_timepoints:(i_chunk+1)*n_timepoints],_ = \
                     sim_homogeneous_pool(rate=20, fs=FS, n_seconds=CHUNK_SIZE, \
                     alpha = ALPHA, tau_c=TAU_C)
+                
+    _,_, rand_process = sim_homogeneous_pool(rate=20, fs=FS, n_seconds=CHUNK_SIZE, \
+                    alpha = ALPHA, tau_c=TAU_C)
+    plt.plot(rand_process[:1000], linewidth=0.5)
+    plt.savefig(pjoin(FIGURE_PATH,'homogeneous_pool_random_process_plot.png'))
+    plt.close('all')
 
     # Plot instantaneous firing rates
     plt.plot(firing_rate.T[:1000,:], linewidth=0.5)
