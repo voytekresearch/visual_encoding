@@ -361,3 +361,53 @@ def sim_lfp(ei_ratio, n_seconds=2 * 60, fs=1000, n_neurons=[8000, 2000],
     lfp = lfp_e + lfp_i
 
     return lfp, lfp_e, lfp_i
+
+def sim_ou_process(n_seconds, fs, tau, mu=100., sigma=10.):
+    ''' 
+    Simulate an Ornstein-Uhlenbeck process with a dymanic timescale.
+    
+    
+    Parameters
+    ----------
+    n_seconds : float
+        Simulation time (s)
+    fs : float
+        Sampling rate (Hz)
+    tau : float
+        Timescale of signal (s)
+    mu : float, optional, default: 100.
+        Mean of signal
+    sigma : float, optional, default: 10.
+        Standard deviation signal
+
+    Returns
+    signal : 1d array
+        Simulated Ornstein-Uhlenbeck process
+    time : 1d array
+        time vector for signal
+
+    References
+    ----------
+    https://ipython-books.github.io/134-simulating-a-stochastic-differential-equation/
+    
+    '''
+
+    # initialize signal and set first value equal to the mean
+    signal = np.zeros(int(np.ceil(n_seconds * fs)))
+    signal[0] = mu
+    
+    # define constants in OU equation (to speed computation) 
+    dt = 1 / fs
+    sqrtdt = np.sqrt(dt)
+    rand = np.random.randn(len(signal))
+    
+    # simulate OU
+    for ii in range(len(signal)-1):
+        signal[ii + 1] = signal[ii] + \
+                        dt * (-(signal[ii] - mu) / tau) + \
+                        sigma * np.sqrt(2/tau) * sqrtdt * rand[ii]
+    
+    # define time vector
+    time = np.linspace(0, n_seconds, len(signal))
+    
+    return signal, time
