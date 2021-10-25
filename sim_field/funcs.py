@@ -3,9 +3,12 @@
 import numpy as np
 from scipy import signal
 from scipy import stats
+from scipy import linalg
 from neurodsp.spectral import compute_spectrum
 from neurodsp.sim.aperiodic import sim_synaptic_current
 from neurodsp.sim.transients import sim_synaptic_kernel
+from aperiodic import sim_random_walk
+# from neurodsp.sim import sim_random_walk
 from fooof import FOOOFGroup
 
 ##########################################################################
@@ -45,7 +48,6 @@ def syn_kernel(n_seconds, tau):
     kernel = normf * (-np.exp(-n_seconds / tau[0]) + np.exp(-n_seconds / tau[1]))
     return kernel
 
-
 def pois_spikes(n_seconds, dt, n_neurons, firing_rate):
     """ simulate population spiking of N neurons firing at firing_rate each, return a
     single spike train that is the total spiking
@@ -84,6 +86,154 @@ def pois_spikes(n_seconds, dt, n_neurons, firing_rate):
     discretized, _ = np.histogram(spk_times, bins=bins, density=False)
     return discretized
 
+def sim_spikes_general_2stoch(n_dt, n_neurons = 5, dt = 0.1, tau_c = 10.0, firing_rate = 20.0):
+    """ simulate population spiking of N neurons firing at firing_rate each, return a
+    spike trains roster of size (n_dt by n_neurons)
+
+    Parameters
+    ----------
+    n_dt : int
+        number of time bins where a spike could occur
+    dt : float
+        Time increment unit (in ms)
+    tau_c : float
+        Time constant TODO: ???
+    n_neurons : int
+        number of neurons
+    firing_rate : float
+        average firing rate of a neuron in Hz
+
+    Returns
+    -------
+    spikes : 2d (n_dt by n_neurons) array
+        the spike roster of n_neurons where 0 is no spike at the time bin and 1 is a spike
+
+    Examples
+    --------
+    >>> spk_roster = sim_spikes_general_2stoch(n_dt=2000, dt = 0.1, n_neurons = 5, firing_rate = 20)
+    """
+    sigma=np.sqrt(1-np.exp(-2.*dt/tau_c)) # standard deviation
+    ccvf_f=np.exp(-dt/tau_c); # f(s) part of CCVF # TODO: ???
+    # define Y(t) = (yi(t)) a vector of N independent Ornstein-Uhlenbeck processes
+    rand_processes = np.random.normal(loc=0.0, scale=1.0, size=(n_dt, n_neurons)) * \
+                        ccvf_f + np.random.normal(loc=0.0, scale=sigma, size=(n_dt, n_neurons))
+    # C = (ci,j) the matrix of correlations
+    correlations = np.zeros((n_neurons,n_neurons))
+    for i in range(correlations.shape[0]):
+        for j in range(correlations.shape[1]):
+            if j < i:
+                rand_num=np.random.uniform(low=1.0,high=101.0)
+                correlations[i,j] = rand_num
+                correlations[j,i] = rand_num
+        correlations[i,i] = firing_rate + i # TODO: ???
+    # mean firing rate of each neuron
+    firing_rates = [correlations[i,i] for i in range(n_neurons)] 
+    # Choleskey Decomposition
+    corr_rate_squared = np.copy(correlations)
+    for i in range(n_neurons):
+        corr_rate_squared[i,i] = corr_rate_squared[i,i]**2
+    c_factor = linalg.cholesky(corr_rate_squared) # Choleskey Factor L(C = LLT)
+    # instantaneus firing rates
+    inst_rates = np.zeros(rand_processes.shape)
+    for i in range(n_dt):
+        inst_rates[i] = firing_rates + c_factor.dot(rand_processes[i])
+    get_spikes = np.vectorize(lambda inst_rate : \
+                1 if np.random.uniform() < inst_rate*0.1*0.001 else 0)
+    spikes = get_spikes(inst_rates)
+    return spikes
+
+def sim_homogeneous_pool(n_neurons=5, rate=20, n_seconds=1, fs=1000,
+                         alpha=1, tau_c=1E-2):
+    """simulate population spiking of N neurons firing at firing_rate each, return a
+    spike trains roster of size (n_seconds*fs by n_neurons)"""
+
+    # simulate randon process (Ornstein-Uhlenbeck)
+    rand_process = sim_random_walk(n_seconds, fs, mu=rate, sigma=(2*tau_c*alpha)**0.5, theta=1/tau_c)
+    rand_process[rand_process < 0] = 0 # ensure all positive values
+
+    # generate spikes from OU process
+    # rate_t = (rand_process + 1) * rate
+    firing_rate = np.zeros([n_neurons, len(rand_process)])
+    spikes = np.zeros([n_neurons, len(rand_process)])
+
+    # turn rates into spikes
+    for j_bin in range(len(rand_process)):
+        firing_rate[:, j_bin] = np.random.normal(size=n_neurons, loc=rand_process[j_bin],
+                                               scale=np.sqrt(rand_process[j_bin]))
+        # firing_rate[:, j_bin] = np.random.normal(size=n_neurons, loc=rand_process[j_bin],
+        #                                        scale=0.01)
+                                      
+        for i_neuron in range(n_neurons):
+            if firing_rate[i_neuron, j_bin] / fs > np.random.uniform():
+                spikes[i_neuron, j_bin] = 1
+    
+    # define time vector
+    # time = np.arange(0, n_seconds, 1/fs)
+
+    return firing_rate, spikes, rand_process
+
+def get_correlation_matrices(n_neurons, firing_rate, xcorr_scalar, firing_rate_std):
+    # C = (c_i,j) the matrix of covariances
+    # The diagonal would be rates scaled by diagonal coefficient alpha
+    covariances = np.zeros((n_neurons,n_neurons))
+    for i in range(covariances.shape[0]):
+        for j in range(covariances.shape[1]):
+            if j < i:
+                # rand_num=np.random.uniform(low=1.0,high=101.0)
+                rand_num = (np.random.uniform(low=0,high=1) + 1.) * xcorr_scalar
+                covariances[i,j] = rand_num
+                covariances[j,i] = rand_num
+
+    # mean firing rate of each neuron, C(i,i), diagnal coefficients
+    # variances of the processes x_i(t)
+    # firing_rates_array = np.array([(1 + .05 * i) * firing_rate for i in range(n_neurons)])
+    firing_rates_array = np.random.normal(firing_rate, firing_rate_std, n_neurons) # not sure to use uniform or normal
+    firing_rates = np.zeros((n_neurons,n_neurons)) # matrix D with d_i,i = r_i^2
+    np.fill_diagonal(firing_rates, firing_rates_array**2)
+
+    # Calcuate diagonal coefficient alpha
+    inv_firing_rates = linalg.inv(firing_rates) # D^-1
+    eig_values, _ = linalg.eig(inv_firing_rates.dot(covariances))
+    diag_coef = -np.real(eig_values).min()
+
+
+    # Choleskey Decomposition
+    # covariances with the diagnal coefficients (firing rate) squared
+    covariances = covariances + diag_coef * firing_rates * 1.01
+
+    return covariances, firing_rates_array
+
+def gen_spikes_mixture(n_seconds, covariances, firing_rates_array, fs, tau_c, alpha):
+    
+    sigma=(2*tau_c*alpha)**0.5
+    n_neurons = len(covariances)
+
+    rand_processes = np.zeros((n_neurons, int(n_seconds * fs)))
+    for i_neuron in range(n_neurons):
+        rand_processes[i_neuron] = sim_random_walk(n_seconds, fs, theta=1/tau_c, mu=0, sigma=sigma)
+
+    # compute cholesky
+    root_covariances = linalg.cholesky(covariances).T # Choleskey Factor L(C = LLT)
+
+    # dot random process and root correlation
+    LY = np.dot(root_covariances, rand_processes)
+
+    # compute firing rate
+    firing_rates = firing_rates_array
+    inst_firing_rates = firing_rates[:, np.newaxis] + LY 
+
+    # turn rates into spikes
+    spikes = np.zeros((n_neurons, n_seconds * fs))
+    for j_bin in range(n_seconds * fs):
+        for i_neuron in range(n_neurons):
+            if inst_firing_rates[i_neuron, j_bin] / fs > np.random.uniform():
+                spikes[i_neuron, j_bin] = 1
+
+    # get_spikes = np.vectorize(lambda inst_rate : \
+    #             1 if np.random.uniform() < inst_rate*dt else 0)
+    # spikes = get_spikes(inst_firing_rates)
+    
+    return spikes, inst_firing_rates
 
 def sim_field(ei_ratio, n_seconds=2 * 60, firing_rate_e=2, firing_rate_i=5, n_neurons_e=8000, n_neurons_i=2000, t_ker=1,
               tau_exc=np.array([0.1, 2.]) / 1000., tau_inh=np.array([0.5, 10.]) / 1000.,
@@ -145,7 +295,6 @@ def sim_field(ei_ratio, n_seconds=2 * 60, firing_rate_e=2, firing_rate_i=5, n_ne
     # high-pass drift removal * potential difference
     lfp_i = signal.detrend(g_i, type='constant') * (e_reversal_i - v_rest)
     return lfp_e, lfp_i, times
-
 
 def batchsim_PSDs(ei_ratios=np.arange(2, 6.01, 0.2), num_trs=5, n_seconds=2 * 60,
                     firing_rate=[2, 5], n_neurons=[8000, 2000], t_ker=1, tau_exc=np.array([0.1, 2.]) / 1000.,
@@ -215,7 +364,6 @@ def batchsim_PSDs(ei_ratios=np.arange(2, 6.01, 0.2), num_trs=5, n_seconds=2 * 60
 
     return psd_batch, freq_lfp
 
-
 def batchfit_PSDs(psd_batch, freq, freq_range=[30, 50]):
     """Fits slopes that maintains the overall dimensions of PSDs by squeeze and unsqueeze
     the PSDs arrays internally
@@ -250,7 +398,6 @@ def batchfit_PSDs(psd_batch, freq, freq_range=[30, 50]):
     slopes = slopes_array.reshape(shapeT).T  # unsqueeze the slopes array
 
     return slopes
-
 
 def batchcorr_PSDs(psd_batch, freq_lfp, ei_ratios=np.arange(2, 6.01, 0.2),
                     center_freqs=np.arange(20, 165, 5), win_len=20, num_trs=5):
@@ -296,7 +443,6 @@ def batchcorr_PSDs(psd_batch, freq_lfp, ei_ratios=np.arange(2, 6.01, 0.2),
             rhos[f, tr] = stats.spearmanr(
                 1. / ei_ratios, slopes[:, tr]).correlation
     return rhos
-
 
 def sim_lfp(ei_ratio, n_seconds=2 * 60, fs=1000, n_neurons=[8000, 2000],
             firing_rate=[2, 5], tau_r=[0.0001, 0.0005], tau_d=[0.002, 0.01],
