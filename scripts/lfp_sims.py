@@ -7,9 +7,13 @@ Notes:
 
 ## IMPORTS
 import sys
+
+# from scripts.corr_spikes_sims import FIRING_RATE, N_NEURONS
 sys.path.append('../sim_field')
 from os.path import join as pjoin
 from funcs import sim_field, batchsim_PSDs, batchfit_PSDs, batchcorr_PSDs
+from funcs import sim_lfp_mixture, sim_lfp_pool, sim_homogeneous_pool
+from utils import plot_correlations, plot_coincidences
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -37,6 +41,12 @@ F_RANGE_FIT = [30, 50]
 F_RANGE_CENTER = np.arange(20, 160.1, 5)
 F_RANGE_WIDTH = 20  # width of freq range (for batch fitting)
 
+# Correlated Spikes Settings
+N_NEURONS = 50
+FIRING_RATE = 20.
+N_SECONDS = 2000.
+ALPHA = 10000.
+
 # Set paths for the project
 BASE_PATH = "../"
 FIGURE_PATH = pjoin(BASE_PATH, "figures/EISlope/")
@@ -49,20 +59,26 @@ DATA_PATH = pjoin(BASE_PATH, "data/simulations/")
 def main():
 
     # simulate LFP for a given E:I ratio
-    simulate_lfp()
+    # simulate_lfp()
 
     # simulate LFPs for a range of E:I ratio
     # and correlate E:I ratio with resulting PSD slope
-    psd_batch, freq = corr_EIRatio_and_slope()
+    # psd_batch, freq = corr_EIRatio_and_slope()
 
     # correlate E:I ratio and slope across a range of fitting freq. ranges
-    assess_corr_across_freqs(psd_batch, freq)
+    # assess_corr_across_freqs(psd_batch, freq)
+
+    # simulate LFP for a given correlation matrix
+    simulate_lfp_mixture()
+
+    # simulate LFP pooling from the same underlying random process
+    # simulate_lfp_pool()
 
 
 def simulate_lfp():
 
     # Initialize any output variables to save out
-    lfp_e, lfp_i, t = sim_field(EI_RATIO_1C)
+    lfp_e, lfp_i, t , spk_e, spk_i = sim_field(EI_RATIO_1C, n_seconds = 120.)
     lfp = lfp_e + lfp_i
 
     # Compute power spectrum of LFP and E/I conductance
@@ -86,12 +102,55 @@ def simulate_lfp():
                       color='black')
     ax.legend(labels=["LFP"])
     fig_1c.savefig(pjoin(FIGURE_PATH,'1C.png'))
+    plt.close('all')
 
     # Plot Figure 1, D.
     # Plot power spectra
     plot_power_spectra([freq, freq, freq], [psd, psd_e, psd_i],
                        ['LFP', 'Excitatory', 'Inhibitory'])
     plt.savefig(pjoin(FIGURE_PATH,'1D.png'))
+    plt.close('all')
+
+    # Plot rate vs time
+    rate_e = [2. * 8000] * len(t)
+    sns.lineplot(x=t, y=rate_e)
+    plt.savefig(pjoin(FIGURE_PATH,'white_noise_rate_v_time.png'))
+    plt.close('all')
+
+    # Plot rate autocorr
+    plt.acorr(rate_e[:5000], maxlags = 20)
+    plt.savefig(pjoin(FIGURE_PATH,'white_noise_rate_autocorr.png'))
+    plt.close('all')
+
+    # Plot spikes
+    # spike_times = t[spk_e[:120000]>0.5]
+    # print(spike_times.shape)
+    # plt.eventplot(spike_times)
+    plt.plot(t[:2000], spk_e[:2000])
+    plt.savefig(pjoin(FIGURE_PATH,'white_noise_spikes.png'))
+    plt.close('all')
+
+    # Plot spikes accor
+    plt.acorr(spk_e[:10000].astype(float), maxlags = 20)
+    plt.savefig(pjoin(FIGURE_PATH,'white_noise_spikes_autocorr.png'))
+    plt.close('all')
+
+    # Plot lfp
+    plt.plot(t[:2000], lfp_e[:2000])
+    plt.savefig(pjoin(FIGURE_PATH,'white_noise_lfp.png'))
+    plt.close('all')
+
+    # Plot lfp accor
+    plt.acorr(lfp_e[:10000], maxlags = 20)
+    plt.savefig(pjoin(FIGURE_PATH,'white_noise_lfp_autocorr.png'))
+    plt.close('all')
+
+    # Plot spectrum
+    freq, psd = compute_spectrum(lfp_e, FS, method='welch', avg_type='median',
+                                 nperseg=FS, noverlap=int(FS/2))
+    plot_power_spectra([freq], [psd],['PSD'])
+    plt.savefig(pjoin(FIGURE_PATH,'white_noise_psd.png'))
+    plt.close('all')
 
     # Save Variables
     # 1C
@@ -102,7 +161,6 @@ def simulate_lfp():
     np.save(pjoin(DATA_PATH,'1D_psd.npy'), psd)
     np.save(pjoin(DATA_PATH,'1D_psd_e.npy'), psd_e)
     np.save(pjoin(DATA_PATH,'1D_psd_i.npy'), psd_i)
-
 
 def corr_EIRatio_and_slope():
     # analysis
@@ -149,7 +207,6 @@ def corr_EIRatio_and_slope():
 
     return psd_batch, freq
 
-
 def assess_corr_across_freqs(psd_batch, freq):
 
     # Correlate EI ratio and slope fit in different frequency ranges
@@ -175,6 +232,76 @@ def assess_corr_across_freqs(psd_batch, freq):
     # 1G
     np.save(pjoin(DATA_PATH,'1G_rhos.npy'), rhos)
 
+def simulate_lfp_mixture():
+    t = np.arange(0, N_SECONDS, 1/FS)
+    lfp, lfps = sim_lfp_mixture(n_neurons = N_NEURONS, alpha = 1000000.)
+    freq, psd = compute_spectrum(lfp, FS, method='welch', avg_type='median',
+                                 nperseg=FS, noverlap=int(FS/2))
+    # Plot time-series
+    samples_1_plot = int(np.floor(FS))  # ~1 seconds
+    sns.lineplot(x=t[:samples_1_plot], y=lfp[:samples_1_plot])
+    plt.savefig(pjoin(FIGURE_PATH,'corr_spikes_mixture_lfp.png'))
+    plt.close('all')
+
+    # Plot power spectra
+    plot_power_spectra([freq], [psd],['Mixture'])
+    plt.savefig(pjoin(FIGURE_PATH,'corr_spikes_mixutre_psd.png'))
+
+def simulate_lfp_pool():
+    spikes, rand_process = sim_homogeneous_pool(n_neurons = 1, n_seconds = N_SECONDS, alpha = ALPHA)
+    
+    # Plot rate vs time
+    # print(np.linspace(0, 2, 2000).shape, rand_process[:2000].shape)
+    sns.lineplot(x=np.linspace(0, 2, 2000), y=rand_process[:2000])
+    plt.savefig(pjoin(FIGURE_PATH,'random_walk_rate_v_time.png'))
+    plt.close('all')
+
+    # Plot rate autocorr
+    plt.acorr(rand_process[:5000], maxlags = 20)
+    plt.savefig(pjoin(FIGURE_PATH,'random_walk_rate_autocorr.png'))
+    plt.close('all')
+
+    # Plot spikes
+    t = np.linspace(0,2,2000)
+    spike_times = t[spikes[0,:2000]==1]
+    plt.eventplot(spike_times)
+    plt.savefig(pjoin(FIGURE_PATH,'random_walk_spikes.png'))
+    plt.close('all')
+
+    # Plot coincidences
+    plot_coincidences(spikes)
+    plt.savefig(pjoin(FIGURE_PATH,'random_walk_spike_coincidences.png'))
+    plt.close('all')
+
+    lfp, _ = sim_lfp_pool(n_neurons = 100, alpha = ALPHA)
+    # Plot lfp
+    plt.plot(t[:2000], lfp[:2000])
+    plt.savefig(pjoin(FIGURE_PATH,'random_walk_lfp.png'))
+    plt.close('all')
+
+    # Plot lfp accor
+    plt.acorr(lfp[:10000], maxlags = 20)
+    plt.savefig(pjoin(FIGURE_PATH,'random_walk_lfp_autocorr.png'))
+    plt.close('all')
+
+    # Plot spectrum
+    freq, psd = compute_spectrum(lfp, FS, method='welch', avg_type='median',
+                                 nperseg=FS, noverlap=int(FS/2))
+    plot_power_spectra([freq], [psd],['PSD'])
+    plt.savefig(pjoin(FIGURE_PATH,'random_walk_psd.png'))
+    plt.close('all')
+
+    _, lfps = sim_lfp_pool(n_neurons = 5, alpha = ALPHA)
+    # Plot lfps
+    plt.plot(t[:2000], lfps[0,:2000])
+    plt.plot(t[:2000], lfps[1,:2000])
+    plt.plot(t[:2000], lfps[2,:2000])
+    plt.plot(t[:2000], lfps[3,:2000])
+    plt.plot(t[:2000], lfps[4,:2000])
+    # sns.lineplot(x=np.linspace(0, 2, 2000), y=lfps[:,:2000])
+    plt.savefig(pjoin(FIGURE_PATH,'random_walk_5_lfp.png'))
+    plt.close('all')
+    
 
 if __name__ == "__main__":
     main()
