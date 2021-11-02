@@ -158,13 +158,9 @@ def sim_homogeneous_pool(n_neurons=5, rate=20, n_seconds=1, fs=1000,
 
     # turn rates into spikes
     for j_bin in range(len(rand_process)):
-        firing_rate[:, j_bin] = np.random.normal(size=n_neurons, loc=rand_process[j_bin],
-                                               scale=np.sqrt(rand_process[j_bin]))
-        # firing_rate[:, j_bin] = np.random.normal(size=n_neurons, loc=rand_process[j_bin],
-        #                                        scale=0.01)
-                                      
+
         for i_neuron in range(n_neurons):
-            if firing_rate[i_neuron, j_bin] / fs > np.random.uniform():
+            if rand_process[i_neuron, j_bin] / fs > np.random.uniform():
                 spikes[i_neuron, j_bin] = 1
     
     # define time vector
