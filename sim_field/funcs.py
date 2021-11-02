@@ -148,7 +148,7 @@ def sim_homogeneous_pool(n_neurons=5, rate=20, n_seconds=1, fs=1000,
     spike trains roster of size (n_seconds*fs by n_neurons)"""
 
     # simulate randon process (Ornstein-Uhlenbeck)
-    rand_process = sim_random_walk(n_seconds, fs, mu=rate, sigma=(2*tau_c*alpha)**0.5, theta=1/tau_c)
+    rand_process = sim_ou_process(n_seconds, fs, mu=rate, sigma=(2*tau_c*alpha)**0.5, theta=1/tau_c)
     rand_process[rand_process < 0] = 0 # ensure all positive values
 
     # generate spikes from OU process
