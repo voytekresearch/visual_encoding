@@ -142,33 +142,51 @@ def sim_spikes_general_2stoch(n_dt, n_neurons = 5, dt = 0.1, tau_c = 10.0, firin
     spikes = get_spikes(inst_rates)
     return spikes
 
-# def sim_homogeneous_pool(n_neurons=5, rate=20, n_seconds=1, fs=1000,
-                         # alpha=1, tau_c=1E-2):
-def sim_homogeneous_pool(n_neurons=5, mu=20, sigma=300, n_seconds=1, fs=1000,
-                         tau=0.01):
-    """simulate population spiking of N neurons firing at firing_rate each, return a
-    spike trains roster of size (n_seconds*fs by n_neurons)"""
+def sim_homogeneous_pool(n_neurons=5, mu=20, variance=300, n_seconds=1, fs=1000,
+                         tau_c=0.01):
+    """
+    simulate population spiking of N neurons firing at firing_rate each, return a
+    spike trains roster of size (n_seconds*fs by n_neurons)
+
+    Parameters
+    ----------
+    n_neurons : scalar, optional
+        number of neurons in population. The default is 5.
+    mu : scalar, optional
+        mean of random walk. The default is 20.
+    sigma : scalar, optional
+        std of random walk. The default is 300.
+    n_seconds : scalar, optional
+        duration of signal (s). The default is 1.
+    fs : scalar, optional
+        sampling frequency (Hz). The default is 1000.
+    tau : scalar, optional
+        timescale (sec). The default is 0.01.
+
+    Returns
+    -------
+    spikes : 2D array
+        spike trains.
+    rand_process : 1D array
+        instantanious firing rate.
+
+    """
 
     # simulate randon process (Ornstein-Uhlenbeck)
-    rand_process = sim_ou_process(n_seconds, fs, mu=mu, sigma=sigma, theta=tau)
-    rand_process[rand_process < 0] = 0 # ensure all positive values
+    rand_process, _ = sim_ou_process(n_seconds, fs, mu=mu, sigma=variance**0.5, tau=tau_c)
+    # rand_process[rand_process < 0] = 0 # ensure all positive values
 
     # generate spikes from OU process
-    # rate_t = (rand_process + 1) * rate
-    firing_rate = np.zeros([n_neurons, len(rand_process)])
     spikes = np.zeros([n_neurons, len(rand_process)])
 
     # turn rates into spikes
     for j_bin in range(len(rand_process)):
 
         for i_neuron in range(n_neurons):
-            if rand_process[i_neuron, j_bin] / fs > np.random.uniform():
+            if rand_process[j_bin] / fs > np.random.uniform():
                 spikes[i_neuron, j_bin] = 1
     
-    # define time vector
-    # time = np.arange(0, n_seconds, 1/fs)
-
-    return firing_rate, spikes, rand_process
+    return spikes, rand_process
 
 def get_correlation_matrices(n_neurons, firing_rate, xcorr_scalar, firing_rate_std):
     # C = (c_i,j) the matrix of covariances
