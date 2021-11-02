@@ -148,29 +148,29 @@ def sim_homogeneous_pool(n_neurons=5, rate=20, n_seconds=1, fs=1000,
     spike trains roster of size (n_seconds*fs by n_neurons)"""
 
     # simulate randon process (Ornstein-Uhlenbeck)
-    rand_process = sim_random_walk(n_seconds, fs, mu=rate, sigma=(2*tau_c*alpha)**0.5, theta=1/tau_c)
+    rand_process, _ = sim_ou_process(n_seconds, fs, tau_c, mu=rate, sigma=(2*tau_c*alpha)**0.5) # replace
     rand_process[rand_process < 0] = 0 # ensure all positive values
 
     # generate spikes from OU process
     # rate_t = (rand_process + 1) * rate
-    firing_rate = np.zeros([n_neurons, len(rand_process)])
+    # firing_rate = np.zeros([n_neurons, len(rand_process)])
     spikes = np.zeros([n_neurons, len(rand_process)])
 
     # turn rates into spikes
     for j_bin in range(len(rand_process)):
-        firing_rate[:, j_bin] = np.random.normal(size=n_neurons, loc=rand_process[j_bin],
-                                               scale=np.sqrt(rand_process[j_bin]))
+        # firing_rate[:, j_bin] = np.random.normal(size=n_neurons, loc=rand_process[j_bin],
+        #                                        scale=np.sqrt(rand_process[j_bin]))
         # firing_rate[:, j_bin] = np.random.normal(size=n_neurons, loc=rand_process[j_bin],
         #                                        scale=0.01)
                                       
         for i_neuron in range(n_neurons):
-            if firing_rate[i_neuron, j_bin] / fs > np.random.uniform():
+            if rand_process[j_bin] / fs > np.random.uniform():
                 spikes[i_neuron, j_bin] = 1
     
     # define time vector
     # time = np.arange(0, n_seconds, 1/fs)
 
-    return firing_rate, spikes, rand_process
+    return spikes, rand_process
 
 def get_correlation_matrices(n_neurons, firing_rate, xcorr_scalar, firing_rate_std):
     # C = (c_i,j) the matrix of covariances
@@ -296,8 +296,31 @@ def sim_field(ei_ratio, n_seconds=2 * 60, firing_rate_e=2, firing_rate_i=5, n_ne
     lfp_e = signal.detrend(g_e, type='constant') * (e_reversal_e - v_rest)
     # high-pass drift removal * potential difference
     lfp_i = signal.detrend(g_i, type='constant') * (e_reversal_i - v_rest)
-    return lfp_e, lfp_i, times
+    return lfp_e, lfp_i, times, spk_E, spk_I
 
+def sim_lfp_mixture(n_seconds=2 * 60, n_neurons = 50, firing_rate = 20., tau_c = 1.0E-2, alpha = 100000., fs=1000, t_ker=1, tau_r=0.0001, tau_d=0.002, e_reversal = 0., v_rest=-65.):
+    covariances, firing_rates_array = get_correlation_matrices(n_neurons, firing_rate, .1, 0)
+    kernel = sim_synaptic_kernel(t_ker, fs, tau_r, tau_d)
+    spikes, _, _ = gen_spikes_mixture(n_seconds, covariances, firing_rates_array, fs, tau_c, alpha)
+    lfps = []
+    for i_neuron in range(len(spikes)):
+        # lfps[i_neuron, np.newaxis] = signal.detrend(np.convolve(spikes[i_neuron], kernel, 'valid'), type='constant')
+        # lfps = np.vstack((lfps, signal.detrend(np.convolve(spikes[i_neuron], kernel, 'valid'), type='constant')))
+        lfps.append(signal.detrend(np.convolve(spikes[i_neuron], kernel, 'valid'), type='constant') * (e_reversal - v_rest))
+    lfps = np.array(lfps)
+    lfp = lfps.sum(axis = 0)
+    return lfp, lfps
+
+def sim_lfp_pool(n_seconds=2 * 60, n_neurons = 50, firing_rate = 20., tau_c = 1.0E-2, alpha = 100000., fs=1000, t_ker=1, tau_r=0.0001, tau_d=0.002, e_reversal = 0., v_rest=-65.):
+    kernel = sim_synaptic_kernel(t_ker, fs, tau_r, tau_d)
+    spikes, _ = sim_homogeneous_pool(n_neurons, firing_rate, n_seconds, fs, alpha, tau_c)
+    lfps = []
+    for i_neuron in range(len(spikes)):
+        lfps.append(signal.detrend(np.convolve(spikes[i_neuron], kernel, 'valid'), type='constant') * (e_reversal - v_rest))
+    lfps = np.array(lfps)
+    lfp = lfps.sum(axis = 0)
+    return lfp, lfps
+    
 def batchsim_PSDs(ei_ratios=np.arange(2, 6.01, 0.2), num_trs=5, n_seconds=2 * 60,
                     firing_rate=[2, 5], n_neurons=[8000, 2000], t_ker=1, tau_exc=np.array([0.1, 2.]) / 1000.,
                     tau_inh=np.array([0.5, 10.]) / 1000., v_rest=-65, e_reversal=[0, -80], dt=0.001, method='neurodsp'):
