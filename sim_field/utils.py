@@ -27,23 +27,36 @@ def plot_coincidences(spikes, maxlags=20, coincidences = None):
         pyplot axes. spike coincidences
 
     """
+    
     n_neurons = spikes.shape[0]
+    
+    # count coincidence, if neccessary 
     if coincidences is None:
         coincidences = np.zeros((n_neurons, n_neurons, 2 * maxlags + 1))
         for i_row in range(n_neurons):
             for i_col in range(n_neurons):
+                # count coincidences for lag=0
                 coincidences[i_row, i_col, maxlags] = np.logical_and(spikes[i_row], spikes[i_col]).sum()
+                
+                # count coincidence for time-lags of interest
                 for i in range(1, maxlags + 1):
                     coincidences[i_row, i_col,maxlags + i] = np.logical_and(spikes[i_row][i:], spikes[i_col][:-i]).sum()
                     coincidences[i_row, i_col,maxlags - i] = np.logical_and(spikes[i_row][:-i], spikes[i_col][i:]).sum()
 
+    # create figure
     fig, axes = plt.subplots(figsize=(10, 10), sharex=False, sharey=True, ncols=4, nrows=4)
     for i in range(n_neurons - 1):
         for j in range(n_neurons - 1):
             if i<j:
                 axes[i, j].axis('off')
             else:
+                # plot coincidences
                 axes[i, j].bar(range(-maxlags, maxlags + 1), coincidences[i+1,j])
+                
+    # label figure
+    
+    
+    
     return fig, axes
 
 def plot_correlations(spikes, plot_model=False, maxlags=20, tau_c=1, alpha=1,
