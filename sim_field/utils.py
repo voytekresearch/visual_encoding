@@ -7,6 +7,26 @@ import matplotlib.pyplot as plt
 ##########################################################################
 
 def plot_coincidences(spikes, maxlags=20, coincidences = None):
+    """
+    Count coincidences between spikes trains and plot correlation
+
+    Parameters
+    ----------
+    spikes : 2d array
+        spikes trains
+    maxlags : int, optional
+        maximum lag for correlation calculation. The default is 20.
+    coincidences : 3d array, optional
+        spike coincidence (if already computed) The default is None.
+
+    Returns
+    -------
+    fig : matplotlib.pyplot.figure
+        pyplot figure. spike coincidences
+    axes : matplotlib.pyplot.axes
+        pyplot axes. spike coincidences
+
+    """
     n_neurons = spikes.shape[0]
     if coincidences is None:
         coincidences = np.zeros((n_neurons, n_neurons, 2 * maxlags + 1))
