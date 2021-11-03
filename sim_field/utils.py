@@ -58,7 +58,8 @@ def plot_coincidences(spikes, fs=1000, maxlags=20, coincidences = None):
                 axes[i, j].bar(x_time_ms, coincidences[i+1,j])
                 
     # label figure
-
+    fig.text(0.5, 0.05, 'time lag (ms)', ha='center', fontsize=16)
+    fig.text(0.05, 0.5, 'spike coincidences', va='center', fontsize=16, rotation='vertical')
     
     
     return fig, axes
