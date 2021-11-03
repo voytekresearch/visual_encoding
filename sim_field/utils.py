@@ -44,9 +44,12 @@ def plot_coincidences(spikes, fs=1000, maxlags=20, coincidences = None):
                     coincidences[i_row, i_col,maxlags - i] = np.logical_and(spikes[i_row][:-i], spikes[i_col][i:]).sum()
 
     # create figure
-    fig, axes = plt.subplots(figsize=(10, 10), sharex=False, sharey=True, ncols=4, nrows=4)
+    fig, axes = plt.subplots(figsize=(10, 10), sharex=False, sharey=True, 
+                             ncols=n_neurons-1, nrows=n_neurons-1,
+                             tight_layout=True)
     for i in range(n_neurons - 1):
         for j in range(n_neurons - 1):
+            # plot lower triangle only
             if i<j:
                 axes[i, j].axis('off')
             else:
