@@ -73,8 +73,34 @@ def plot_coincidences(spikes, fs=1000, maxlags=20, coincidences = None):
 
 def plot_correlations(signals, fs=1000, maxlags=20, tau_c=1, alpha=1,
                      plot_all=False, plot_model=False):
-    
-    
+    """
+    plot correlation between multiple signals
+
+    Parameters
+    ----------
+    signals : 2d array
+        matrix of time-series (e.g. firing rates of several neurons)
+    fs : float, optional
+        sampling frequency. The default is 1000.
+    maxlags : int, optional
+        maximum lag for correlation calculation. The default is 20.
+    tau_c : float, optional
+        correlation decay time-constant (param for model). The default is 1.
+    alpha : flaot, optional
+        maximum correlation (param for model). The default is 1.
+    plot_all : bool, optional
+        indicate whether to plot the lower triangle only. The default is False.
+    plot_model : bool, optional
+        indicate whether to plot to correlation model. The default is False.
+
+    Returns
+    -------
+    fig : pyplot.figure
+        figure - correlations between each pair of signals.
+    ax : pyplot.axes
+        ax - correlations between each pair of signals.
+
+    """
     n_neurons = signals.shape[0]
     fig, ax = plt.subplots(nrows=n_neurons, ncols=n_neurons, figsize=(12,10), sharey=True, constrained_layout=True)
     for i_row in range(n_neurons):
