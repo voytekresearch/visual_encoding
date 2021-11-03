@@ -218,15 +218,15 @@ def get_correlation_matrices(n_neurons, firing_rate, xcorr_scalar, firing_rate_s
 
     return covariances, firing_rates_array
 
-def gen_spikes_mixture(n_seconds, covariances, firing_rates_array, fs, tau_c, alpha):
+def gen_spikes_mixture(n_seconds, covariances, firing_rates_array, fs, tau_c, variance = 300.):
     
-    sigma=(2*tau_c*alpha)**0.5
+    # sigma=(2*tau_c*alpha)**0.5
     n_neurons = len(covariances)
 
     rand_processes = np.zeros((n_neurons, int(n_seconds * fs)))
     for i_neuron in range(n_neurons):
         # rand_processes[i_neuron] = sim_random_walk(n_seconds, fs, theta=1/tau_c, mu=0, sigma=sigma)
-        rand_processes[i_neuron], _ = sim_ou_process(n_seconds, fs, tau_c, mu=firing_rates_array[i_neuron], sigma=sigma)
+        rand_processes[i_neuron], _ = sim_ou_process(n_seconds, fs, tau_c, mu=firing_rates_array[i_neuron], sigma=variance**0.5)
 
     # compute cholesky
     root_covariances = linalg.cholesky(covariances).T # Choleskey Factor L(C = LLT)
@@ -313,10 +313,10 @@ def sim_field(ei_ratio, n_seconds=2 * 60, firing_rate_e=2, firing_rate_i=5, n_ne
     lfp_i = signal.detrend(g_i, type='constant') * (e_reversal_i - v_rest)
     return lfp_e, lfp_i, times, spk_E, spk_I
 
-def sim_lfp_mixture(n_seconds=2 * 60, n_neurons = 50, firing_rate = 20., tau_c = 1.0E-2, alpha = 100000., fs=1000, t_ker=1, tau_r=0.0001, tau_d=0.002, e_reversal = 0., v_rest=-65.):
-    covariances, firing_rates_array = get_correlation_matrices(n_neurons, firing_rate, .1, 0)
+def sim_lfp_mixture(n_seconds=2 * 60, n_neurons = 50, firing_rate = 20., tau_c = 1.0E-2, variance = 300., fs=1000, t_ker=1, tau_r=0.0001, tau_d=0.002, e_reversal = 0., v_rest=-65.):
+    covariances, firing_rates_array = get_correlation_matrices(n_neurons, firing_rate, 1, 0)
     kernel = sim_synaptic_kernel(t_ker, fs, tau_r, tau_d)
-    spikes, _, _ = gen_spikes_mixture(n_seconds, covariances, firing_rates_array, fs, tau_c, alpha)
+    spikes, _, _ = gen_spikes_mixture(n_seconds, covariances, firing_rates_array, fs, tau_c, variance)
     lfps = []
     for i_neuron in range(len(spikes)):
         # lfps[i_neuron, np.newaxis] = signal.detrend(np.convolve(spikes[i_neuron], kernel, 'valid'), type='constant')
@@ -326,9 +326,9 @@ def sim_lfp_mixture(n_seconds=2 * 60, n_neurons = 50, firing_rate = 20., tau_c =
     lfp = lfps.sum(axis = 0)
     return lfp, lfps
 
-def sim_lfp_pool(n_seconds=2 * 60, n_neurons = 50, firing_rate = 20., tau_c = 1.0E-2, alpha = 100000., fs=1000, t_ker=1, tau_r=0.0001, tau_d=0.002, e_reversal = 0., v_rest=-65.):
+def sim_lfp_pool(n_seconds=2 * 60, n_neurons = 50, firing_rate = 20., tau_c = 1.0E-2, variance = 300., fs=1000, t_ker=1, tau_r=0.0001, tau_d=0.002, e_reversal = 0., v_rest=-65.):
     kernel = sim_synaptic_kernel(t_ker, fs, tau_r, tau_d)
-    spikes, _ = sim_homogeneous_pool(n_neurons, firing_rate, n_seconds, fs, alpha, tau_c)
+    spikes, _ = sim_homogeneous_pool(n_neurons, firing_rate, n_seconds = n_seconds, fs = fs, tau_c = tau_c, variance=variance)
     lfps = []
     for i_neuron in range(len(spikes)):
         lfps.append(signal.detrend(np.convolve(spikes[i_neuron], kernel, 'valid'), type='constant') * (e_reversal - v_rest))

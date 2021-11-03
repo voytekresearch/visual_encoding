@@ -7,7 +7,7 @@ from scipy.optimize import minimize
 ##########################################################################
 ##########################################################################
 
-def plot_coincidences(spikes, maxlags=20, coincidences = None, plot_model=False):
+def plot_coincidences(spikes, maxlags=20, coincidences = None, plot_model=False, normalize = True):
     n_neurons = spikes.shape[0]
     if (n_neurons == 1):
         if coincidences is None:
@@ -27,6 +27,8 @@ def plot_coincidences(spikes, maxlags=20, coincidences = None, plot_model=False)
                 for i in range(1, maxlags + 1):
                     coincidences[i_row, i_col,maxlags + i] = np.logical_and(spikes[i_row][i:], spikes[i_col][:-i]).sum()
                     coincidences[i_row, i_col,maxlags - i] = np.logical_and(spikes[i_row][:-i], spikes[i_col][i:]).sum()
+                if normalize == True:
+                    coincidences[i_row, i_col, : ] = coincidences[i_row, i_col, : ] / coincidences[i_row, i_col, : ].max()
 
     fig, axes = plt.subplots(figsize=(10, 10), sharex=False, sharey=True, ncols=n_neurons - 1, nrows= n_neurons - 1, tight_layout = True)
     for i in range(n_neurons - 1):
@@ -36,10 +38,10 @@ def plot_coincidences(spikes, maxlags=20, coincidences = None, plot_model=False)
             else:
                 axes[i, j].bar(range(-maxlags, maxlags + 1), coincidences[i+1,j])
                 if plot_model:
-                    x0 = [1, 1000]
+                    x0 = [1, 1]
                     lags = range(-maxlags, maxlags + 1)
                     corr = coincidences[i+1,j]
-                    result = minimize(calc_model_error, x0=x0, args=(corr, lags), method = 'Nelder-Mead')
+                    result = minimize(calc_model_error, x0=x0, args=(corr, lags))
                     tau_c_fit = result['x'][0]
                     alpha_fit = result['x'][1]
                     model = model_acorr(lags, alpha_fit, tau_c_fit)
@@ -51,6 +53,19 @@ def plot_coincidences(spikes, maxlags=20, coincidences = None, plot_model=False)
 def plot_correlations(spikes, plot_model=False, maxlags=20, tau_c=1, alpha=1,
                      plot_all=False):
     n_neurons = spikes.shape[0]
+    if (spikes.ndim == 1):
+        lags, corr, _, _  = plt.xcorr(spikes.astype(float), spikes.astype(float), maxlags=maxlags)
+        if plot_model:
+                # t = np.arange(-maxlags,maxlags)
+                x0 = [1, 1]
+                result = minimize(calc_model_error, x0=x0, args=(corr, lags))
+                tau_c_fit = result['x'][0]
+                alpha_fit = result['x'][1]
+                model = model_acorr(lags, alpha_fit, tau_c_fit)
+                # cross_covar = alpha * np.exp(-abs(t)/(tau_c * 1000))
+                plt.plot(lags, model)
+                plt.title('tau: %0.4f' %tau_c_fit)
+        return
     fig, ax = plt.subplots(nrows=n_neurons, ncols=n_neurons, figsize=(14,14), sharey=True, tight_layout = True)
     for i_row in range(n_neurons):
         for i_col in range(n_neurons):

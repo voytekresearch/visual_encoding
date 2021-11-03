@@ -20,7 +20,7 @@ import pandas as pd
 import numpy as np
 from neurodsp.spectral import compute_spectrum
 from neurodsp.plts.spectral import plot_power_spectra
-
+from scipy import signal
 
 ###################################################################################################
 ###################################################################################################
@@ -234,7 +234,7 @@ def assess_corr_across_freqs(psd_batch, freq):
 
 def simulate_lfp_mixture():
     t = np.arange(0, N_SECONDS, 1/FS)
-    lfp, lfps = sim_lfp_mixture(n_neurons = N_NEURONS, alpha = 1000000.)
+    lfp, lfps = sim_lfp_mixture(n_neurons = N_NEURONS)
     freq, psd = compute_spectrum(lfp, FS, method='welch', avg_type='median',
                                  nperseg=FS, noverlap=int(FS/2))
     # Plot time-series
@@ -243,12 +243,17 @@ def simulate_lfp_mixture():
     plt.savefig(pjoin(FIGURE_PATH,'corr_spikes_mixture_lfp.png'))
     plt.close('all')
 
+    # Plot lfp autocorr
+    plot_correlations(lfp[:10000], plot_model = True)
+    plt.savefig(pjoin(FIGURE_PATH,'mixture_lfp_autocorr.png'))
+    plt.close('all')
+
     # Plot power spectra
     plot_power_spectra([freq], [psd],['Mixture'])
     plt.savefig(pjoin(FIGURE_PATH,'corr_spikes_mixutre_psd.png'))
 
 def simulate_lfp_pool():
-    spikes, rand_process = sim_homogeneous_pool(n_neurons = 1, n_seconds = N_SECONDS, alpha = ALPHA)
+    spikes, rand_process = sim_homogeneous_pool(n_neurons = 1, n_seconds = N_SECONDS)
     
     # Plot rate vs time
     # print(np.linspace(0, 2, 2000).shape, rand_process[:2000].shape)
@@ -257,7 +262,8 @@ def simulate_lfp_pool():
     plt.close('all')
 
     # Plot rate autocorr
-    plt.acorr(rand_process[:5000], maxlags = 20)
+    rand_process_mean_removed = signal.detrend(rand_process, type='constant')
+    plt.acorr(rand_process_mean_removed[:5000], maxlags = 20)
     plt.savefig(pjoin(FIGURE_PATH,'random_walk_rate_autocorr.png'))
     plt.close('all')
 
@@ -269,18 +275,19 @@ def simulate_lfp_pool():
     plt.close('all')
 
     # Plot coincidences
-    plot_coincidences(spikes)
+    plot_coincidences(spikes, plot_model = True)
     plt.savefig(pjoin(FIGURE_PATH,'random_walk_spike_coincidences.png'))
     plt.close('all')
 
-    lfp, _ = sim_lfp_pool(n_neurons = 100, alpha = ALPHA)
+    lfp, _ = sim_lfp_pool(n_neurons = 100)
     # Plot lfp
     plt.plot(t[:2000], lfp[:2000])
     plt.savefig(pjoin(FIGURE_PATH,'random_walk_lfp.png'))
     plt.close('all')
 
     # Plot lfp accor
-    plt.acorr(lfp[:10000], maxlags = 20)
+    # plt.acorr(lfp[:10000], maxlags = 20)
+    plot_correlations(lfp[:10000], plot_model = True)
     plt.savefig(pjoin(FIGURE_PATH,'random_walk_lfp_autocorr.png'))
     plt.close('all')
 
@@ -291,7 +298,7 @@ def simulate_lfp_pool():
     plt.savefig(pjoin(FIGURE_PATH,'random_walk_psd.png'))
     plt.close('all')
 
-    _, lfps = sim_lfp_pool(n_neurons = 5, alpha = ALPHA)
+    _, lfps = sim_lfp_pool(n_neurons = 5)
     # Plot lfps
     plt.plot(t[:2000], lfps[0,:2000])
     plt.plot(t[:2000], lfps[1,:2000])
