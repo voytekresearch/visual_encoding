@@ -87,6 +87,9 @@ def plot_correlations(spikes, plot_model=False, maxlags=20, tau_c=1, alpha=1,
                 t = np.arange(-maxlags,maxlags)
                 cross_covar = alpha * np.exp(-abs(t)/(tau_c * 1000))
                 ax[i_row, i_col].plot(t, cross_covar)
-
+                
+    # label figure
+    fig.text(0.5, 0.05, 'time lag (ms)', ha='center', fontsize=16)
+    fig.text(0.05, 0.5, 'correlation', va='center', fontsize=16, rotation='vertical')
       
     return fig, ax
