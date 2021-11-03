@@ -71,9 +71,11 @@ def plot_coincidences(spikes, fs=1000, maxlags=20, coincidences = None):
     
     return fig, axes
 
-def plot_correlations(spikes, fs=1000, maxlags=20, tau_c=1, alpha=1,
+def plot_correlations(signals, fs=1000, maxlags=20, tau_c=1, alpha=1,
                      plot_all=False, plot_model=False):
-    n_neurons = spikes.shape[0]
+    
+    
+    n_neurons = signals.shape[0]
     fig, ax = plt.subplots(nrows=n_neurons, ncols=n_neurons, figsize=(12,10), sharey=True, constrained_layout=True)
     for i_row in range(n_neurons):
         for i_col in range(n_neurons):
@@ -83,8 +85,8 @@ def plot_correlations(spikes, fs=1000, maxlags=20, tau_c=1, alpha=1,
                 continue
                     
             # plot correlation
-            x_1 = spikes[i_row].astype(float) - np.mean(spikes[i_row].astype(float))
-            x_2 = spikes[i_col].astype(float) - np.mean(spikes[i_col].astype(float))
+            x_1 = signals[i_row].astype(float) - np.mean(signals[i_row].astype(float))
+            x_2 = signals[i_col].astype(float) - np.mean(signals[i_col].astype(float))
             ax[i_row, i_col].xcorr(x_1, x_2, maxlags=maxlags)
             
             # increase text size
