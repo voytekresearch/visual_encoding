@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 ##########################################################################
 ##########################################################################
 
-def plot_coincidences(spikes, maxlags=20, coincidences = None):
+def plot_coincidences(spikes, fs=1000, maxlags=20, coincidences = None):
     """
     Count coincidences between spikes trains and plot correlation
 
@@ -50,11 +50,15 @@ def plot_coincidences(spikes, maxlags=20, coincidences = None):
             if i<j:
                 axes[i, j].axis('off')
             else:
+                # convert bins to ms
+                x_bins = np.linspace(-maxlags, maxlags, coincidences.shape[2])
+                x_time_ms = x_bins * (1/fs) *  1000
+                
                 # plot coincidences
-                axes[i, j].bar(range(-maxlags, maxlags + 1), coincidences[i+1,j])
+                axes[i, j].bar(x_time_ms, coincidences[i+1,j])
                 
     # label figure
-    
+
     
     
     return fig, axes
