@@ -79,11 +79,14 @@ def plot_correlations(spikes, plot_model=False, maxlags=20, tau_c=1, alpha=1,
                 continue
                     
             # plot correlation
-            ax[i_row, i_col].xcorr(spikes[i_row].astype(float), spikes[i_col].astype(float), maxlags=maxlags)
+            x_1 = spikes[i_row].astype(float) - np.mean(spikes[i_row].astype(float))
+            x_2 = spikes[i_col].astype(float) - np.mean(spikes[i_col].astype(float))
+            ax[i_row, i_col].xcorr(x_1, x_2, maxlags=maxlags)
             
             if plot_model:
                 t = np.arange(-maxlags,maxlags)
                 cross_covar = alpha * np.exp(-abs(t)/(tau_c * 1000))
                 ax[i_row, i_col].plot(t, cross_covar)
+
       
     return fig, ax
