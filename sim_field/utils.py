@@ -67,8 +67,8 @@ def plot_coincidences(spikes, fs=1000, maxlags=20, coincidences = None):
     
     return fig, axes
 
-def plot_correlations(spikes, plot_model=False, maxlags=20, tau_c=1, alpha=1,
-                     plot_all=False):
+def plot_correlations(spikes, fs=1000, maxlags=20, tau_c=1, alpha=1,
+                     plot_all=False, plot_model=False):
     n_neurons = spikes.shape[0]
     fig, ax = plt.subplots(nrows=n_neurons, ncols=n_neurons, figsize=(14,14), sharey=True)
     for i_row in range(n_neurons):
@@ -84,9 +84,10 @@ def plot_correlations(spikes, plot_model=False, maxlags=20, tau_c=1, alpha=1,
             ax[i_row, i_col].xcorr(x_1, x_2, maxlags=maxlags)
             
             if plot_model:
-                t = np.arange(-maxlags,maxlags)
-                cross_covar = alpha * np.exp(-abs(t)/(tau_c * 1000))
-                ax[i_row, i_col].plot(t, cross_covar)
+                x_bins = np.arange(-maxlags,maxlags)
+                x_time_ms = x_bins * (1/fs) *  1000
+                cross_covar = alpha * np.exp(-abs(x_bins)/(tau_c * 1000))
+                ax[i_row, i_col].plot(x_time_ms, cross_covar)
                 
     # label figure
     fig.text(0.5, 0.05, 'time lag (ms)', ha='center', fontsize=16)
