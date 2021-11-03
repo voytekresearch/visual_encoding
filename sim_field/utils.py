@@ -60,6 +60,10 @@ def plot_coincidences(spikes, fs=1000, maxlags=20, coincidences = None):
                 # plot coincidences
                 axes[i, j].bar(x_time_ms, coincidences[i+1,j])
                 
+                # increase text size
+                axes[i, j].tick_params(axis='y', labelsize=14)
+                axes[i, j].tick_params(axis='x', labelsize=14)
+                
     # label figure
     fig.text(0.5, 0.05, 'time lag (ms)', ha='center', fontsize=16)
     fig.text(0.05, 0.5, 'spike coincidences', va='center', fontsize=16, rotation='vertical')
@@ -70,7 +74,7 @@ def plot_coincidences(spikes, fs=1000, maxlags=20, coincidences = None):
 def plot_correlations(spikes, fs=1000, maxlags=20, tau_c=1, alpha=1,
                      plot_all=False, plot_model=False):
     n_neurons = spikes.shape[0]
-    fig, ax = plt.subplots(nrows=n_neurons, ncols=n_neurons, figsize=(14,14), sharey=True)
+    fig, ax = plt.subplots(nrows=n_neurons, ncols=n_neurons, figsize=(12,10), sharey=True, constrained_layout=True)
     for i_row in range(n_neurons):
         for i_col in range(n_neurons):
             # plot bottom triangle only
@@ -83,6 +87,14 @@ def plot_correlations(spikes, fs=1000, maxlags=20, tau_c=1, alpha=1,
             x_2 = spikes[i_col].astype(float) - np.mean(spikes[i_col].astype(float))
             ax[i_row, i_col].xcorr(x_1, x_2, maxlags=maxlags)
             
+            # increase text size
+            ax[i_row, i_col].tick_params(axis='y', labelsize=14)
+            ax[i_row, i_col].tick_params(axis='x', labelsize=14)
+        
+            # remove xtick labels from most plots
+            if i_row != n_neurons - 1:
+                ax[i_row, i_col].set_xticklabels([])
+                
             if plot_model:
                 x_bins = np.arange(-maxlags,maxlags)
                 x_time_ms = x_bins * (1/fs) *  1000
@@ -90,7 +102,7 @@ def plot_correlations(spikes, fs=1000, maxlags=20, tau_c=1, alpha=1,
                 ax[i_row, i_col].plot(x_time_ms, cross_covar)
                 
     # label figure
-    fig.text(0.5, 0.05, 'time lag (ms)', ha='center', fontsize=16)
-    fig.text(0.05, 0.5, 'correlation', va='center', fontsize=16, rotation='vertical')
-      
+    fig.text(0.5, -0.05, 'time lag (ms)', ha='center', fontsize=18)
+    fig.text(-0.05, 0.5, 'correlation', va='center', fontsize=18, rotation='vertical')
+    
     return fig, ax
