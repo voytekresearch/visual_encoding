@@ -13,8 +13,8 @@ from os.path import join as pjoin
 from funcs import sim_spikes_general_2stoch
 from funcs import sim_homogeneous_pool
 from funcs import get_correlation_matrices, gen_spikes_mixture
-from utils import plot_coincidences
-from utils import plot_correlations
+from plots import plot_coincidences
+from plots import plot_correlations
 import matplotlib.pyplot as plt
 import numpy as np
 
