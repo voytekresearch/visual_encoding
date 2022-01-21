@@ -235,8 +235,9 @@ def gen_spikes_mixture(n_seconds, covariances, firing_rates_array, fs, tau_c, al
     LY = np.dot(root_covariances, rand_processes)
 
     # compute firing rate
-    firing_rates = firing_rates_array
-    inst_firing_rates = firing_rates[:, np.newaxis] + LY 
+    # firing_rates = firing_rates_array
+    # inst_firing_rates = firing_rates[:, np.newaxis] + LY 
+    inst_firing_rates = LY * 1000 + firing_rates_array[0]
 
     # turn rates into spikes
     spikes = np.zeros((n_neurons, n_seconds * fs))
@@ -249,7 +250,7 @@ def gen_spikes_mixture(n_seconds, covariances, firing_rates_array, fs, tau_c, al
     #             1 if np.random.uniform() < inst_rate*dt else 0)
     # spikes = get_spikes(inst_firing_rates)
     
-    return spikes, inst_firing_rates
+    return spikes, inst_firing_rates, rand_processes
 
 def sim_field(ei_ratio, n_seconds=2 * 60, firing_rate_e=2, firing_rate_i=5, n_neurons_e=8000, n_neurons_i=2000, t_ker=1,
               tau_exc=np.array([0.1, 2.]) / 1000., tau_inh=np.array([0.5, 10.]) / 1000.,
