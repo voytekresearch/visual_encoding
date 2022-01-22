@@ -17,6 +17,7 @@ from plots import plot_coincidences
 from plots import plot_correlations
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import signal
 
 ###################################################################################################
 ###################################################################################################
@@ -26,9 +27,9 @@ N_DT_CC = 20000 # number of time bins for cross correlation
 DT = 0.1 # time increment in ms
 N_NEURONS = 5 # number of neurons
 
-N_SECONDS = 3600
+N_SECONDS = 2000
 FS = 1000
-ALPHA = 10.
+ALPHA = 300. # I don't know why ALPHA needs to be this high for the functions to work
 TAU_C = 1.0E-2
 CHUNK_SIZE = 5
 FIRING_RATE = 20
@@ -61,27 +62,27 @@ def simulate_spikes_general_doubly_stochastic():
     plt.close('all')
 
 def simulate_spikes_homogeneous_pool():
-    firing_rate = np.zeros((5, N_SECONDS * FS))
-    spikes = np.zeros((5, N_SECONDS * FS))
-    for i_chunk in range(int(N_SECONDS / CHUNK_SIZE)):
-        n_timepoints = CHUNK_SIZE * FS
-        firing_rate[:,i_chunk*n_timepoints:(i_chunk+1)*n_timepoints], \
-                    spikes[:,i_chunk*n_timepoints:(i_chunk+1)*n_timepoints] = \
-                    sim_homogeneous_pool(rate=FIRING_RATE, fs=FS, n_seconds=CHUNK_SIZE, \
-                    alpha = ALPHA, tau_c=TAU_C)
+    spikes, rand_process = sim_homogeneous_pool(mu=FIRING_RATE, fs=FS, n_seconds=N_SECONDS, \
+                         variance = 300, tau_c=TAU_C)
 
-    # Plot instantaneous firing rates
-    plt.plot(firing_rate.T[:1000,:], linewidth=0.5)
-    plt.savefig(pjoin(FIGURE_PATH,'homogeneous_pool_firing_rate_plot.png'))
+    # Plot random process
+    plt.plot(rand_process[:1000], linewidth=0.5)
+    plt.savefig(pjoin(FIGURE_PATH,'homogeneous_pool_random_process_plot.png'))
     plt.close('all')
 
-    # Plot correlations of firing rates
-    plot_correlations(firing_rate[:,:5000], maxlags=20, plot_model=False)
-    plt.savefig(pjoin(FIGURE_PATH,'homogeneous_pool_firing_rate_correlations_plot.png'))
+    # # # Plot correlations of firing rates
+    # plot_correlations(rand_process[:2000], maxlags=20, plot_model=False)
+    # plt.savefig(pjoin(FIGURE_PATH,'homogeneous_pool_rand_process_autocorrelation_plot.png'))
+    # plt.close('all')
+
+    # Plot rate autocorr
+    rand_process_mean_removed = signal.detrend(rand_process, type='constant')
+    plt.acorr(rand_process_mean_removed[:5000], maxlags = 20)
+    plt.savefig(pjoin(FIGURE_PATH,'random_walk_rate_autocorr.png'))
     plt.close('all')
 
     # Plot coincidences
-    plot_coincidences(spikes, maxlags = int(TAU_C * FS * 2))
+    plot_coincidences(spikes, maxlags = int(TAU_C * FS * 2) * 3, plot_model = True)
     plt.savefig(pjoin(FIGURE_PATH,'homogeneous_pool_coincidences_plot.png'))
     plt.close('all')
 
@@ -89,31 +90,32 @@ def simulate_gaussian_mixture():
     covariances, firing_rates_array = get_correlation_matrices(N_NEURONS, FIRING_RATE, .1, 0)
 
     # Plot spike roster
+    # print(covariances)
     plt.pcolor(covariances)
+    plt.colorbar()
     plt.gca().invert_yaxis()
+    plt.title('covariance matrix')
     plt.savefig(pjoin(FIGURE_PATH,'gaussian_mixture_covariance_matrix.png'))
     plt.close('all')
 
-    inst_firing_rates = np.zeros((N_NEURONS, N_SECONDS * FS))
-    spikes = np.zeros((N_NEURONS, N_SECONDS * FS))
-    for i_chunk in range(int(N_SECONDS / CHUNK_SIZE)):
-        n_timepoints = CHUNK_SIZE * FS
-        spikes[:,i_chunk*n_timepoints:(i_chunk+1)*n_timepoints], \
-                inst_firing_rates[:,i_chunk*n_timepoints:(i_chunk+1)*n_timepoints], _ = \
-                gen_spikes_mixture(CHUNK_SIZE, covariances, firing_rates_array, FS, TAU_C, ALPHA)
+    # run simualation
+    spikes, inst_firing_rates, _ = gen_spikes_mixture(N_SECONDS, covariances, firing_rates_array, FS, TAU_C)
     
     # Plot instantaneous firing rates
+    # detrended_rates = np.array([inst_firing_rates[a,:5000] for a in range(len(inst_firing_rates))])
     plt.plot(inst_firing_rates.T[:1000,:], linewidth=0.5)
+    # plt.plot(detrended_rates.T)
     plt.savefig(pjoin(FIGURE_PATH,'gaussian_mixture_firing_rate_plot.png'))
     plt.close('all')
 
     # Plot correlations of firing rates
-    plot_correlations(inst_firing_rates[:,:5000], maxlags=20, plot_model=False)
+    detrended_rates = np.array([signal.detrend(inst_firing_rates[a,:5000]) for a in range(len(inst_firing_rates))])
+    plot_correlations(detrended_rates, maxlags=20, plot_model=True)
     plt.savefig(pjoin(FIGURE_PATH,'gaussian_mixture_firing_rate_correlations_plot.png'))
     plt.close('all')
 
     # Plot coincidences
-    plot_coincidences(spikes, maxlags = int(TAU_C * FS * 2))
+    plot_coincidences(spikes, maxlags = int(TAU_C * FS * 2) * 3, plot_model=True)
     plt.savefig(pjoin(FIGURE_PATH,'gaussian_mixture_coincidences_plot.png'))
     plt.close('all')
 
