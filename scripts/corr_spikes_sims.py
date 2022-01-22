@@ -10,14 +10,13 @@ Notes:
 import sys
 sys.path.append('../sim_field')
 from os.path import join as pjoin
-from funcs import sim_spikes_general_2stoch
-from funcs import sim_homogeneous_pool
-from funcs import get_correlation_matrices, gen_spikes_mixture
-from plots import plot_coincidences
-from plots import plot_correlations
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import signal
+
+from plots import plot_coincidences,  plot_correlations
+from funcs import sim_spikes_general_2stoch, sim_homogeneous_pool, \
+                  get_correlation_matrices, gen_spikes_mixture
 
 ###################################################################################################
 ###################################################################################################
@@ -35,7 +34,7 @@ CHUNK_SIZE = 5
 FIRING_RATE = 20
 
 # Set paths
-BASE_PATH = "../"
+BASE_PATH = "C:/Users/micha/visual_encoding"
 FIGURE_PATH = pjoin(BASE_PATH, "figures/CorrSpikes/")
 DATA_PATH = pjoin(BASE_PATH, "data/simulations/")
 
@@ -115,7 +114,7 @@ def simulate_gaussian_mixture():
     plt.close('all')
 
     # Plot coincidences
-    plot_coincidences(spikes, maxlags = int(TAU_C * FS * 2) * 3, plot_model=True)
+    plot_coincidences(spikes, maxlags = int(TAU_C * FS * 2) * 3)
     plt.savefig(pjoin(FIGURE_PATH,'gaussian_mixture_coincidences_plot.png'))
     plt.close('all')
 
