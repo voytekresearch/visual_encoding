@@ -8,6 +8,34 @@ from scipy.optimize import minimize
 
 # Functions
 
+def timescale_knee(knee, exponent):
+    """
+    calculate knee frequency and timecale from FOOOF parameters. This 
+    method is detailed in Gao, 2020.
+
+    Parameters
+    ----------
+    knee : float
+        FOOOF aperiodic knee parameter.
+    exponent : float
+        FOOOF aperiodic exponent parameter..
+
+    Returns
+    -------
+    tau : float
+        timescale (ms).
+    knee_hz : float
+        knee frequency (Hz).
+
+    """
+    # compute knee freq
+    knee_hz = knee**(1./exponent)
+    
+    # compute timescale
+    tau = 1./(2*np.pi*knee_hz)
+    
+    return knee_hz, tau
+
 
 def autocorr(x, maxlag):
     """ 
