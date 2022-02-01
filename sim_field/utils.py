@@ -122,7 +122,7 @@ def calc_model_error(tau_c, alpha, empirical, lags):
     
     return error
 
-def comp_tau_acorr(signal, maxlag, x0=1):
+def comp_tau_acorr(signal, fs, maxlag, x0=1):
     """
     compute timescale as decay rate of autocorrelation function
 
@@ -130,6 +130,8 @@ def comp_tau_acorr(signal, maxlag, x0=1):
     ----------
     signal : float
         signal / data for which to compute autocorreltation.
+    fs : float
+        sampling frequency.
     maxlag : int
         number of lags to compute.
     x0 : float, optional
@@ -146,7 +148,7 @@ def comp_tau_acorr(signal, maxlag, x0=1):
 
     # solve for time constant
     result = minimize(calc_model_error, x0=x0, args=(1, xcorr, lags))
-    tau_c = result['x']
+    tau_c = result['x'] / fs
     
     return tau_c
 
