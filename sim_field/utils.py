@@ -4,6 +4,9 @@
 import numpy as np
 from scipy.optimize import minimize
 
+from neurodsp.spectral import compute_spectrum
+from fooof import FOOOF
+
 # Settings
 
 # Functions
@@ -119,7 +122,7 @@ def calc_model_error(tau_c, alpha, empirical, lags):
     
     return error
 
-def comp_time_constant(signal, maxlag, x0=1):
+def comp_tau_acorr(signal, maxlag, x0=1):
     """
     compute timescale as decay rate of autocorrelation function
 
@@ -135,7 +138,7 @@ def comp_time_constant(signal, maxlag, x0=1):
     Returns
     -------
     tau_c : float
-        timescale fit to signal.
+        timescale of signal.
 
     """
     # compute autocorrelation
@@ -147,4 +150,37 @@ def comp_time_constant(signal, maxlag, x0=1):
     
     return tau_c
 
+def comp_tau_fooof(signal, fs, peak_width_limits=[2, 20], f_range=[2,200]):
+    """
+    
 
+    Parameters
+    ----------
+    signal : float
+        signal / data for which to compute autocorreltation.
+    fs : float
+        sampling freqeuncy.
+    peak_width_limits : float, optional
+        FOOOF setting - peak width limits. The default is [2, 20].
+    f_range : float, optional
+        frequency range over which to fit the power spectrum. The default is 
+        [2,200].
+
+    Returns
+    -------
+    tau_c :  float
+        timescale of signal.
+
+    """
+    # compute psd
+    freq, spectrum = compute_spectrum(signal, fs)
+    
+    # parameterize psd
+    sp = FOOOF(peak_width_limits=peak_width_limits, aperiodic_mode='knee')
+    sp.fit(freq, spectrum, f_range)
+    ap_params = sp.get_params('aperiodic')
+
+    # compute tiemscale from FOOOF parameters
+    knee_hz, tau_c = timescale_knee(ap_params[1], ap_params[2])
+    
+    return tau_c
