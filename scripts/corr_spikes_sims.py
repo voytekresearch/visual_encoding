@@ -10,14 +10,13 @@ Notes:
 import sys
 sys.path.append('../sim_field')
 from os.path import join as pjoin
-from funcs import sim_spikes_general_2stoch
-from funcs import sim_homogeneous_pool
-from funcs import get_correlation_matrices, gen_spikes_mixture
-from utils import plot_coincidences
-from utils import plot_correlations
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import signal
+
+from plots import plot_coincidences,  plot_correlations
+from funcs import sim_spikes_general_2stoch, sim_homogeneous_pool, \
+                  get_correlation_matrices, gen_spikes_mixture
 
 ###################################################################################################
 ###################################################################################################
@@ -35,7 +34,7 @@ CHUNK_SIZE = 5
 FIRING_RATE = 20
 
 # Set paths
-BASE_PATH = "../"
+BASE_PATH = "C:/Users/micha/visual_encoding"
 FIGURE_PATH = pjoin(BASE_PATH, "figures/CorrSpikes/")
 DATA_PATH = pjoin(BASE_PATH, "data/simulations/")
 
@@ -62,14 +61,6 @@ def simulate_spikes_general_doubly_stochastic():
     plt.close('all')
 
 def simulate_spikes_homogeneous_pool():
-    # firing_rate = np.zeros((5, N_SECONDS * FS))
-    # spikes = np.zeros((5, N_SECONDS * FS))
-    # for i_chunk in range(int(N_SECONDS / CHUNK_SIZE)):
-    #     n_timepoints = CHUNK_SIZE * FS
-    #     firing_rate[:,i_chunk*n_timepoints:(i_chunk+1)*n_timepoints], \
-    #                 spikes[:,i_chunk*n_timepoints:(i_chunk+1)*n_timepoints] = \
-    #                 sim_homogeneous_pool(rate=FIRING_RATE, fs=FS, n_seconds=CHUNK_SIZE, \
-    #                 alpha = ALPHA, tau_c=TAU_C)
     spikes, rand_process = sim_homogeneous_pool(mu=FIRING_RATE, fs=FS, n_seconds=N_SECONDS, \
                          variance = 300, tau_c=TAU_C)
 
@@ -106,13 +97,7 @@ def simulate_gaussian_mixture():
     plt.savefig(pjoin(FIGURE_PATH,'gaussian_mixture_covariance_matrix.png'))
     plt.close('all')
 
-    # inst_firing_rates = np.zeros((N_NEURONS, N_SECONDS * FS))
-    # spikes = np.zeros((N_NEURONS, N_SECONDS * FS))
-    # for i_chunk in range(int(N_SECONDS / CHUNK_SIZE)):
-    #     n_timepoints = CHUNK_SIZE * FS
-    #     spikes[:,i_chunk*n_timepoints:(i_chunk+1)*n_timepoints], \
-    #             inst_firing_rates[:,i_chunk*n_timepoints:(i_chunk+1)*n_timepoints], _ = \
-    #             gen_spikes_mixture(CHUNK_SIZE, covariances, firing_rates_array, FS, TAU_C, ALPHA)
+    # run simualation
     spikes, inst_firing_rates, _ = gen_spikes_mixture(N_SECONDS, covariances, firing_rates_array, FS, TAU_C)
     
     # Plot instantaneous firing rates
@@ -129,7 +114,7 @@ def simulate_gaussian_mixture():
     plt.close('all')
 
     # Plot coincidences
-    plot_coincidences(spikes, maxlags = int(TAU_C * FS * 2) * 3, plot_model=True)
+    plot_coincidences(spikes, maxlags = int(TAU_C * FS * 2) * 3)
     plt.savefig(pjoin(FIGURE_PATH,'gaussian_mixture_coincidences_plot.png'))
     plt.close('all')
 
