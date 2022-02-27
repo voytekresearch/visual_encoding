@@ -328,13 +328,13 @@ def sim_lfp_mixture(n_seconds=2 * 60, n_neurons = 50, firing_rate = 20., tau_c =
 
 def sim_lfp_pool(n_seconds=2 * 60, n_neurons = 50, firing_rate = 20., tau_c = 1.0E-2, variance = 300., fs=1000, t_ker=1, tau_r=0.0001, tau_d=0.002, e_reversal = 0., v_rest=-65.):
     kernel = sim_synaptic_kernel(t_ker, fs, tau_r, tau_d)
-    spikes, _ = sim_homogeneous_pool(n_neurons, firing_rate, n_seconds = n_seconds, fs = fs, tau_c = tau_c, variance=variance)
+    spikes, rand_process = sim_homogeneous_pool(n_neurons, firing_rate, n_seconds = n_seconds, fs = fs, tau_c = tau_c, variance=variance)
     lfps = []
     for i_neuron in range(len(spikes)):
         lfps.append(signal.detrend(np.convolve(spikes[i_neuron], kernel, 'valid'), type='constant') * (e_reversal - v_rest))
     lfps = np.array(lfps)
     lfp = lfps.sum(axis = 0)
-    return lfp, lfps
+    return lfp, lfps, rand_process
     
 def batchsim_PSDs(ei_ratios=np.arange(2, 6.01, 0.2), num_trs=5, n_seconds=2 * 60,
                     firing_rate=[2, 5], n_neurons=[8000, 2000], t_ker=1, tau_exc=np.array([0.1, 2.]) / 1000.,

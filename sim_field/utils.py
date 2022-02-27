@@ -172,6 +172,8 @@ def comp_tau_fooof(signal, fs, peak_width_limits=[2, 20], f_range=[2,200]):
     -------
     tau_c :  float
         timescale of signal.
+    ap_params : list
+        offset, exponent, k_param
 
     """
     # compute psd
@@ -180,9 +182,9 @@ def comp_tau_fooof(signal, fs, peak_width_limits=[2, 20], f_range=[2,200]):
     # parameterize psd
     sp = FOOOF(peak_width_limits=peak_width_limits, aperiodic_mode='knee')
     sp.fit(freq, spectrum, f_range)
-    ap_params = sp.get_params('aperiodic')
+    ap_params = sp.get_params('aperiodic') # offset, exponent, k_param
 
     # compute tiemscale from FOOOF parameters
     knee_hz, tau_c = timescale_knee(ap_params[1], ap_params[2])
     
-    return tau_c
+    return tau_c, ap_params
