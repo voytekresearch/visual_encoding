@@ -2,183 +2,177 @@
 
 # Imports
 import numpy as np
-from scipy.optimize import minimize
-
-from neurodsp.spectral import compute_spectrum
-from fooof import FOOOF
-
 # Settings
 
 # Functions
-
-def timescale_knee(knee, exponent):
+def sim_corr_spikes(n_seconds=10, fs=1000, f_rate=20, sigma=20, tau_c=0.01, return_rand=False):
     """
-    calculate knee frequency and timecale from FOOOF parameters. This 
-    method is detailed in Gao, 2020.
+    Simulate an auto-correlated spike train
 
     Parameters
     ----------
-    knee : float
-        FOOOF aperiodic knee parameter.
-    exponent : float
-        FOOOF aperiodic exponent parameter..
+    n_seconds : float, optional
+        duration of signal (seconds). The default is 10.
+    fs : float, optional
+        sampling frequency (1/dt). The default is 1000.
+    f_rate : float, optional
+        mean firing rate. The default is 20.
+    sigma : float, optional
+        standard deviation of the firing rate. The default is 20.
+    tau_c : float, optional
+        timescale of random (OU) process (seconds). The default is 0.01.
+    return_rand : bool, optional
+        whether to return the underlying random process. The default is False.
 
     Returns
     -------
-    tau : float
-        timescale (ms).
-    knee_hz : float
-        knee frequency (Hz).
+    spikes : 1D array, int
+        spike train.
+    rand_p : 1D array, float
+        random (OU) process.
+    time : 1D array, float
+        time-vector.
 
     """
-    # compute knee freq
-    knee_hz = knee**(1./exponent)
-    
-    # compute timescale
-    tau = 1./(2*np.pi*knee_hz)
-    
-    return knee_hz, tau
+    from funcs import sim_ou_process
 
+    # simulate correlated spike train
+    rand_p, time = sim_ou_process(n_seconds, fs, tau_c, mu=f_rate, sigma=sigma)
+    spikes = sample_spikes(rand_p, f_rate, fs)
 
-def autocorr(x, maxlag):
-    """ 
-    compute autocorrelation
-    soure: https://mark-kramer.github.io/Case-Studies-Python/08.html#autocorrelations
+    if return_rand:
+        return spikes, rand_p, time
+    else:
+        return spikes
+
+def sample_spikes(rand_p, fs):
+    """
+    Sample spikes from a random process
 
     Parameters
     ----------
-    x : float
-        signal / data for which to compute autocorreltation
-    maxlag : int
-        number of lags to compute
-
-    Returns
-    -------
-    xcorr : float
-        autocorrelation of x.
-
-    """
-    
-    xcorr = np.correlate(x - x.mean(), x - x.mean(), 'full')  # Compute the autocorrelation
-    xcorr = xcorr / xcorr.max()                               # Convert to correlation coefficients
-    xcorr = xcorr[int(xcorr.size//2-maxlag-1) : int(xcorr.size//2+maxlag+1)] # Return only requested lags
-    lags = np.linspace(-maxlag, maxlag, len(xcorr))
-    
-    return xcorr, lags
-
-
-# fit time constant
-def model_acorr(lags, alpha, tau_c):
-    """
-    model autocorrelation function as exponential decay
-
-    Parameters
-    ----------
-    lags : float
-        array of lag times.
-    alpha : float
-        amplitude (max correlation).
-    tau_c : float
-        timescale (decay rate of function).
-
-    Returns
-    -------
-    model : float
-        modelled autocorrelation function.
-
-    """
-    model = alpha * np.exp(-np.abs(lags)/(tau_c))
-    
-    return model
-
-def calc_model_error(tau_c, alpha, empirical, lags):
-    """
-    calculate model error. Compute the summed absolute differenec between
-    the modeled and empirical autocorrelatin function.
-
-    Parameters
-    ----------
-    tau_c : float
-        model parameter - timescale (decay rate of function).
-    alpha : float
-        model parameter - amplitude (max correlation).
-    empirical : float
-        autocorrelation function for which to calculate error.
-    lags : float
-        array of lag times (corresponding to empirical acorr function).
-
-    Returns
-    -------
-    error : TYPE
-        DESCRIPTION.
-
-    """
-    
-    # comput model
-    model = model_acorr(lags, alpha, tau_c)
-    
-    # calc error
-    error = np.sum(np.abs(empirical - model))
-    
-    return error
-
-def comp_tau_acorr(signal, fs, maxlag, x0=1):
-    """
-    compute timescale as decay rate of autocorrelation function
-
-    Parameters
-    ----------
-    signal : float
-        signal / data for which to compute autocorreltation.
+    rand_p : 1D array, float
+        random process (from which spikes will be sampled).
     fs : float
-        sampling frequency.
-    maxlag : int
-        number of lags to compute.
-    x0 : float, optional
-        intial guess for timescale. The default is 1.
+        sampling frequency (1/dt).
 
     Returns
     -------
-    tau_c : float
-        timescale of signal.
+    spikes : 1D array, int
+        spike train
 
     """
-    # compute autocorrelation
-    xcorr, lags = autocorr(signal, maxlag)
-
-    # solve for time constant
-    result = minimize(calc_model_error, x0=x0, args=(1, xcorr, lags))
-    tau_c = result['x'] / fs
+    # initialize
+    spikes = np.zeros([len(rand_p)])
+        
+    # loop through each time bin
+    for i_bin in range(len(rand_p)):
+        # sample spikes
+        if rand_p[i_bin] / fs > np.random.uniform():
+            spikes[i_bin] = 1    
     
-    return tau_c
+    return spikes
 
-def comp_tau_fooof(signal, fs, peak_width_limits=[2, 20], f_range=[2,200]):
+def sample_pop_spikes(rand_p, fs, n_neurons=10):
     """
-    
+    Simulate a population of correlated neurons
 
     Parameters
     ----------
-    signal : float
-        signal / data for which to compute autocorreltation.
+    rand_p : 1D array, float
+        random process (from which spikes will be sampled).
     fs : float
-        sampling freqeuncy.
-    peak_width_limits : float, optional
-        FOOOF setting - peak width limits. The default is [2, 20].
-    f_range : float, optional
-        frequency range over which to fit the power spectrum. The default is 
-        [2,200].
+        sampling frequency (1/dt).
+    n_neurons : int, optional
+        Number of neurons in population. The default is 10.
 
     Returns
     -------
+    spikes : 2D array, int
+        population spike trains.
+
+    """    
+    
+    # sample spikes
+    spikes = np.zeros([n_neurons, len(rand_p)])
+    for i_neuron in range(n_neurons):
+        spikes[i_neuron] = sample_spikes(rand_p, fs)
+
+    return spikes
+
+def get_spike_times(spikes, time):
+    """
+    convert spike train to spike times 
+
+    Parameters
+    ----------
+    spikes : 1D array, int
+        Spike train.
+    time : 1D array, float
+        Time-vector.
+
+    Returns
+    -------
+    spike_times : 1D array, float
+        spike times.
+
+    """
+    
+    spike_times = time[np.where(spikes)]
+    
+    return spike_times
+
+def convolve_psps(spikes, fs, tau_r=0., tau_d=0.01, t_ker=None):
+    """Adapted from neurodsp.sim.aperiodic.sim_synaptic_current
+    
+    Convolve spike train and synaptic kernel.
+
+    Parameters
+    ----------
+    spikes : 1D array, int 
+        spike train 
+    tau_r : float, optional, default: 0.
+        Rise time of synaptic kernel, in seconds.
+    tau_d : float, optional, default: 0.01
+        Decay time of synaptic kernel, in seconds.
+    t_ker : float, optional
+        Length of time of the simulated synaptic kernel, in seconds.
+
+    Returns
+    -------
+<<<<<<< HEAD
+    sig : 1d array
+        Simulated synaptic current.
+    time : 1d array
+        associated time-vector (sig is trimmed  during convolution).
+=======
     tau_c :  float
         timescale of signal.
     ap_params : list
         offset, exponent, k_param
+>>>>>>> 86be66a90d6e56da96231ca088733eeab04c0114
 
     """
-    # compute psd
-    freq, spectrum = compute_spectrum(signal, fs)
+    from neurodsp.sim.transients import sim_synaptic_kernel
+    from neurodsp.utils import create_times
     
+<<<<<<< HEAD
+    # If not provided, compute t_ker as a function of decay time constant
+    if t_ker is None:
+        t_ker = 5. * tau_d
+
+    # Simulate
+    ker = sim_synaptic_kernel(t_ker, fs, tau_r, tau_d)
+    sig = np.convolve(spikes, ker, 'valid')
+
+    # compute time vector (convolve will trim when 'valid')
+    times = create_times(len(spikes)/fs, fs)
+    trim = len(times) - len(spikes)
+    time = times[int(trim/2):-int(trim/2)-1]
+    
+    return sig, time
+
+=======
     # parameterize psd
     sp = FOOOF(peak_width_limits=peak_width_limits, aperiodic_mode='knee')
     sp.fit(freq, spectrum, f_range)
@@ -188,3 +182,4 @@ def comp_tau_fooof(signal, fs, peak_width_limits=[2, 20], f_range=[2,200]):
     knee_hz, tau_c = timescale_knee(ap_params[1], ap_params[2])
     
     return tau_c, ap_params
+>>>>>>> 86be66a90d6e56da96231ca088733eeab04c0114
