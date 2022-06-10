@@ -140,23 +140,15 @@ def convolve_psps(spikes, fs, tau_r=0., tau_d=0.01, t_ker=None):
 
     Returns
     -------
-<<<<<<< HEAD
     sig : 1d array
         Simulated synaptic current.
     time : 1d array
         associated time-vector (sig is trimmed  during convolution).
-=======
-    tau_c :  float
-        timescale of signal.
-    ap_params : list
-        offset, exponent, k_param
->>>>>>> 86be66a90d6e56da96231ca088733eeab04c0114
 
     """
     from neurodsp.sim.transients import sim_synaptic_kernel
     from neurodsp.utils import create_times
     
-<<<<<<< HEAD
     # If not provided, compute t_ker as a function of decay time constant
     if t_ker is None:
         t_ker = 5. * tau_d
@@ -171,15 +163,3 @@ def convolve_psps(spikes, fs, tau_r=0., tau_d=0.01, t_ker=None):
     time = times[int(trim/2):-int(trim/2)-1]
     
     return sig, time
-
-=======
-    # parameterize psd
-    sp = FOOOF(peak_width_limits=peak_width_limits, aperiodic_mode='knee')
-    sp.fit(freq, spectrum, f_range)
-    ap_params = sp.get_params('aperiodic') # offset, exponent, k_param
-
-    # compute tiemscale from FOOOF parameters
-    knee_hz, tau_c = timescale_knee(ap_params[1], ap_params[2])
-    
-    return tau_c, ap_params
->>>>>>> 86be66a90d6e56da96231ca088733eeab04c0114
