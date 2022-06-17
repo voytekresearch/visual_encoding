@@ -5,6 +5,7 @@ import pickle
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 
 #NOTE: Must run Brain_Structure_DataFrame for given brain_structure beforehand
+#The resulting DataFrame contains all units within the given brain structure from both the functional_connectivity and brain_observatory dataset
 
 brain_structure_acronym='VISp'
 
@@ -20,7 +21,7 @@ def main():
     spike_amplitudes={}
     mean_waveforms={}
 
-    meta=pd.read_csv(f'C:\\Users\\User\\visual_encoding\\data\\brain_structure_DataFrames\\{brain_structure_acronym}_DataFrame')
+    meta=pd.read_csv(f'C:\\Users\\User\\visual_encoding\\data\\brain_structure_DataFrames\\{brain_structure_acronym}_DataFrame.csv')
 
     for ses in meta.get('ecephys_session_id').unique():
         session = cache.get_session_data(ses, isi_violations_maximum = np.inf,

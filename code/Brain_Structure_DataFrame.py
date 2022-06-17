@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 
+#The resulting DataFrame contains all units within the given brain structure from both the functional_connectivity and brain_observatory dataset
+
 brain_structure_acronym='VISp'
 
 def main():
