@@ -6,6 +6,8 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 PROJECT_PATH = 'C:/users/micha/visual_encoding' # 'C:\\Users\\User\\visual_encoding'
 BRAIN_STRUCTURE = 'VISp'
 
+#The resulting DataFrame contains all units within the given brain structure from both the functional_connectivity and brain_observatory dataset
+
 def main():
 
 	#Define data directory and create Allensdk cache object
