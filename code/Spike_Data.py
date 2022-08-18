@@ -39,21 +39,13 @@ def main():
             mean_waveforms[unit]=session.mean_waveforms[unit]
 
     # create a binary pickle file 
-    f = open(f"{dir_results}/{BRAIN_STRUCTURE}_spike_times.pkl","wb")
+    for variable, var_str in zip([[spike_times,spike_amplitudes,mean_waveforms],
+                                  ['spike_times', 'spike_amplitudes',
+                                   'mean_waveforms']]):
+        h = open(f"{dir_results}/{BRAIN_STRUCTURE}_{var_str}.pkl","wb")
+        pickle.dump(variable, h)
+        h.close()
 
-    # write the python object (dict) to pickle file
-    pickle.dump(spike_times,f)
-
-    # close file
-    f.close()
-
-    g = open(f"{dir_results}/{BRAIN_STRUCTURE}_spike_amplitudes.pkl","wb")
-    pickle.dump(spike_amplitudes,g)
-    g.close()
-
-    h = open(f"{dir_results}/{BRAIN_STRUCTURE}_mean_waveforms.pkl","wb")
-    pickle.dump(mean_waveforms,h)
-    h.close()
 
 if __name__ == '__main__':
     main()
