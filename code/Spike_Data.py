@@ -38,13 +38,14 @@ def main():
             spike_amplitudes[unit]=session.spike_amplitudes[unit]
             mean_waveforms[unit]=session.mean_waveforms[unit]
 
-    # create a binary pickle file 
-    for variable, var_str in zip([[spike_times,spike_amplitudes,mean_waveforms],
-                                  ['spike_times', 'spike_amplitudes',
-                                   'mean_waveforms']]):
-        h = open(f"{dir_results}/{BRAIN_STRUCTURE}_{var_str}.pkl","wb")
-        pickle.dump(variable, h)
-        h.close()
+        # create a binary pickle file 
+        for variable, var_str in zip([[spike_times,spike_amplitudes,mean_waveforms],
+                                      ['spike_times', 'spike_amplitudes',
+                                        'mean_waveforms']]):
+            fname_out = f"{dir_results}/{str(ses)}_{BRAIN_STRUCTURE}_{var_str}.pkl"
+            h = open(fname_out,"wb")
+            pickle.dump(variable, h)
+            h.close()
 
 
 if __name__ == '__main__':
