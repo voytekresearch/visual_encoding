@@ -8,7 +8,7 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 #NOTE: Must run Brain_Structure_DataFrame for given brain_structure beforehand
 
 # settings
-PROJECT_PATH = 'C:/users/micha/visual_encoding' # 'C:\\Users\\User\\visual_encoding'
+PROJECT_PATH = 'C:\\Users\\User\\visual_encoding'
 BRAIN_STRUCTURE = 'VISp'
 
 def main():
@@ -22,14 +22,14 @@ def main():
     manifest_path = f"{PROJECT_PATH}/data/manifest_files/manifest.json"
     cache = EcephysProjectCache.from_warehouse(manifest=manifest_path)
 
-    # Retrive data and store in dictionaries
-    spike_times={}
-    spike_amplitudes={}
-    mean_waveforms={}
-
     meta=pd.read_csv(f'{PROJECT_PATH}\\data\\brain_structure_DataFrames\\{BRAIN_STRUCTURE}_DataFrame.csv')
 
     for ses in meta.get('ecephys_session_id').unique():
+        #Retrieve data and store in dictionaries
+        spike_times={}
+        spike_amplitudes={}
+        mean_waveforms={}
+
         session = cache.get_session_data(ses, isi_violations_maximum = np.inf,
                                 amplitude_cutoff_maximum = np.inf,
                                 presence_ratio_minimum = -np.inf)
@@ -39,9 +39,9 @@ def main():
             mean_waveforms[unit]=session.mean_waveforms[unit]
 
         # create a binary pickle file 
-        for variable, var_str in zip([[spike_times,spike_amplitudes,mean_waveforms],
+        for variable, var_str in zip([spike_times,spike_amplitudes,mean_waveforms],
                                       ['spike_times', 'spike_amplitudes',
-                                        'mean_waveforms']]):
+                                        'mean_waveforms']):
             fname_out = f"{dir_results}/{str(ses)}_{BRAIN_STRUCTURE}_{var_str}.pkl"
             h = open(fname_out,"wb")
             pickle.dump(variable, h)
