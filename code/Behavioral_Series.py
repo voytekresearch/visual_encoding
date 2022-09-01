@@ -15,7 +15,7 @@ def sig_filt_inter(time, speed, bins):
 	return t_vals, model(t_vals)
 
 #Make sure epoch lengths are in order least to greatest
-def get_behavioral_epochs(epoch_lengths):
+def get_behavioral_series(epoch_lengths):
 	manifest_path = f"{PROJECT_PATH}/data/manifest_files/manifest.json"
 	cache = EcephysProjectCache.from_warehouse(manifest=manifest_path)
 	sessions = cache.get_session_table()
