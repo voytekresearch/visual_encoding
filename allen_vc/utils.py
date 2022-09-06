@@ -1,5 +1,6 @@
 # imports
 import numpy as np
+import pandas as pd
 
 def get_unit_info(manifest_path, brain_structure=None, session_type=None):
 	"""
@@ -181,4 +182,70 @@ def get_valid_epochs(start_times, stop_times, epoch_length):
 	            negative_epochs.append([stop_times[i],start_times[i+1]])
 
 	return positive_epochs, negative_epochs
+
+def calculate_spike_metrics(raw_spikes, epoch):
+	"""
+	calculate spike metrics (mean firing rate, coefficient of variance, 
+	SPIKE-distance, SPIKE-synchrony, and correlation coefficient) within
+	a specified epoch given a matrix of spike times.
+
+	Parameters
+	----------
+	raw_spikes: list/array
+		list/array of lists/arrays of raw spike times for several units.
+	epoch: list/array
+		list of length 2 that includes epoch start and stop times.
+
+	Returns
+	-------
+	mean_firing_rate: float
+		mean firing rate over all units during specified epoch.
+	coeff_of_var: float
+		coefficient of variation over all units during specified epoch.
+	spike_dist: float
+		SPIKE-distance (pyspike) over all units during specified epoch.
+	spike_sync: float
+		SPIKE-synchrony (pyspike) over all units during specified epoch.
+	corr_coeff:
+		correlation coefficient (elephant) over all units during 
+		specified epoch. 
+	"""
+	#Imports
+	import pyspike as spk
+	import neo
+	import elephant
+	import quantities as pq
+
+	#Compute coefficient of variation
+	def comp_cov(pop_spikes):
+        isi = np.diff(pop_spikes)
+        cov = np.std(isi) / np.mean(isi)   
+        return cov
+
+	#Store pyspike.SpikeTrain and Neo.SpikeTrain objects
+	spk_trains = []
+	neo_trains = []
+
+	#Initialize metric calculation
+	epoch_length = int(epoch[1]-epoch[0])
+	pop_spikes = epoch[0]
+	raw_spikes = [raw_spike[(raw_spike>epoch[0]) & (raw_spike<epoch[1])] for raw_spike in raw_spikes]
+	fr=0
+
+	for i in range(len(raw_spikes)):
+		fr+=len(raw_spikes[i])/epoch_length
+		pop_spikes = np.hstack([pop_spikes,raw_spikes[i]])
+		spk_trains.append(spk.SpikeTrain(raw_spikes[i], epoch))
+		neo_obj=neo.SpikeTrain(times=raw_spikes[i], units='sec', t_start=epoch[0], t_stop=epoch[1])
+		neo_trains.append(neo_obj)
+
+	mean_firing_rate = (fr/len(raw_spikes))
+	pop_spikes = np.sort(pop_spikes)
+	coeff_of_var = (comp_cov(pop_spikes))
+	spike_dist = (spk.spike_distance(spk_trains))
+	spike_sync = (spk.spike_sync(spk_trains))
+	corr_coeff = (elephant.spike_train_correlation.correlation_coefficient(elephant.conversion.BinnedSpikeTrain(neo_trains, bin_size=1 * pq.s)))
+
+	return mean_firing_rate, coeff_of_var, spike_dist, spike_sync, corr_coeff
+
 		
