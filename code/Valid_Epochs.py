@@ -52,7 +52,7 @@ def get_epochs(time, speed, threshold):
 	start_times = []
 	stop_times = []
 	delta_indices = np.argwhere(np.diff(run_bool))
-	for i in delta_indices:
+	for i in np.stack(delta_indices, axis=-1)[0]:
 		if speed[i+1]>threshold:
 			start_times.append(time[i+1])
 		else:
