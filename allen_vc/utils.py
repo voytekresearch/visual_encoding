@@ -83,7 +83,7 @@ def get_running_timeseries(session, fs):
 
 	return time, velocity
 
-def get_spiking_data(session, manifest_path, brain_structure=None):
+def get_spiking_data(session_id, manifest_path, brain_structure=None):
 	"""
 	load and save spiking data of given units. include metrics spike_times,
 	spike_amplitudes, and mean_waveforms.
@@ -116,23 +116,23 @@ def get_spiking_data(session, manifest_path, brain_structure=None):
 
 	# Initialize storage dictionaries
 	spike_times = {}
-    spike_amplitudes = {}
-    mean_waveforms = {}
+	spike_amplitudes = {}
+	mean_waveforms = {}
 
-    #Get all session info
-    session = cache.get_session_data(ses)
+	#Get all session info
+	session = cache.get_session_data(session_id)
 
     #Filter for brain structure if argument included
-    if brain_structure:
-    	for unit in session.units[session.units.get('ecephys_structure_acronym')==brain_structure].index:
-            spike_times[unit] = session.spike_times[unit]
-            spike_amplitudes[unit] = session.spike_amplitudes[unit]
-            mean_waveforms[unit] = session.mean_waveforms[unit]
-    else:
-    	for unit in session.units.index:
-    		spike_times[unit] = session.spike_times[unit]
-            spike_amplitudes[unit] = session.spike_amplitudes[unit]
-            mean_waveforms[unit] = session.mean_waveforms[unit]
+	if brain_structure:
+		for unit in session.units[session.units.get('ecephys_structure_acronym')==brain_structure].index:
+			spike_times[unit] = session.spike_times[unit]
+			spike_amplitudes[unit] = session.spike_amplitudes[unit]
+			mean_waveforms[unit] = session.mean_waveforms[unit]
+	else:
+		for unit in session.units.index:
+			spike_times[unit] = session.spike_times[unit]
+			spike_amplitudes[unit] = session.spike_amplitudes[unit]
+	mean_waveforms[unit] = session.mean_waveforms[unit]
 
 	return spike_times, spike_amplitudes, mean_waveforms
 
@@ -160,26 +160,26 @@ def get_valid_epochs(start_times, stop_times, epoch_length):
 	"""
 	#Determine the amount of times to iterate through series to include all data
 	if len(start_times)==len(stop_times):
-	        iter_length = min(len(start_times),len(stop_times))-1
-	    else:
-	        iter_length = min(len(start_times),len(stop_times))
+		iter_length = min(len(start_times),len(stop_times))-1
+	else:
+		iter_length = min(len(start_times),len(stop_times))
 
 	#Identify all valid running/stationary epochs for each entered epoch length
 	positive_epochs = []
 	negative_epochs = []
 	
 	if start_times[0]>stop_times[0]:
-	    for i in range(iter_length):
-	        if (stop_times[i+1]-start_times[i])>e:
-	            positive_epochs.append([start_times[i],stop_times[i+1]])
-	        elif (start_times[i]-stop_times[i])>e:
-	            negative_epochs.append([stop_times[i],start_times[i]])
+		for i in range(iter_length):
+			if (stop_times[i+1]-start_times[i])>epoch_length:
+				positive_epochs.append([start_times[i],stop_times[i+1]])
+			elif (start_times[i]-stop_times[i])>epoch_length:
+				negative_epochs.append([stop_times[i],start_times[i]])
 	else:
-	    for i in range(iter_length):
-	        if (stop_times[i]-start_times[i])>e:
-	           positive_epochs.append([start_times[i],stop_times[i]])
-	        elif (start_times[i+1]-stop_times[i])>e:
-	            negative_epochs.append([stop_times[i],start_times[i+1]])
+		for i in range(iter_length):
+			if (stop_times[i]-start_times[i])>epoch_length:
+				positive_epochs.append([start_times[i],stop_times[i]])
+			elif (start_times[i+1]-stop_times[i])>epoch_length:
+				negative_epochs.append([stop_times[i],start_times[i+1]])
 
 	return positive_epochs, negative_epochs
 
@@ -218,9 +218,9 @@ def calculate_spike_metrics(raw_spikes, epoch):
 
 	#Compute coefficient of variation
 	def comp_cov(pop_spikes):
-        isi = np.diff(pop_spikes)
-        cov = np.std(isi) / np.mean(isi)   
-        return cov
+		isi = np.diff(pop_spikes)
+		cov = np.std(isi) / np.mean(isi)   
+		return cov
 
 	#Store pyspike.SpikeTrain and Neo.SpikeTrain objects
 	spk_trains = []
