@@ -20,7 +20,7 @@ def main():
 		meta=pd.read_csv(f'{PROJECT_PATH}\\data\\brain_structure_DataFrames\\{structure}_DataFrame.csv')
 
 		for session_id in meta.get('ecephys_session_id').unique():
-			both_epochs = np.load(f'{DATA_LOC}\\epoch_data\\{session_id}_{epoch_length}s_random_epochs.npz')
+			both_epochs = np.load(f'{DATA_LOC}\\epoch_data\\running\\{session_id}_{epoch_length}s_random_epochs.npz')
 			spike_matrix = pd.read_pickle(f"{DATA_LOC}/spike_data/{str(session_id)}_{structure}_spike_times.pkl")
 
 			raw_spikes = []

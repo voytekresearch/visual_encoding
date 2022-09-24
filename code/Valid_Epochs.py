@@ -5,7 +5,7 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 
 #Settings
 PROJECT_PATH='C:\\Users\\User\\visual_encoding' #'C:/users/micha/visual_encoding'
-DATA_LOC=f'{PROJECT_PATH}\\data\\epoch_data'
+DATA_LOC=f'{PROJECT_PATH}\\data\\epoch_data\\running'
 epoch_lengths = [10,20,30]
 speed_threshold = 5
 
