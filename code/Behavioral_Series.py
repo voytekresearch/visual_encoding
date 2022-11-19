@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from scipy import signal
+from scipy.ndimage import median_filter
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 
 #Settings
@@ -63,7 +63,7 @@ def get_spontaneous_epoch(session, time, velocity, smooth=True, kernel_size=None
 			if kernel_size % 2 == 0:
 				ks = kernel_size + 1
 		# filter
-		spont_speed_filt = signal.medfilt(spont_speed, ks)
+		spont_speed_filt = median_filter(spont_speed, ks)
 	else:
 		spont_speed_filt = None
 
