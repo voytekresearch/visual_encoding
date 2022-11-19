@@ -5,10 +5,11 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 
 #Settings
 PROJECT_PATH = 'C:/users/micha/visual_encoding' # 'C:\\Users\\User\\visual_encoding'
-FS = 2500
-KERNEL_SIZE = 501
+FS = 2500 # sampling frequency for interpolation
+SMOOTH = True # whether to smooth data (median filter)
+KERNEL_SIZE = 501 # kenel size for median filter
 
-# import cusgtom functions
+# import custom functions
 import sys
 sys.path.append(PROJECT_PATH)
 from allen_vc.utils import get_running_timeseries
@@ -36,9 +37,10 @@ def main():
 
 		# save running data for spontaneous epoch to file
 		fname_out = dir_output + f'/running_{session_id}_spont'
-		save_spontaneous_epoch(session, time, velocity, fname_out)
+		results = get_spontaneous_epoch(session, time, velocity, smooth=SMOOTH, kernel_size=KERNEL_SIZE)
+		np.savez(fname_out, time=results[0], velocity_raw=results[1], velocity=results[2])
 
-def save_spontaneous_epoch(session, time, velocity, fname_out):    
+def get_spontaneous_epoch(session, time, velocity, smooth=True, kernel_size=500):    
 	# Isolate the largest timeframe of spontaneous activity
 	stimuli_df = session.stimulus_presentations
 	stimuli_df = stimuli_df[stimuli_df.get('stimulus_name')=='spontaneous'].get(['start_time','stop_time'])
@@ -53,10 +55,13 @@ def save_spontaneous_epoch(session, time, velocity, fname_out):
 	spont_speed = velocity[epoch_mask]
 
 	# Apply a median filter
-	spont_speed_filt = signal.medfilt(spont_speed, [KERNEL_SIZE])
+	if smooth:
+		spont_speed_filt = signal.medfilt(spont_speed, [KERNEL_SIZE])
+	else:
+		spont_speed_filt = None
 
-	# Save filtered data
-	np.savez(fname_out, time=spont_time, velocity=spont_speed_filt)
+	return spont_time, spont_speed, spont_speed_filt
+
 
 if __name__ == "__main__":
 	main()
