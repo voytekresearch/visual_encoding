@@ -7,7 +7,7 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 PROJECT_PATH = 'C:/users/micha/visual_encoding' # 'C:\\Users\\User\\visual_encoding'
 FS = 2500 # sampling frequency for interpolation
 SMOOTH = True # whether to smooth data (median filter)
-KERNEL_SIZE = 501 # kenel size for median filter
+KERNEL_SIZE = 1*FS # kenel size for median filter
 
 # import custom functions
 import sys
@@ -40,7 +40,7 @@ def main():
 		results = get_spontaneous_epoch(session, time, velocity, smooth=SMOOTH, kernel_size=KERNEL_SIZE)
 		np.savez(fname_out, time=results[0], velocity_raw=results[1], velocity=results[2])
 
-def get_spontaneous_epoch(session, time, velocity, smooth=True, kernel_size=500):    
+def get_spontaneous_epoch(session, time, velocity, smooth=True, kernel_size=None):    
 	# Isolate the largest timeframe of spontaneous activity
 	stimuli_df = session.stimulus_presentations
 	stimuli_df = stimuli_df[stimuli_df.get('stimulus_name')=='spontaneous'].get(['start_time','stop_time'])
@@ -56,7 +56,14 @@ def get_spontaneous_epoch(session, time, velocity, smooth=True, kernel_size=500)
 
 	# Apply a median filter
 	if smooth:
-		spont_speed_filt = signal.medfilt(spont_speed, [KERNEL_SIZE])
+		# make sure kernel size is odd
+		if kernel_size is None:
+			print("Please provide kernel_size")
+		else:
+			if kernel_size % 2 == 0:
+				ks = kernel_size + 1
+		# filter
+		spont_speed_filt = signal.medfilt(spont_speed, ks)
 	else:
 		spont_speed_filt = None
 
