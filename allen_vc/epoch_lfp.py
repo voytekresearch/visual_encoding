@@ -11,6 +11,9 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 from time import time as timer
 from time import ctime as time_now
 
+# ! TESTING ONLY !
+SKIP_SESSIONS = [767871931,768515987,771160300]
+
 # settings - directories
 MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
@@ -21,10 +24,12 @@ SESSION_TYPE = 'functional_connectivity' # dataset of interest
 REGION = "VISp" # brain structure of interest
 
 # settings - stimulus epoch of interest
-# STIM can be a list; each will be saved to a separate file.
-STIM = ['natural_movie_one_more_repeats','natural_movie_one_shuffled'] 
-STIM_CODE = ['movie', 'shuffled'] # alternate stimulus name for output filename
+STIM_PARAMS = dict({
+    'stimulus_name' : 'natural_movie_one_more_repeats',
+    'frame' : 0
+    }) # other stim params
 T_WINDOW = [0, 30]  # epoch bounds (sec) [time_before_stim, tiimem_aftfer_stim]
+STIM_CODE = 'movie' # alternate stimulus name for output filename
 
 # settings - dataset details
 FS = 1250 # LFP sampling freq
@@ -53,8 +58,19 @@ def main():
         print(f"\n\n Beginning session {i_session+1}/{len(session_ids)}: \t{time_now()}")
         print(f"    session ID: {session_id}")
 
+        # ! TESTING ONLY !
+        # skip completed
+        if session_id in SKIP_SESSIONS:
+            print(f"    skipping ...")
+            continue
+
         # load session data
         session = cache.get_session_data(session_id)
+
+        # get stim info for session
+        stim_table = session.stimulus_presentations
+        for param_name in STIM_PARAMS.keys():
+            stim_table = stim_table[stim_table[param_name] == STIM_PARAMS[param_name]]
 
         # get probe info (for region of interest)
         if REGION is None:
@@ -78,22 +94,17 @@ def main():
                     (session.channels.ecephys_structure_acronym==REGION)].index.values
                 lfp = lfp.sel(channel=slice(np.min(chan_ids), np.max(chan_ids)))
 
-            # epoch data around stimulus
-            for stim_code, stim_name in zip(STIM_CODE, STIM):
-                # get stim info 
-                stim_table = session.stimulus_presentations[ \
-                    session.stimulus_presentations.stimulus_name==stim_name]
-                
-                # epoch LFP
-                print(f'    aligning to stim: \t{stim_name}')
-                lfp_a, time = align_lfp(lfp, stim_table.start_time.values, 
-                    stim_table.index.values, t_window=[T_WINDOW[0], T_WINDOW[1]], dt=1/FS)
+            # epoch LFP data around stimulus
+            print(f'    aligning to stimulus')
+            lfp_a, time = align_lfp(lfp, stim_table.start_time.values, 
+                stim_table.index.values, t_window=T_WINDOW, dt=1/FS)
 
-                # save results
-                fname_out = f"{session_id}_{probe_id}_lfp_{stim_code}.npz"
-                for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-                    dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-                    np.savez(f"{dir_results}/{fname_out}", lfp=lfp_a, time=time) 
+            # save results
+            print('    saving data')
+            fname_out = f"{session_id}_{probe_id}_lfp_{STIM_CODE}.npz"
+            for base_path in [PROJECT_PATH, MANIFEST_PATH]:
+                dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
+                np.savez(f"{dir_results}/{fname_out}", lfp=lfp_a, time=time) 
 
         # display progress
         _, min, sec = hour_min_sec(timer() - t_start_s)
