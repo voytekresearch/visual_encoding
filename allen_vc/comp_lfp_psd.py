@@ -1,5 +1,5 @@
 """
-Epoch LFP arond stimulus presentation time
+Compute PSD for LFP epochs. Analyzes input of allen_vc.epoch_lfp.py.
 
 """
 
@@ -13,7 +13,7 @@ from mne.time_frequency import psd_array_multitaper
 # settings - directories
 MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_IN = "data/lfp_epochs/natural_movie" # output of epoch_lfp.py
+RELATIVE_PATH_IN = "data/lfp_epochs/natural_movie" # folder containing output of epoch_lfp.py
 RELATIVE_PATH_OUT = "data/lfp_psd/natural_movie" # where to save output relative to both paths above
 
 # settings - analysis details
