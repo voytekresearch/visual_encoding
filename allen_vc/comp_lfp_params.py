@@ -61,7 +61,7 @@ def main():
         for base_path in [PROJECT_PATH, MANIFEST_PATH]:
             dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
             fname_out = fname_in.replace('_psd.npz', f'_params.pkl')
-            pd.to_pickle(f"{dir_results}/{fname_out}")
+            df.to_pickle(f"{dir_results}/{fname_out}")
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)
@@ -80,7 +80,7 @@ def spec_param_3d(psd, freq):
                         min_peak_height = MIN_PEAK_HEIGHT,
                         peak_threshold=PEAK_THRESHOLD,
                         aperiodic_mode=AP_MODE, verbose=False)
-        params.fit(freq, psd[i_chan])
+        params.fit(freq, psd[i_chan], n_jobs=N_JOBS)
 
         # convert results to df
         df_i = params_to_df(params, MAX_N_PEAKS)
