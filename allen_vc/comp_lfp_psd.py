@@ -19,6 +19,7 @@ RELATIVE_PATH_OUT = "data/lfp_psd/natural_movie" # where to save output relative
 
 # settings - analysis details
 N_JOBS = 8 # number of jobs to run in parallel for psd_array_multitaper()
+F_RANGE = [1, 300]
 
 # settings - dataset details
 FS = 1250 # LFP sampling freq
@@ -47,7 +48,8 @@ def main():
         data_in = np.load(f"{MANIFEST_PATH}/{RELATIVE_PATH_IN}/{fname_in}")
 
         # compute psd
-        psd, freq = psd_array_multitaper(data_in['lfp'], FS, n_jobs=N_JOBS)
+        psd, freq = psd_array_multitaper(data_in['lfp'], FS, 
+            fmin=F_RANGE[0], fmax=F_RANGE[1], n_jobs=N_JOBS)
 
         # save results
         fname_out = fname_in.replace('.npz', '_psd.npz')
