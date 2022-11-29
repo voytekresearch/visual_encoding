@@ -12,9 +12,6 @@ from time import time as timer
 from time import ctime as time_now
 from utils import find_probes_in_region, hour_min_sec
 
-# ! TESTING ONLY !
-SKIP_SESSIONS = [767871931,768515987,771160300]
-
 # settings - directories
 MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
@@ -59,12 +56,6 @@ def main():
         print(f"\n\n Beginning session {i_session+1}/{len(session_ids)}: \t{time_now()}")
         print(f"    session ID: {session_id}")
 
-        # ! TESTING ONLY !
-        # skip completed
-        if session_id in SKIP_SESSIONS:
-            print(f"    skipping ...")
-            continue
-
         # load session data
         session = cache.get_session_data(session_id)
 
@@ -81,10 +72,14 @@ def main():
 
         # display progress
         print(f"    {len(probe_ids)} probe(s) in ROI")
-
+            
         # loop through all probes for region of interst
         for probe_id in probe_ids:
-            
+            # skip probes with no LFP data
+            if ~ session.probes.loc[probe_id, 'has_lfp_data']:
+                print(f"    No LFP data for probe: {probe_id}... skipping")
+                continue
+                
             # load LFP data
             print(f'    importing LFP data for probe: {probe_id}')
             lfp = session.get_lfp(probe_id)
