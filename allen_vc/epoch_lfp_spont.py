@@ -23,7 +23,7 @@ REGION = "VISp" # brain structure of interest
 
 # settings - stimulus epoch of interest
 STIM_PARAMS = dict({'stimulus_name' : 'spontaneous'})
-T_WINDOW = 1  # duration of arbitrary epochs (s)
+DURATIONS = [1, 30]  # duration of arbitrary epochs (s)
 STIM_CODE = 'spont' # alternate stimulus name for output filename
 
 # settings - dataset details
@@ -89,19 +89,20 @@ def main():
                 lfp = lfp.sel(channel=slice(np.min(chan_ids), np.max(chan_ids)))
 
             # epoch LFP data around stimulus
-            n_epochs = int(np.floor(EXPECTED_DURATION / T_WINDOW))
-            print(f"    {n_epochs} epochs identified")
-            start_times = np.linspace(stim_table['start_time'].values[0], \
-                stim_table['start_time'].values[0] + (n_epochs*T_WINDOW), n_epochs)
-            lfp_a, time = align_lfp(lfp, start_times, np.arange(n_epochs),
-                t_window=[0, T_WINDOW], dt=1/FS)
+            for duration in DURATIONS:
+                n_epochs = int(np.floor(EXPECTED_DURATION / duration))
+                print(f"    {n_epochs} epochs identified")
+                start_times = np.linspace(stim_table['start_time'].values[0], \
+                    stim_table['start_time'].values[0] + (n_epochs*duration), n_epochs)
+                lfp_a, time = align_lfp(lfp, start_times, np.arange(n_epochs),
+                    t_window=[0, duration], dt=1/FS)
 
-            # save results
-            print('    saving data')
-            fname_out = f"{session_id}_{probe_id}_lfp_{STIM_CODE}.npz"
-            for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-                dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-                np.savez(f"{dir_results}/{fname_out}", lfp=lfp_a, time=time) 
+                # save results
+                print('    saving data')
+                fname_out = f"{session_id}_{probe_id}_lfp_{STIM_CODE}_{duration}s.npz"
+                for base_path in [PROJECT_PATH, MANIFEST_PATH]:
+                    dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
+                    np.savez(f"{dir_results}/{fname_out}", lfp=lfp_a, time=time) 
 
         # display progress
         _, min, sec = hour_min_sec(timer() - t_start_s)
