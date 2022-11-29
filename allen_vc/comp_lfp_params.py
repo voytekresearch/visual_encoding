@@ -105,6 +105,9 @@ def params_to_df(parmas, max_peaks):
     df_ap = pd.DataFrame(parmas.get_params('aperiodic'),  
         columns=['offset', 'knee', 'exponent'])
 
+    # get quality metrics
+    df_ap['r_squared'] = parmas.get_params('r_squared')
+
     # initiate combined df
     df = df_ap.copy()
     columns = []
