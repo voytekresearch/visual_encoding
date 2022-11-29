@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from time import time as timer
 from mne.time_frequency import psd_array_multitaper
+from utils import hour_min_sec
 
 # settings - directories
 MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
@@ -61,14 +62,6 @@ def main():
     # display progress
     hour, min, sec = hour_min_sec(timer() - t_start)
     print(f"\n\n Total Time: \t {hour} hours, {min} minutes, {sec :0.1f} seconds")
-
-
-def hour_min_sec(duration):
-    hours = int(np.floor(duration / 3600))
-    mins = int(np.floor(duration%3600 / 60))
-    secs = duration % 60
-    
-    return hours, mins, secs
 
 
 if __name__ == '__main__':

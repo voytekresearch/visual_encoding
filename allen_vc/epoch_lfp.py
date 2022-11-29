@@ -10,6 +10,7 @@ import pandas as pd
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 from time import time as timer
 from time import ctime as time_now
+from utils import find_probes_in_region, hour_min_sec
 
 # ! TESTING ONLY !
 SKIP_SESSIONS = [767871931,768515987,771160300]
@@ -115,20 +116,6 @@ def main():
     print(f"\n\n Total Time: \t {hour} hours, {min} minutes, {sec :0.1f} seconds")
 
 
-def find_probes_in_region(session, region):
-    probe_ids = session.probes.index.values
-    has_region = np.zeros_like(probe_ids).astype(bool)
-
-    for i_probe, probe_id in enumerate(probe_ids):
-        regions = session.channels[session.channels.probe_id == probe_id].ecephys_structure_acronym.unique()
-        has_region[i_probe] = region in regions
-
-    ids = probe_ids[has_region]
-    names = session.probes.description.values[has_region]
-
-    return ids, names
-
-
 def align_lfp(lfp, t_stim, ids, t_window=[-1,1], dt=0.001):
     trial_window = np.arange(t_window[0], t_window[1], dt)
     time_selection = np.concatenate([trial_window + t for t in t_stim])
@@ -142,13 +129,6 @@ def align_lfp(lfp, t_stim, ids, t_window=[-1,1], dt=0.001):
     aligned_lfp = ds['aligned_lfp']
 
     return aligned_lfp, trial_window
-
-def hour_min_sec(duration):
-    hours = int(np.floor(duration / 3600))
-    mins = int(np.floor(duration%3600 / 60))
-    secs = duration % 60
-    
-    return hours, mins, secs
 
 
 if __name__ == '__main__':

@@ -248,4 +248,24 @@ def calculate_spike_metrics(raw_spikes, epoch):
 
 	return mean_firing_rate, coeff_of_var, spike_dist, spike_sync, corr_coeff
 
-		
+
+def hour_min_sec(duration):
+    hours = int(np.floor(duration / 3600))
+    mins = int(np.floor(duration%3600 / 60))
+    secs = duration % 60
+    
+    return hours, mins, secs
+
+
+def find_probes_in_region(session, region):
+    probe_ids = session.probes.index.values
+    has_region = np.zeros_like(probe_ids).astype(bool)
+
+    for i_probe, probe_id in enumerate(probe_ids):
+        regions = session.channels[session.channels.probe_id == probe_id].ecephys_structure_acronym.unique()
+        has_region[i_probe] = region in regions
+
+    ids = probe_ids[has_region]
+    names = session.probes.description.values[has_region]
+
+    return ids, names
