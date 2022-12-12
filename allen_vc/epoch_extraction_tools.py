@@ -5,7 +5,25 @@ import pandas as pd
 def get_stimulus_behavioral_series(stimulus_name, session, time, velocity, \
     trial=0, smooth=True, kernel_size=None):
     """
+    Retrieves the timeseries of the velocity of an animal's behavior during 
+    a stimulus presentation.
+
+    Parameters
+    ----------
+    stimulus_name (str): The name of the stimulus being presented.
+    session (Allen session object): session containing the behavioral data.
+    time (array-like): The time array corresponding to the velocity data.
+    velocity (array-like): The velocity array corresponding to the time data.
+    trial (int): The trial number. Default is 0.
+    smooth (boolean): If True, the data will be smoothed with median_filter. Default is True.
+    kernel_size (int): The size of the kernel to use for median_filter. Default is None.
+
+    Returns
+    -------
+    Time, speed, and filtered speed arrays
     """
+    # imports
+    from scipy.ndimage import median_filter
 
     # get start and stop time of stimulus for correct trial (0-indexec)
     stimuli_df = session.get_stimulus_epochs()
@@ -16,8 +34,8 @@ def get_stimulus_behavioral_series(stimulus_name, session, time, velocity, \
 
     # epoch data
     epoch_mask = (time>start_time) & (time<stop_time)
-    spont_time = time[epoch_mask]
-    spont_speed = velocity[epoch_mask]
+    stim_time = time[epoch_mask]
+    stim_speed = velocity[epoch_mask]
 
     # Apply a median filter
     if smooth:
@@ -28,11 +46,11 @@ def get_stimulus_behavioral_series(stimulus_name, session, time, velocity, \
             if kernel_size % 2 == 0:
                 ks = kernel_size + 1
         # filter
-        spont_speed_filt = median_filter(spont_speed, ks)
+        stim_speed_filt = median_filter(stim_speed, ks)
     else:
-        spont_speed_filt = None
+        stim_speed_filt = None
 
-    return spont_time, spont_speed, spont_speed_filt
+    return stim_time, stim_speed, stim_speed_filt
 
 
 def find_segments(signal, threshold, return_below=False):
@@ -105,6 +123,8 @@ def plot_epochs(signal, time, epochs, threshold=None):
     fig, ax : matplotlib Figure, Axes
         Figure and axes for the plot.
     """
+    # imports
+    import matplotlib.pyplot as plt
 
     # plot signal
     fig, ax = plt.subplots(figsize=[20,4])
@@ -267,3 +287,57 @@ def get_epoch_times(signal, threshold, min_duration):
         epochs_below = drop_short_epochs(epochs_below, min_duration)
 
     return epochs_above, epochs_below
+
+
+def get_random_epoch(epochs, epoch_length):
+    """
+    This function takes in two parameters, epochs and epoch_length, and 
+    returns a single random epoch of length epoch_length. 
+
+    Parameters 
+    ----------
+    epochs (list): A list of epochs, where each epoch is a list of two 
+    elements representing the start and end time of the epoch. 
+
+    epoch_length (int): The length of the random epoch to be returned. 
+
+    Returns
+    ------- 
+    cropped_epochs (list): A list of two elements representing the start and 
+    end time of the random epoch of length epoch_length. 
+
+    """
+    # imports
+    import random
+
+    epoch = random.choice(epochs[np.array([e[1]-e[0] for e in epochs])\
+        >epoch_length])
+    cropped_epoch = np.array([epoch[0], epoch[0] + epoch_length])
+
+    print(f'Saving Random Epoch: {list(cropped_epoch)}')
+
+    return cropped_epoch
+    
+
+def get_movie_times(session, trial):
+    
+    """
+    This function retrieves the start and end times of a natural movie 
+    presentation for a given trial. 
+
+    Parameters
+    ----------
+    session (Allen session obj): A visualization session object
+    trial (int): An integer corresponding to the desired trial
+
+    Returns
+    ------- 
+    movie_times (numpy array): Start and end times
+
+    """
+    stimuli_df = session.stimulus_presentations
+    stimuli_df = stimuli_df[stimuli_df.get('stimulus_name')=='natural_movie_one_more_repeats']
+    starts = np.array(stimuli_df[stimuli_df.get('frame')==0].get('start_time'))[trial*30:(trial+1)*30]
+    end = np.array(stimuli_df[stimuli_df.get('frame')==899].get('stop_time'))[((trial+1)*30)-1]
+
+    return np.append(starts, end)

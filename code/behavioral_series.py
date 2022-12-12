@@ -1,6 +1,5 @@
 import os
 import numpy as np
-from scipy.ndimage import median_filter
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 
 #Settings
@@ -29,12 +28,13 @@ def main():
 	cache = EcephysProjectCache.from_warehouse(manifest=manifest_path)
 	sessions = cache.get_session_table()
 
+	# Iterate over each session
 	for session_id in sessions[sessions.get('session_type')=='functional_connectivity'].index:
 		# get session data and display progress	
 		print(f'Analyzing session: \t{session_id}')
 		session = cache.get_session_data(session_id)
 
-		# Create uniform set of data using interpolation and save to file
+		# create uniform set of data using interpolation and save to file
 		time, velocity = get_running_timeseries(session, FS)
 		np.savez(f'{dir_output}/running_{session_id}', time=time, velocity=velocity)
 
