@@ -81,6 +81,11 @@ def find_segments(signal, threshold, return_below=False):
     starts = above_threshold[np.where(np.diff(above_threshold) != 1)[0] + 1]
     ends = above_threshold[np.where(np.diff(above_threshold) != 1)[0]]
 
+    # handle missing data
+    if len(starts)==0 or len(ends)==0:
+        starts = np.insert(starts, 0, above_threshold[0])
+        ends = np.append(ends, above_threshold[-1])
+
     # add first and last index if needed
     if starts[0] > ends[0]:
         starts = np.insert(starts, 0, 0)
@@ -212,6 +217,9 @@ def drop_short_epochs(epochs, min_duration):
     epochs_clean : ndarray
         2D array of epochs, with epochs shorter than `min_duration` removed.
     """
+    # handle cases of missing epochs
+    if len(epochs)==0:
+        return epochs
 
     # get duration of epochs
     duration = np.ravel(np.diff(epochs, axis=1))
@@ -274,7 +282,7 @@ def get_epoch_times(signal, threshold, min_duration):
 
     # drop short epochs
     epochs_above = drop_short_epochs(epochs_above, min_duration=min_duration)
-    
+
     # if no above-threshold epochs identified
     if len(epochs_above) == 0:
         epochs_below = np.array([[0, len(signal)-1]])
@@ -310,8 +318,14 @@ def get_random_epoch(epochs, epoch_length):
     # imports
     import random
 
-    epoch = random.choice(epochs[np.array([e[1]-e[0] for e in epochs])\
-        >epoch_length])
+    long_epochs = epochs[np.array([e[1]-e[0] for e in epochs])\
+        >epoch_length]
+
+    if len(long_epochs)==0:
+        return np.array([])
+
+    epoch = random.choice(long_epochs)
+
     cropped_epoch = np.array([epoch[0], epoch[0] + epoch_length])
 
     print(f'Saving Random Epoch: {list(cropped_epoch)}')
