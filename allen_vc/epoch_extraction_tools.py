@@ -2,56 +2,6 @@
 import numpy as np
 import pandas as pd
 
-def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity, \
-    idx_block=0, smooth=True, kernel_size=None):
-    """
-    Retrieves the timeseries of the velocity of an animal's behavior during 
-    a stimulus presentation.
-
-    Parameters
-    ----------
-    stimulus_name (str): The name of the stimulus being presented.
-    session (Allen session object): session containing the behavioral data.
-    time (array-like): The time array corresponding to the velocity data.
-    velocity (array-like): The velocity array corresponding to the time data.
-    idx_block (int): The index of the stimulus block. Default is 0.
-    smooth (boolean): If True, the data will be smoothed with median_filter. Default is True.
-    kernel_size (int): The size of the kernel to use for median_filter. Default is None.
-
-    Returns
-    -------
-    Time, speed, and filtered speed arrays
-    """
-    # imports
-    from scipy.ndimage import median_filter
-
-    # get start and stop time of stimulus block (0-indexec)
-    stimuli_df = session.get_stimulus_epochs()
-    stimuli_df = stimuli_df[stimuli_df.get('stimulus_name')==stimulus_name].\
-    get(['start_time','stop_time'])
-    start_time = stimuli_df.get('start_time').iloc[idx_block]
-    stop_time = stimuli_df.get('stop_time').iloc[idx_block]
-
-    # epoch data
-    epoch_mask = (time>start_time) & (time<stop_time)
-    stim_time = time[epoch_mask]
-    stim_speed = velocity[epoch_mask]
-
-    # Apply a median filter
-    if smooth:
-    # make sure kernel size is odd
-        if kernel_size is None:
-            print("Please provide kernel_size")
-        else:
-            if kernel_size % 2 == 0:
-                ks = kernel_size + 1
-        # filter
-        stim_speed_filt = median_filter(stim_speed, ks)
-    else:
-        stim_speed_filt = None
-
-    return stim_time, stim_speed, stim_speed_filt
-
 
 def find_segments(signal, threshold, return_below=False):
     """
