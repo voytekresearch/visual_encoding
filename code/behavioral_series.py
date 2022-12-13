@@ -8,7 +8,7 @@ FS = 2500 # sampling frequency for interpolation
 SMOOTH = True # whether to smooth data (median filter)
 KERNEL_SIZE = 1*FS # kernel size for median filter
 STIMULUS_NAME = 'spontaneous' # name of stimulus in allen dataset
-TRIAL = 4 # trial of stimulus
+BLOCK = 4 # index of stimulus block to analyze
 
 # import custom functions
 import sys
@@ -39,9 +39,9 @@ def main():
 		np.savez(f'{dir_output}/running_{session_id}', time=time, velocity=velocity)
 
 		# save running data for spontaneous epoch to file
-		fname_out = dir_output + f'/running_{session_id}_{STIMULUS_NAME}_{TRIAL}'
+		fname_out = dir_output + f'/running_{session_id}_{STIMULUS_NAME}_{BLOCK}'
 		results = get_stimulus_behavioral_series(STIMULUS_NAME, session, time, velocity, \
-			trial=TRIAL, smooth=SMOOTH, kernel_size=KERNEL_SIZE)
+			block=BLOCK, smooth=SMOOTH, kernel_size=KERNEL_SIZE)
 		np.savez(fname_out, time=results[0], velocity_raw=results[1], velocity=results[2])
 
 

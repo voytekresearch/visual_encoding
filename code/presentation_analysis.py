@@ -5,7 +5,7 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 #Settings (see Behavioral_Series.py and Valid_Epochs.py for details on parameters)
 PROJECT_PATH = 'C:\\Users\\User\\visual_encoding' #'C:/users/micha/visual_encoding'
 DATA_LOC = f'{PROJECT_PATH}/data/behavior'
-NUM_TRIALS = 2
+N_BLOCKS = 2
 
 # import custom functions
 import sys
@@ -41,13 +41,13 @@ def main():
 		print(f'Analyzing session: \t{session_id}')
 		session = cache.get_session_data(session_id)
 
-		for trial in range(NUM_TRIALS): # two trials of natural movie one exist for each session
-			epochs = all_epochs[trial]
+		for block in range(N_BLOCKS): # two blocks of natural movie one exist for each session
+			epochs = all_epochs[block]
 
 			# calculate threshold crossings and individual movie times
-			mt = get_movie_times(session, trial)
+			mt = get_movie_times(session, block)
 			for i in range(30):
-				movie_times[f'{session_id}_{(trial*30)+i}'] = np.array([mt[i], mt[i+1]])
+				movie_times[f'{session_id}_{(block*30)+i}'] = np.array([mt[i], mt[i+1]])
 
 			# filter diffs for each start/stop movie time and create/save boolean array
 			movie_run_bool = []
@@ -64,7 +64,7 @@ def main():
 					else:
 						movie_run_bool.append(None)
 
-			if trial==0:
+			if block==0:
 				movie_run_bools[str(session_id)] = np.array(movie_run_bool)
 			else:
 				movie_run_bools[str(session_id)] = \

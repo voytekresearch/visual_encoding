@@ -2,8 +2,8 @@
 import numpy as np
 import pandas as pd
 
-def get_stimulus_behavioral_series(stimulus_name, session, time, velocity, \
-    trial=0, smooth=True, kernel_size=None):
+def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity, \
+    idx_block=0, smooth=True, kernel_size=None):
     """
     Retrieves the timeseries of the velocity of an animal's behavior during 
     a stimulus presentation.
@@ -14,7 +14,7 @@ def get_stimulus_behavioral_series(stimulus_name, session, time, velocity, \
     session (Allen session object): session containing the behavioral data.
     time (array-like): The time array corresponding to the velocity data.
     velocity (array-like): The velocity array corresponding to the time data.
-    trial (int): The trial number. Default is 0.
+    idx_block (int): The index of the stimulus block. Default is 0.
     smooth (boolean): If True, the data will be smoothed with median_filter. Default is True.
     kernel_size (int): The size of the kernel to use for median_filter. Default is None.
 
@@ -25,12 +25,12 @@ def get_stimulus_behavioral_series(stimulus_name, session, time, velocity, \
     # imports
     from scipy.ndimage import median_filter
 
-    # get start and stop time of stimulus for correct trial (0-indexec)
+    # get start and stop time of stimulus block (0-indexec)
     stimuli_df = session.get_stimulus_epochs()
     stimuli_df = stimuli_df[stimuli_df.get('stimulus_name')==stimulus_name].\
     get(['start_time','stop_time'])
-    start_time = stimuli_df.get('start_time').iloc[trial]
-    stop_time = stimuli_df.get('stop_time').iloc[trial]
+    start_time = stimuli_df.get('start_time').iloc[idx_block]
+    stop_time = stimuli_df.get('stop_time').iloc[idx_block]
 
     # epoch data
     epoch_mask = (time>start_time) & (time<stop_time)
@@ -294,16 +294,16 @@ def get_random_epoch(epochs, epoch_length):
     return cropped_epoch
     
 
-def get_movie_times(session, trial):
+def get_movie_times(session, block):
     
     """
     This function retrieves the start and end times of a natural movie 
-    presentation for a given trial. 
+    presentation for a given experimental block. 
 
     Parameters
     ----------
     session (Allen session obj): A visualization session object
-    trial (int): An integer corresponding to the desired trial
+    block (int): An integer corresponding to the desired block
 
     Returns
     ------- 
@@ -312,7 +312,7 @@ def get_movie_times(session, trial):
     """
     stimuli_df = session.stimulus_presentations
     stimuli_df = stimuli_df[stimuli_df.get('stimulus_name')=='natural_movie_one_more_repeats']
-    starts = np.array(stimuli_df[stimuli_df.get('frame')==0].get('start_time'))[trial*30:(trial+1)*30]
-    end = np.array(stimuli_df[stimuli_df.get('frame')==899].get('stop_time'))[((trial+1)*30)-1]
+    starts = np.array(stimuli_df[stimuli_df.get('frame')==0].get('start_time'))[block*30:(block+1)*30]
+    end = np.array(stimuli_df[stimuli_df.get('frame')==899].get('stop_time'))[((block+1)*30)-1]
 
     return np.append(starts, end)

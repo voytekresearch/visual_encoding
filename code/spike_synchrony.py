@@ -3,12 +3,10 @@ import numpy as np
 import pandas as pd
 
 #Settings
-PROJECT_PATH = 'C:\\Users\\User\\visual_encoding' #'C:/users/micha/visual_encoding'
+PROJECT_PATH = r"G:\Shared drives\visual_encoding"
 BRAIN_STRUCTURES = ['VISp', 'LGd']
 STIMULUS_NAME = 'spontaneous'
 EPOCH_LENGTH = 10
-EPOCHS_FILEPATH = f'{PROJECT_PATH}/data/behavior/running/'+\
-f'{STIMULUS_NAME}_random_running_epoch_{EPOCH_LENGTH}s.npz'
 STATES = ['stationary', 'running']
 
 # Import custom functions
@@ -20,7 +18,8 @@ def main():
 	#Initialize space for data storage
 	data = [0]*9
 
-	epochs = np.load(EPOCHS_FILEPATH)
+	epochs = np.load(f'{PROJECT_PATH}/data/behavior/running/'+\
+		f'{STIMULUS_NAME}_random_running_epoch_{EPOCH_LENGTH}s.npz')
 
 	for structure in BRAIN_STRUCTURES:
 		meta=pd.read_csv(f'{PROJECT_PATH}\\data\\brain_structure_DataFrames\\{structure}_DataFrame.csv')

@@ -11,7 +11,7 @@ SPEED_THRESHOLD = 5 # Any speed greater than this value is considered running (c
 MIN_DURATION = 1 # Minimum time of measured epochs (s)
 EPOCH_LENGTH = 10
 STIMULUS_NAME = 'spontaneous'
-TRIAL = 4 
+BLOCK = 4 # index of stimulus block to analyze
 FS = 2500 # Sampling rate (Hz)
 
 # Import custom functions			  
@@ -32,7 +32,7 @@ def main():
 	# Iterate over all sessions
 	for session_id in sessions[sessions.get('session_type')=='functional_connectivity'].index:
 		print(f'Analyzing Session:      {session_id}')
-		series_data = np.load(f'{DATA_LOC}\\running_{session_id}_{STIMULUS_NAME}_{TRIAL}.npz')
+		series_data = np.load(f'{DATA_LOC}\\running_{session_id}_{STIMULUS_NAME}_{BLOCK}.npz')
 
 		# Calculate/store above and below epochs
 		running_epochs, stationary_epochs = \
