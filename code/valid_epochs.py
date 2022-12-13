@@ -17,7 +17,6 @@ FS = 2500 # Sampling rate (Hz)
 # Import custom functions			  
 import sys
 sys.path.append(PROJECT_PATH)
-from allen_vc.utils import get_valid_epochs
 from allen_vc.epoch_extraction_tools import get_epoch_times, get_random_epoch
 
 def main():

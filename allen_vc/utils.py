@@ -136,53 +136,6 @@ def get_spiking_data(session_id, manifest_path, brain_structure=None):
 
 	return spike_times, spike_amplitudes, mean_waveforms
 
-def get_valid_epochs(start_times, stop_times, epoch_length):
-	"""
-	filter epochs as behavior positive/negative based on a series of start
-	and stop times. return epochs greater than a given epoch length.
-
-	Parameters
-	----------
-	start_times : list/array
-		epoch start times.
-	stop_times : list/array
-		epoch stop times.
-	epoch_length : int
-		length of epoch to be found.
-
-	Returns
-	-------
-	positive_epochs : list
-		epochs > epoch length that are behavior positive
-	negative_epochs : list
-		epochs > epoch length that are behavior negative
-
-	"""
-	#Determine the amount of times to iterate through series to include all data
-	if len(start_times)==len(stop_times):
-		iter_length = min(len(start_times),len(stop_times))-1
-	else:
-		iter_length = min(len(start_times),len(stop_times))
-
-	#Identify all valid running/stationary epochs for each entered epoch length
-	positive_epochs = []
-	negative_epochs = []
-	
-	if start_times[0]>stop_times[0]:
-		for i in range(iter_length):
-			if (stop_times[i+1]-start_times[i])>epoch_length:
-				positive_epochs.append([start_times[i],stop_times[i+1]])
-			elif (start_times[i]-stop_times[i])>epoch_length:
-				negative_epochs.append([stop_times[i],start_times[i]])
-	else:
-		for i in range(iter_length):
-			if (stop_times[i]-start_times[i])>epoch_length:
-				positive_epochs.append([start_times[i],stop_times[i]])
-			elif (start_times[i+1]-stop_times[i])>epoch_length:
-				negative_epochs.append([stop_times[i],start_times[i+1]])
-
-	return positive_epochs, negative_epochs
-
 def calculate_spike_metrics(raw_spikes, epoch):
 	"""
 	calculate spike metrics (mean firing rate, coefficient of variance, 
