@@ -1,43 +1,58 @@
+"""
+Import running velocity time-series, and find running/stationary epochs.
+"""
+
+# imports
 import os
 import numpy as np
-import pandas as pd
 import random
-from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 
-# Settings
-PROJECT_PATH='C:\\Users\\User\\visual_encoding' #'C:/users/micha/visual_encoding'
-DATA_LOC = f'{PROJECT_PATH}/data/behavior/running'
+# Settings - directories
+MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
+PROJECT_PATH = "G:/Shared drives/visual_encoding"
+REPO_PATH = r'C:\Users\micha\visual_encoding' # code repo
+RELATIVE_PATH_IN = "data/behavior/running/spontaneous" # where input data is saved relative to both paths above
+
+# settings - dataset details
+FS = 2500 # Sampling rate (Hz)
+
+# settings - analysis
 SPEED_THRESHOLD = 5 # Any speed greater than this value is considered running (cm/s)
 MIN_DURATION = 1 # Minimum time of measured epochs (s)
 EPOCH_LENGTH = 10
-STIMULUS_NAME = 'spontaneous'
-BLOCK = 4 # index of stimulus block to analyze
-FS = 2500 # Sampling rate (Hz)
 
 # Import custom functions			  
 import sys
-sys.path.append(PROJECT_PATH)
+sys.path.append(REPO_PATH)
 from allen_vc.epoch_extraction_tools import get_epoch_times, get_random_epoch
 
 def main():
-
-	manifest_path = f"{PROJECT_PATH}/data/manifest_files/manifest.json"
-	cache = EcephysProjectCache.from_warehouse(manifest=manifest_path)
-	sessions = cache.get_session_table()
+	# Define/create directories for output
+	for base_path in [PROJECT_PATH, MANIFEST_PATH]:
+		dir_results = f'{base_path}/data/behavior/running/epoch_times'
+		if not os.path.exists(dir_results): 
+			os.makedirs(dir_results)
 
 	# Initialize storage space
 	epoch_times = {}
 	random_epochs = {}
 
-	# Iterate over all sessions
-	for session_id in sessions[sessions.get('session_type')=='functional_connectivity'].index:
-		print(f'Analyzing Session:      {session_id}')
-		series_data = np.load(f'{DATA_LOC}\\running_{session_id}_{STIMULUS_NAME}_{BLOCK}.npz')
+    # id files of interest and loop through them
+	files = os.listdir(f'{PROJECT_PATH}/{RELATIVE_PATH_IN}')
+	files = [f for f in files if f.endswith('.npz')] # .npz files only
+	for i_file, fname_in in enumerate(files):
+		# displey progress
+		session_id = fname_in.split('_')[1].split('.')[0]
+		print(f'Analyzing session: \t{session_id}')
 
-		# Calculate/store above and below epochs
+		# load running data
+		series_data = np.load(f'{PROJECT_PATH}/{RELATIVE_PATH_IN}/{fname_in}')
+
+		# Getting epoch times
 		running_epochs, stationary_epochs = \
-		get_epoch_times(series_data['velocity'], SPEED_THRESHOLD, MIN_DURATION*FS)
+			get_epoch_times(series_data['velocity'], SPEED_THRESHOLD, MIN_DURATION*FS)
 		
+		# aggregate results across sessions
 		epoch_times[f'{session_id}_running'] = series_data['time'][0] + running_epochs/FS
 		epoch_times[f'{session_id}_stationary'] = series_data['time'][0] + stationary_epochs/FS
 
@@ -49,8 +64,11 @@ def main():
 			epoch_times[f'{session_id}_stationary'], EPOCH_LENGTH)
 
 	# Save data
-	np.savez(f'{DATA_LOC}/{STIMULUS_NAME}_running_epochs.npz', **epoch_times)
-	np.savez(f'{DATA_LOC}/{STIMULUS_NAME}_random_running_epoch_{EPOCH_LENGTH}s.npz', **random_epochs)
+	for base_path in [PROJECT_PATH, MANIFEST_PATH]:
+		dir_results = f'{base_path}/data/behavior/running/epoch_times'
+		fname_out = f'{dir_results}/{RELATIVE_PATH_IN.split("/")[-1]}_{EPOCH_LENGTH}s'
+		np.savez(f'{fname_out}.npz', **epoch_times)
+		np.savez(f'{fname_out}_random.npz', **random_epochs)
 
 
 if __name__ == "__main__":
