@@ -83,6 +83,41 @@ def get_running_timeseries(session, fs):
 
 	return time, velocity
 
+
+def gen_neo_spiketrain(session_id, manifest_path, brain_structure=None):
+	"""
+	load spiking data for a session and reformat as Neo object.
+
+	Parameters
+	----------
+	session : AllenSDK session object
+		AllenSDK session object.
+	manifest_path : str
+		path to AllenSDK manifest file.
+	brain_structure : str, optional
+		include to filter results by brain structure. The default is None.
+
+	Returns
+	-------
+	spiketrains : Neo SpikeTrains object
+		Neo SpikeTrains object
+	"""
+
+	# imports
+	from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
+
+	# Create Allensdk cache object
+	cache = EcephysProjectCache.from_warehouse(manifest=manifest_path)
+
+	#Get all session info
+	session = cache.get_session_data(session_id)
+
+    # Create Neo SpikeTrain object
+	spiketrains = []
+
+	return spiketrains
+
+
 def get_spiking_data(session_id, manifest_path, brain_structure=None):
 	"""
 	load and save spiking data of given units. include metrics spike_times,
@@ -105,7 +140,6 @@ def get_spiking_data(session_id, manifest_path, brain_structure=None):
 		keys as unit ids and respective spike amplitudes as values.
 	mean_waveforms : dict
 		keys as unit ids and respective mean_waveforms as values.
-
 	"""
 
 	# imports
@@ -136,7 +170,7 @@ def get_spiking_data(session_id, manifest_path, brain_structure=None):
 
 	return spike_times, spike_amplitudes, mean_waveforms
 
-def calculate_spike_metrics(raw_spikes, epoch):
+def calculate_spike_metrics(spiketrains):
 	"""
 	calculate spike metrics (mean firing rate, coefficient of variance, 
 	SPIKE-distance, SPIKE-synchrony, and correlation coefficient) within
@@ -144,10 +178,9 @@ def calculate_spike_metrics(raw_spikes, epoch):
 
 	Parameters
 	----------
-	raw_spikes: list/array
-		list/array of lists/arrays of raw spike times for several units.
-	epoch: list/array
-		list of length 2 that includes epoch start and stop times.
+	-------
+	spiketrains : Neo SpikeTrains object
+		Neo SpikeTrains object
 
 	Returns
 	-------
@@ -169,35 +202,23 @@ def calculate_spike_metrics(raw_spikes, epoch):
 	import elephant
 	import quantities as pq
 
-	#Compute coefficient of variation
+	# Compute coefficient of variation (this can be moved to independent function)
 	def comp_cov(pop_spikes):
 		isi = np.diff(pop_spikes)
 		cov = np.std(isi) / np.mean(isi)   
 		return cov
 
-	#Store pyspike.SpikeTrain and Neo.SpikeTrain objects
-	spk_trains = []
-	neo_trains = []
+	# create spk object (is this necessary?)
+	spk_trains = ...
+	pop_spikes = ...
 
-	#Initialize metric calculation
-	epoch_length = int(epoch[1]-epoch[0])
-	pop_spikes = epoch[0]
-	raw_spikes = [raw_spike[(raw_spike>epoch[0]) & (raw_spike<epoch[1])] for raw_spike in raw_spikes]
-	fr=0
-
-	for i in range(len(raw_spikes)):
-		fr+=len(raw_spikes[i])/epoch_length
-		pop_spikes = np.hstack([pop_spikes,raw_spikes[i]])
-		spk_trains.append(spk.SpikeTrain(raw_spikes[i], epoch))
-		neo_obj=neo.SpikeTrain(times=raw_spikes[i], units='sec', t_start=epoch[0], t_stop=epoch[1])
-		neo_trains.append(neo_obj)
-
-	mean_firing_rate = (fr/len(raw_spikes))
+	# compute metrics
+	mean_firing_rate = ...
 	pop_spikes = np.sort(pop_spikes)
 	coeff_of_var = (comp_cov(pop_spikes))
 	spike_dist = (spk.spike_distance(spk_trains))
 	spike_sync = (spk.spike_sync(spk_trains))
-	corr_coeff = (elephant.spike_train_correlation.correlation_coefficient(elephant.conversion.BinnedSpikeTrain(neo_trains, bin_size=1 * pq.s)))
+	corr_coeff = (elephant.spike_train_correlation.correlation_coefficient(elephant.conversion.BinnedSpikeTrain(spiketrains, bin_size=1 * pq.s)))
 
 	return mean_firing_rate, coeff_of_var, spike_dist, spike_sync, corr_coeff
 

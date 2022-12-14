@@ -11,7 +11,7 @@ BRAIN_STRUCTURES = ['VISp','LGd']
 
 import sys
 sys.path.append(PROJECT_PATH)
-from allen_vc.utils import get_spiking_data
+from allen_vc.utils import gen_neo_spiketrains
 
 def main():
 
@@ -27,18 +27,15 @@ def main():
         print(f'Analyzing Brain Structure: {structure}')
         meta=pd.read_csv(f'{PROJECT_PATH}\\data\\brain_structure_DataFrames\\{structure}_DataFrame.csv')
 
+        # loop through sessions
         for session_id in meta.get('ecephys_session_id').unique():
             print(f'Analyzing session: \t{session_id}')
-            spike_times, spike_amplitudes, mean_waveforms = get_spiking_data(session_id, manifest_path, structure)
+            
+            # Get spiking data
+            spiketrains = gen_neo_spiketrains(session_id, manifest_path, structure)
 
-            # create a binary pickle file 
-            for variable, var_str in zip([spike_times,spike_amplitudes,mean_waveforms],
-                                          ['spike_times', 'spike_amplitudes',
-                                            'mean_waveforms']):
-                fname_out = f"{dir_results}/{str(session_id)}_{structure}_{var_str}.pkl"
-                h = open(fname_out,"wb")
-                pickle.dump(variable, h)
-                h.close()
+            # save to file
+            ...
 
 
 if __name__ == '__main__':

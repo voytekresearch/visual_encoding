@@ -26,20 +26,19 @@ def main():
 
 		# Iterate over each session
 		for session_id in meta.get('ecephys_session_id').unique():
-			spike_matrix = pd.read_pickle(f'{PROJECT_PATH}/data/spike_data'+\
-				f'/{str(session_id)}_{structure}_spike_times.pkl')
-
-			# Change spike data format
-			raw_spikes = []
-			for train in spike_matrix:
-				raw_spikes.append(spike_matrix[train])
+			# load Neo SpikeTrains
+			spiketrains = ...
 
 			# Calculate spike metrics for both states
 			for epoch_type in STATES:
 				epoch = epochs[f'{session_id}_{epoch_type}']
+
+				# epoch spiking data for state
+				spiketrains_state = ...
+
+				# Calculate/combine metrics for storage
 				if len(epoch)>0:
-					#Calculate/combine metrics for storage
-					metrics = list(calculate_spike_metrics(raw_spikes, epoch))
+					metrics = list(calculate_spike_metrics(spiketrains_state))
 					metrics += [epoch, epoch_type, structure, session_id]
 					data = np.vstack((data, metrics))
 				else:
