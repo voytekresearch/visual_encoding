@@ -84,7 +84,7 @@ def get_running_timeseries(session, fs):
 	return time, velocity
 
 
-def gen_neo_spiketrain(session_id, manifest_path, brain_structure=None):
+def gen_neo_spiketrains(session_id, manifest_path, brain_structure=None):
 	"""
 	load spiking data for a session and reformat as Neo object.
 
@@ -104,6 +104,7 @@ def gen_neo_spiketrain(session_id, manifest_path, brain_structure=None):
 	"""
 
 	# imports
+	import neo
 	from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 
 	# Create Allensdk cache object
@@ -112,8 +113,20 @@ def gen_neo_spiketrain(session_id, manifest_path, brain_structure=None):
 	#Get all session info
 	session = cache.get_session_data(session_id)
 
-    # Create Neo SpikeTrain object
+	# Create Neo SpikeTrain object
 	spiketrains = []
+
+	# Retrive raw spikes
+	if brain_structure:
+		for unit in session.units[session.units.get('ecephys_structure_acronym')==brain_structure].index:
+			session_spikes = session.spike_times[unit]
+			spiketrains.append(neo.SpikeTrain(times=session_spikes, \
+				units='sec', t_stop=session_spikes[-1]))
+	else:
+		for unit in session.units.index:
+			session_spikes = session.spike_times[unit]
+			spiketrains.append(neo.SpikeTrain(times=session_spikes, \
+				units='sec', t_stop=session_spikes[-1]))
 
 	return spiketrains
 
@@ -166,7 +179,7 @@ def get_spiking_data(session_id, manifest_path, brain_structure=None):
 		for unit in session.units.index:
 			spike_times[unit] = session.spike_times[unit]
 			spike_amplitudes[unit] = session.spike_amplitudes[unit]
-	mean_waveforms[unit] = session.mean_waveforms[unit]
+			mean_waveforms[unit] = session.mean_waveforms[unit]
 
 	return spike_times, spike_amplitudes, mean_waveforms
 
@@ -203,22 +216,24 @@ def calculate_spike_metrics(spiketrains):
 	import quantities as pq
 
 	# Compute coefficient of variation (this can be moved to independent function)
-	def comp_cov(pop_spikes):
+	def comp_cov(spike_trains):
+		pop_spikes = np.sort(np.array(np.concatenate(np.array(spike_trains))))
 		isi = np.diff(pop_spikes)
 		cov = np.std(isi) / np.mean(isi)   
 		return cov
 
 	# create spk object (is this necessary?)
-	spk_trains = ...
-	pop_spikes = ...
+	spk_trains = [spk.SpikeTrain(spiketrain, [spiketrain.t_start, spiketrain.t_stop]) \
+	for spiketrain in spiketrains]
 
 	# compute metrics
-	mean_firing_rate = ...
-	pop_spikes = np.sort(pop_spikes)
-	coeff_of_var = (comp_cov(pop_spikes))
+	mean_firing_rate = sum([len(spiketrain)/float(spiketrain.duration) \
+		for spiketrain in spiketrains])/len(spiketrains)
+	coeff_of_var = (comp_cov(spiketrains))
 	spike_dist = (spk.spike_distance(spk_trains))
 	spike_sync = (spk.spike_sync(spk_trains))
-	corr_coeff = (elephant.spike_train_correlation.correlation_coefficient(elephant.conversion.BinnedSpikeTrain(spiketrains, bin_size=1 * pq.s)))
+	corr_coeff = (elephant.spike_train_correlation.correlation_coefficient(\
+		elephant.conversion.BinnedSpikeTrain(spiketrains, bin_size=1 * pq.s)))
 
 	return mean_firing_rate, coeff_of_var, spike_dist, spike_sync, corr_coeff
 
@@ -243,3 +258,46 @@ def find_probes_in_region(session, region):
     names = session.probes.description.values[has_region]
 
     return ids, names
+
+def sync_stats(df, metrics, condition):
+    """
+    Computes and prints the mean, standard deviation, and t-test results for two states in a dataframe.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Dataframe containing the data to be analyzed.
+    metrics : list
+        List of metrics to be analyzed.
+    condition : str
+        Name of the column in the dataframe containing the states.
+
+    Returns
+    -------
+    None
+    """
+    
+    import scipy.stats as sts
+    
+    states = df.get(condition).unique()
+    
+    for metric in metrics:
+        print(f'Metric: {metric}\n')
+            
+        s_data = df[df.get('state')==states[0]]
+        s = s_data.get(metric).dropna()
+        print(f'State: {states[0]}\nN = {len(s)}\nMean = {np.mean(s)}\nStdev = {np.std(s)}\n')
+            
+        r_data = df[df.get('state')==states[1]]
+        r = r_data.get(metric).dropna()
+        print(f'State: {states[1]}\nN = {len(s)}\nMean = {np.mean(s)}\nStdev = {np.std(s)}\n')
+
+        i = sts.ttest_ind(s, r)
+        print(f'Independent T-Test (All data)\n{i}\n')
+        
+        valid_sessions = df[np.array([False if any(df[df.get('session_id')==ses_id]\
+            .get(metric).isnull()) else True for ses_id in df.get('session_id')])]
+        s = valid_sessions[valid_sessions.get('state')==states[0]].get(metric)
+        r = valid_sessions[valid_sessions.get('state')==states[1]].get(metric)
+        p = sts.ttest_rel(s, r)
+        print(f'Paired T-Test\n{p}\n\n\n\n')

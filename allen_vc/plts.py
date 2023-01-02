@@ -41,3 +41,38 @@ def plot_epochs(signal, time, epochs, threshold=None):
         ax.axvline(t_stop, color='r')
 
     return fig, ax
+
+def sync_plot(df, metrics, condition):
+    """
+    Plot violin plots for each spike statistic in the given dataframe (df) for the given condition.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Dataframe containing the data to be plotted.
+    metrics : list
+        List of spike statistics to be plotted.
+    condition : str
+        Condition to be plotted.
+
+    Returns
+    -------
+    None
+    """
+    import seaborn as sns
+    # plot violin plots for each spike statistic
+    for metric in metrics:
+    # set plotting parameters
+        plotting_params = {
+            'data':    df,
+            'x':       'brain_structure',
+            'hue':     condition,
+            'y':       metric,
+            'split':   True
+        }
+
+        # create figure
+        fig, ax = plt.subplots()
+        plt.title(f'{metric}')
+        vp = sns.violinplot(**plotting_params, ax=ax, color = 'magenta')
+        sp = sns.swarmplot(**plotting_params, ax=ax, color=[0,0,0])

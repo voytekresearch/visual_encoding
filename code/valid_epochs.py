@@ -8,13 +8,14 @@ import numpy as np
 import random
 
 # Settings - directories
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
+MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding"
-REPO_PATH = r'C:\Users\micha\visual_encoding' # code repo
+REPO_PATH = 'C:/Users/User/visual_encoding' # code repo r'C:\Users\micha\visual_encoding
 RELATIVE_PATH_IN = "data/behavior/running/spontaneous" # where input data is saved relative to both paths above
 
 # settings - dataset details
 FS = 2500 # Sampling rate (Hz)
+BLOCK = 4
 
 # settings - analysis
 SPEED_THRESHOLD = 5 # Any speed greater than this value is considered running (cm/s)
@@ -43,7 +44,7 @@ def main():
 	for i_file, fname_in in enumerate(files):
 		# displey progress
 		session_id = fname_in.split('_')[1].split('.')[0]
-		print(f'Analyzing session: \t{session_id}')
+		print(f'Analyzing session: \t{session_id}\tBlock: \t{BLOCK}')
 
 		# load running data
 		series_data = np.load(f'{PROJECT_PATH}/{RELATIVE_PATH_IN}/{fname_in}')
@@ -66,9 +67,9 @@ def main():
 	# Save data
 	for base_path in [PROJECT_PATH, MANIFEST_PATH]:
 		dir_results = f'{base_path}/data/behavior/running/epoch_times'
-		fname_out = f'{dir_results}/{RELATIVE_PATH_IN.split("/")[-1]}_{EPOCH_LENGTH}s'
+		fname_out = f'{dir_results}/{RELATIVE_PATH_IN.split("/")[-1]}_{BLOCK}'
 		np.savez(f'{fname_out}.npz', **epoch_times)
-		np.savez(f'{fname_out}_random.npz', **random_epochs)
+		np.savez(f'{fname_out}_{EPOCH_LENGTH}s_random.npz', **random_epochs)
 
 
 if __name__ == "__main__":

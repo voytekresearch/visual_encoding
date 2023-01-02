@@ -10,7 +10,7 @@ import numpy as np
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 
 # Settings - directories
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
+MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding"
 RELATIVE_PATH_OUT = "data/behavior/running/spontaneous" # where to save output relative to both paths above
 
@@ -27,35 +27,36 @@ KERNEL_SIZE = 1*FS # kernel size for median filter
 
 #Make sure epoch lengths are in order least to greatest
 def main():
-	# identify / create directories
-	dir_input = PROJECT_PATH + '/data/behavior/running/session_timeseries'
-	for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-		dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-		if not os.path.exists(dir_results): 
-			os.makedirs(dir_results)
+    # identify / create directories
+    dir_input = PROJECT_PATH + '/data/behavior/running/session_timeseries'
+    for base_path in [PROJECT_PATH, MANIFEST_PATH]:
+        dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
+        if not os.path.exists(dir_results): 
+            os.makedirs(dir_results)
 
-	# load project cache
-	cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
-	sessions = cache.get_session_table()
+    # load project cache
+    manifest_path = f"{MANIFEST_PATH}/manifest_files"
+    cache = EcephysProjectCache.from_warehouse(manifest=f"{manifest_path}/manifest.json")
+    sessions = cache.get_session_table()
 
-	# Iterate over each session
-	for session_id in sessions[sessions.get('session_type')=='functional_connectivity'].index:
-		# get session data and display progress	
-		print(f'Analyzing session: \t{session_id}')
-		session = cache.get_session_data(session_id)
+    # Iterate over each session
+    for session_id in sessions[sessions.get('session_type')=='functional_connectivity'].index:
+        # get session data and display progress 
+        print(f'Analyzing session: \t{session_id}')
+        session = cache.get_session_data(session_id)
 
-		# load session velocity timeseries
-		fname = f'running_{session_id}.npz'
-		data_in = np.load(f'{dir_input}/{fname}')
+        # load session velocity timeseries
+        fname = f'running_{session_id}.npz'
+        data_in = np.load(f'{dir_input}/{fname}')
 
-		# get running data for stimulus block
-		results = get_stimulus_block_behavioral_series(STIMULUS_NAME, session, data_in['time'], \
-			data_in['velocity'], block=BLOCK, smooth=SMOOTH, kernel_size=KERNEL_SIZE)
-		
-		# save results
-		for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-			np.savez(f'{base_path}/{RELATIVE_PATH_OUT}/{fname}', 
-				time=results[0], velocity_raw=results[1], velocity=results[2])
+        # get running data for stimulus block
+        results = get_stimulus_block_behavioral_series(STIMULUS_NAME, session, data_in['time'], \
+            data_in['velocity'], block=BLOCK, smooth=SMOOTH, kernel_size=KERNEL_SIZE)
+        
+        # save results
+        for base_path in [PROJECT_PATH, MANIFEST_PATH]:
+            np.savez(f'{base_path}/{RELATIVE_PATH_OUT}/{fname}_{BLOCK}', 
+                time=results[0], velocity_raw=results[1], velocity=results[2])
 
 
 def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity, \
@@ -110,4 +111,4 @@ def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity,
 
 
 if __name__ == "__main__":
-	main()
+    main()
