@@ -12,11 +12,11 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 # Settings - directories
 MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding"
-RELATIVE_PATH_OUT = "data/behavior/running/spontaneous" # where to save output relative to both paths above
+RELATIVE_PATH_OUT = "data/behavior/running/natural_movie_one_more_repeats" # where to save output relative to both paths above
 
 # settings - data of interest
-STIMULUS_NAME = 'spontaneous' # name of stimulus in allen dataset
-BLOCK = 4 # index of stimulus block to analyze
+STIMULUS_NAME = 'natural_movie_one_more_repeats' # name of stimulus in allen dataset
+BLOCK = 1 # index of stimulus block to analyze
 
 # settings - dataset details
 FS = 2500 # sampling frequency for interpolation
@@ -55,7 +55,7 @@ def main():
         
         # save results
         for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-            np.savez(f'{base_path}/{RELATIVE_PATH_OUT}/{fname}_{BLOCK}', 
+            np.savez(f'{base_path}/{RELATIVE_PATH_OUT}/{fname[:-4]}_{BLOCK}.npz', 
                 time=results[0], velocity_raw=results[1], velocity=results[2])
 
 

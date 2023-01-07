@@ -16,10 +16,12 @@ REPO_PATH = 'C:/Users/User/visual_encoding' # code repo r'C:\Users\micha\visual_
 
 # settings - data of interest
 BRAIN_STRUCTURES = ['VISp', 'LGd']
-STIMULUS_NAME = 'spontaneous'
-BLOCK = 4
-EPOCH_LENGTH = 10
-STATES = ['stationary', 'running']
+STIMULUS_NAME = 'natural_movie_one_more_repeats'
+# BLOCK = 1
+EPOCH_LENGTH = 30
+STATES = range(60)
+EPOCH_FILEPATH = f'{PROJECT_PATH}/data/behavior/running/epoch_times/'+\
+        'natural_movie_one_times.npz'
 
 # Import custom functions
 import sys
@@ -27,51 +29,55 @@ sys.path.append(REPO_PATH)
 from allen_vc.utils import calculate_spike_metrics
 
 def main():
-	#Initialize space for data storage
-	data = [0]*9
+    #Initialize space for data storage
+    data = [0]*9
 
-	epochs = np.load(f'{PROJECT_PATH}/data/behavior/running/epoch_times/'+\
-		f'{STIMULUS_NAME}_{BLOCK}_{EPOCH_LENGTH}s_random.npz')
+    epochs = np.load(EPOCH_FILEPATH)
 
-	for structure in BRAIN_STRUCTURES:
-		meta=pd.read_csv(f'{PROJECT_PATH}\\data\\brain_structure_DataFrames\\{structure}_DataFrame.csv')
+    for structure in BRAIN_STRUCTURES:
+        meta=pd.read_csv(f'{PROJECT_PATH}\\data\\brain_structure_DataFrames\\{structure}_DataFrame.csv')
 
-		# Iterate over each session
-		for session_id in meta.get('ecephys_session_id').unique():
-			# load Neo SpikeTrains
-			spiketrains = pd.read_pickle(f'{PROJECT_PATH}/data/spike_data'+\
-				f'/spike_times/{str(session_id)}_{structure}.pkl')
+        # Iterate over each session
+        for session_id in meta.get('ecephys_session_id').unique():
+            # skip over weird session
+            if STIMULUS_NAME == 'natural_movie_one_more_repeats' and \
+            session_id==793224716:
+                continue
 
-			# Calculate spike metrics for both states
-			for epoch_type in STATES:
-				epoch = epochs[f'{session_id}_{epoch_type}']
+            # load Neo SpikeTrains
+            spiketrains = pd.read_pickle(f'{PROJECT_PATH}/data/spike_data'+\
+                f'/spike_times/{str(session_id)}_{structure}.pkl')
 
-				if len(epoch)>0:
-					# epoch spiking data for state
-					spiketrains_state = [spiketrain.time_slice(epoch[0]*pq.s, epoch[1]*pq.s) \
-					for spiketrain in spiketrains]
+            # Calculate spike metrics for both states
+            for epoch_type in STATES:
+                epoch = epochs[f'{session_id}_{epoch_type}']
 
-					# Calculate/combine metrics for storage
-					metrics = list(calculate_spike_metrics(spiketrains_state))
-					metrics += [epoch, epoch_type, structure, session_id]
-					data = np.vstack((data, metrics))
-				else:
-					metrics = [None]*6 + [epoch_type, structure, session_id]
-					data = np.vstack((data, metrics))
+                if len(epoch)>0:
+                    # epoch spiking data for state
+                    spiketrains_state = [spiketrain.time_slice(epoch[0]*pq.s, epoch[1]*pq.s) \
+                    for spiketrain in spiketrains]
 
-	#Save DataFrame including all metrics
-	data = np.delete(data, (0), axis=0)
-	labels = ['mean_firing_rate', 'coefficient_of_variation', \
-	'SPIKE-distance','SPIKE-synchrony','correlation coefficient', \
-	'epoch', 'state', 'brain_structure','session_id']
-	
-	for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-		pd.DataFrame(data=data, columns=labels).\
-		to_csv(f'{PROJECT_PATH}/data/synchrony_data/{BRAIN_STRUCTURES}_'+\
-			f'{STIMULUS_NAME}_{BLOCK}_{EPOCH_LENGTH}s.csv', index=False)
+                    # Calculate/combine metrics for storage
+                    metrics = list(calculate_spike_metrics(spiketrains_state))
+                    metrics += [epoch, epoch_type, structure, session_id]
+                    data = np.vstack((data, metrics))
+                else:
+                    metrics = [None]*6 + [epoch_type, structure, session_id]
+                    data = np.vstack((data, metrics))
+
+    #Save DataFrame including all metrics
+    data = np.delete(data, (0), axis=0)
+    labels = ['mean_firing_rate', 'coefficient_of_variation', \
+    'SPIKE-distance','SPIKE-synchrony','correlation coefficient', \
+    'epoch', 'state', 'brain_structure','session_id']
+    
+    for base_path in [PROJECT_PATH, MANIFEST_PATH]:
+        pd.DataFrame(data=data, columns=labels).\
+        to_csv(f'{PROJECT_PATH}/data/synchrony_data/{BRAIN_STRUCTURES}_'+\
+            f'{STIMULUS_NAME}_{EPOCH_LENGTH}s.csv', index=False)
 
 if __name__ == '__main__':
-	main()
+    main()
 
 
 
@@ -79,4 +85,4 @@ if __name__ == '__main__':
 
 
 
-	
+    

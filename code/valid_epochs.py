@@ -11,11 +11,11 @@ import random
 MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding"
 REPO_PATH = 'C:/Users/User/visual_encoding' # code repo r'C:\Users\micha\visual_encoding
-RELATIVE_PATH_IN = "data/behavior/running/spontaneous" # where input data is saved relative to both paths above
+RELATIVE_PATH_IN = "data/behavior/running/natural_movie_one_more_repeats" # where input data is saved relative to both paths above
 
 # settings - dataset details
 FS = 2500 # Sampling rate (Hz)
-BLOCK = 4
+BLOCK = 1
 
 # settings - analysis
 SPEED_THRESHOLD = 5 # Any speed greater than this value is considered running (cm/s)
@@ -40,7 +40,7 @@ def main():
 
     # id files of interest and loop through them
 	files = os.listdir(f'{PROJECT_PATH}/{RELATIVE_PATH_IN}')
-	files = [f for f in files if f.endswith('.npz')] # .npz files only
+	files = [f for f in files if f.endswith(f'{BLOCK}.npz')] # .npz files only
 	for i_file, fname_in in enumerate(files):
 		# displey progress
 		session_id = fname_in.split('_')[1].split('.')[0]
