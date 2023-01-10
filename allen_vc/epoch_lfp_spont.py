@@ -15,7 +15,7 @@ from utils import find_probes_in_region, hour_min_sec
 # settings - directories
 MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_OUT = "data/lfp_epochs/spont" # where to save output relative to both paths above
+RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/spont" # where to save output relative to both paths above
 
 # settings - data of interest
 SESSION_TYPE = 'functional_connectivity' # dataset of interest

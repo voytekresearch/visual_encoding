@@ -18,8 +18,8 @@ from fooof import FOOOFGroup
 # settings - directories
 MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_IN = "data/lfp_psd/natural_movie" # folder containing output of epoch_lfp.py
-RELATIVE_PATH_OUT = "data/lfp_params/natural_movie" # where to save output relative to both paths above
+RELATIVE_PATH_IN = "data/lfp_data/lfp_psd/natural_movie" # folder containing output of epoch_lfp.py
+RELATIVE_PATH_OUT = "data/lfp_data/lfp_params/natural_movie" # where to save output relative to both paths above
 
 # settings - analysis details
 N_JOBS = 8 # number of jobs to run in parallel for psd_array_multitaper()
