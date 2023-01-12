@@ -26,7 +26,7 @@ EPOCH_FILEPATH = f'{PROJECT_PATH}/data/behavior/running/epoch_times/'+\
 # Import custom functions
 import sys
 sys.path.append(REPO_PATH)
-from allen_vc.utils import calculate_spike_metrics
+from allen_vc.analysis import calculate_spike_metrics
 
 def main():
     #Initialize space for data storage
@@ -73,7 +73,7 @@ def main():
     
     for base_path in [PROJECT_PATH, MANIFEST_PATH]:
         pd.DataFrame(data=data, columns=labels).\
-        to_csv(f'{PROJECT_PATH}/data/synchrony_data/{BRAIN_STRUCTURES}_'+\
+        to_csv(f'{PROJECT_PATH}/data/spike_data/synchrony_data/{BRAIN_STRUCTURES}_'+\
             f'{STIMULUS_NAME}_{EPOCH_LENGTH}s.csv', index=False)
 
 if __name__ == '__main__':
