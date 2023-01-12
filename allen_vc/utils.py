@@ -183,6 +183,65 @@ def get_spiking_data(session_id, manifest_path, brain_structure=None):
 
     return spike_times, spike_amplitudes, mean_waveforms
 
+
+def gen_pop_spiketrain(spike_trains, units='s', t_stop=None):
+    """Generates a population spiketrain from a list of individual spike trains.
+
+    Parameters
+    ----------
+    spike_trains : list
+        A list of Neo SpikeTrains 
+    units : str, optional
+        The units of the spike times (default is 's')
+    t_stop : float, optional
+        The stop time of the population spike train. If not provided, it will be
+        set to the last spike time (default is None)
+
+    Returns
+    -------
+    pop_spiketrain : neo.SpikeTrain
+        A Neo SpikeTrain object with the population spike train
+    """
+    
+    # imports
+    import neo
+
+    # concatenate spike trains across population
+    pop_spikes = np.sort(np.array(np.concatenate(np.array(spike_trains, dtype=object))))
+
+    # get stop time
+    if t_stop is None:
+        t_stop = pop_spikes[-1]
+
+    # create Neo SpikeTrain for population
+    pop_spiketrain = neo.SpikeTrain(pop_spikes, units=units, t_stop=t_stop)
+    
+    return pop_spiketrain
+
+
+def comp_spike_cov(spike_train):
+    """Computes the coefficient of variation (CoV) of the interspike interval (ISI) distribution.
+
+    Parameters
+    ----------
+    spike_train : neo.SpikeTrain
+        Neo SpikeTrain object
+
+    Returns
+    -------
+    cov : float
+        Coefficient of variation (CoV) of the interspike interval (ISI) distribution.
+    """
+    
+    # compute interspike intervals
+    isi = np.diff(spike_train.times)
+
+    # compute coefficient of variation
+    cov = np.std(isi) / np.mean(isi)
+    
+    return cov
+
+
 def calculate_spike_metrics(spiketrains):
     """
     calculate spike metrics (mean firing rate, coefficient of variance, 
@@ -211,25 +270,17 @@ def calculate_spike_metrics(spiketrains):
     """
     #Imports
     import pyspike as spk
-    import neo
     import elephant
     import quantities as pq
 
-    # Compute coefficient of variation (this can be moved to independent function)
-    def comp_cov(spike_trains):
-        pop_spikes = np.sort(np.array(np.concatenate(np.array(spike_trains))))
-        isi = np.diff(pop_spikes)
-        cov = np.std(isi) / np.mean(isi)   
-        return cov
-
-    # create spk object (is this necessary?)
+    # reformat as PySpike object for synchrony analyses
     spk_trains = [spk.SpikeTrain(spiketrain, [spiketrain.t_start, spiketrain.t_stop]) \
-    for spiketrain in spiketrains]
+        for spiketrain in spiketrains]
 
     # compute metrics
     mean_firing_rate = sum([len(spiketrain)/float(spiketrain.duration) \
         for spiketrain in spiketrains])/len(spiketrains)
-    coeff_of_var = (comp_cov(spiketrains))
+    coeff_of_var = (comp_spike_cov(gen_pop_spiketrain(spiketrains)))
     spike_dist = (spk.spike_distance(spk_trains))
     spike_sync = (spk.spike_sync(spk_trains))
     corr_coeff = (elephant.spike_train_correlation.correlation_coefficient(\
