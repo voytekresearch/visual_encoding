@@ -240,3 +240,30 @@ def find_probes_in_region(session, region):
 
     return ids, names
 
+def save_pkl(dictionary, fname_out, method='pickle'):
+    """
+    save dictionary as pickle
+
+    Parameters
+    ----------
+    dictionary : dict
+        dictionary to be saved to file.
+    fname_out : str
+        filename for output.
+    method : str, optional
+        what method (pickle or joblib) to use to saving. 
+        OS users were having issues saving large files with pickle.
+        The default is 'pickle'.
+
+    Returns
+    -------
+    None.
+
+    """
+    # imports
+    import pickle
+
+    # save pickle
+    f = open(fname_out, "wb")
+    pickle.dump(dictionary, f)
+    f.close()
