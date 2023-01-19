@@ -37,8 +37,7 @@ def main():
 
 		# save to file (csv)
 		for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-			unit_info.to_csv(f'{base_path}/{RELATIVE_PATH_OUT}/{structure}_DataFrame.csv',\
-				index=False)
+			unit_info.to_csv(f'{base_path}/{RELATIVE_PATH_OUT}/{structure}_DataFrame.csv')
 
 # Can be ran as script
 if __name__ == "__main__":

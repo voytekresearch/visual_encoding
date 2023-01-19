@@ -42,7 +42,8 @@ def get_unit_info(manifest_path, brain_structure=None, session_type=None):
         unit_info = unit_info[unit_info.get('ecephys_structure_acronym')==brain_structure]
 
     # get info of interest
-    unit_info = unit_info.get(['ecephys_session_id','specimen_id','ecephys_probe_id','ecephys_channel_id']).drop_duplicates()
+    unit_info = unit_info.get(['ecephys_session_id','specimen_id',\
+        'ecephys_probe_id','ecephys_channel_id'])#.drop_duplicates()
 
     return unit_info
 
@@ -84,7 +85,7 @@ def get_running_timeseries(session, fs):
     return time, velocity
 
 
-def gen_neo_spiketrains(session_id, manifest_path, brain_structure=None):
+def gen_neo_spiketrains(session_id, manifest_path, metadata, brain_structure=None):
     """
     load spiking data for a session and reformat as Neo object.
 
@@ -94,6 +95,8 @@ def gen_neo_spiketrains(session_id, manifest_path, brain_structure=None):
         AllenSDK session object.
     manifest_path : str
         path to AllenSDK manifest file.
+    metadata : Pandas DataFrame
+        contains information for unit annotations.
     brain_structure : str, optional
         include to filter results by brain structure. The default is None.
 
@@ -116,17 +119,19 @@ def gen_neo_spiketrains(session_id, manifest_path, brain_structure=None):
     # Create Neo SpikeTrain object
     spiketrains = []
 
-    # Retrive raw spikes
+    # Retrive raw spikes and save as a group containing a single Neo SpikeTrain
     if brain_structure:
         for unit in session.units[session.units.get('ecephys_structure_acronym')==brain_structure].index:
+            annotations = metadata.loc[unit]
             session_spikes = session.spike_times[unit]
-            spiketrains.append(neo.SpikeTrain(times=session_spikes, \
-                units='sec', t_stop=session_spikes[-1]))
+            spiketrains.append(neo.Group([neo.SpikeTrain(times=session_spikes, \
+                units='sec', t_stop=session_spikes[-1], **annotations)]))
     else:
         for unit in session.units.index:
+            annotations = metadata.loc[unit]
             session_spikes = session.spike_times[unit]
-            spiketrains.append(neo.SpikeTrain(times=session_spikes, \
-                units='sec', t_stop=session_spikes[-1]))
+            spiketrains.append(neo.Group([neo.SpikeTrain(times=session_spikes, \
+                units='sec', t_stop=session_spikes[-1], **annotations)]))
 
     return spiketrains
 

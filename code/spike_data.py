@@ -35,14 +35,15 @@ def main():
 
     for structure in BRAIN_STRUCTURES:
         print(f'Analyzing Brain Structure: {structure}')
-        meta=pd.read_csv(f'{PROJECT_PATH}\\data\\brain_structure_DataFrames\\{structure}_DataFrame.csv')
+        metadata=pd.read_csv(f'{PROJECT_PATH}\\data\\brain_structure_DataFrames\\{structure}_DataFrame.csv')\
+            .set_index('id')
 
         # loop through sessions
-        for session_id in meta.get('ecephys_session_id').unique():
+        for session_id in metadata.get('ecephys_session_id').unique():
             print(f'Analyzing session: \t{session_id}')
             
             # Get spiking data
-            spiketrains = gen_neo_spiketrains(session_id, manifest_path, structure)
+            spiketrains = gen_neo_spiketrains(session_id, manifest_path, metadata, structure)
 
             # save to file
             for base_path in [PROJECT_PATH, MANIFEST_PATH]:
