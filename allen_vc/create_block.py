@@ -30,7 +30,7 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    for base_path in [PROJECT_PATH, MANIFEST_PATH]:
+    for base_path in [PROJECT_PATH]:#, MANIFEST_PATH]:
         dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
         if not os.path.exists(dir_results): 
             os.makedirs(dir_results)
@@ -49,23 +49,43 @@ def main():
 
         # load spike data and add to block
         for region in REGIONS:
+            # load list of spiketrains for region
             fname_spikes = f"{fname_in.split('_')[0]}_{region}.pkl"
-            spike_trains = pd.read_pickle(f"{PROJECT_PATH}/{RELATIVE_PATH_SPIKES}/{fname_spikes}")
-            group_r = Group(spike_trains, name=region)
-            block.groups.append(group_r)
+            spiketrains = pd.read_pickle(f"{PROJECT_PATH}/{RELATIVE_PATH_SPIKES}/{fname_spikes}")
+
+            # create Group object for each unit
+            group_names = []
+            for spiketrain in spiketrains:
+                group_name = f"unit_{spiketrain.annotations['unit_id']}"
+                group_names.append(group_name)
+                group_u = Group(name=group_name)
+                block.groups.append(group_u)
 
             # loop through segments
             for i_seg in range(len(block.segments)):
-                # add each spiketrain segment after slicing in time
-                for spiketrain in spike_trains:
+                # create Group object for each segment-region combination
+                group_sr = Group(name=f"seg_{i_seg}_{region}")
+                block.groups.append(group_sr)
+
+                # add LFP segment to group
+                group_sr.analogsignals.append(block.segments[i_seg].analogsignals)
+
+                # add each spiketrain to segment after slicing in time
+                for spiketrain in spiketrains:
                     spiketrain_seg = spiketrain.time_slice(block.segments[i_seg].t_start, block.segments[i_seg].t_stop)
                     block.segments[i_seg].spiketrains.append(spiketrain_seg)
+                    
+                    # add spiketrain to region group
+                    group_sr.spiketrains.append(spiketrain)
+
+                    # add spiketrain to unit group
+                    block.groups[group_names==spiketrain.annotations['unit_id']].spiketrains.append(spiketrain)
 
         # load behavioral data
 
         # save results
         fname_out = fname_in.replace('.npz', '.pkl')
-        for base_path in [PROJECT_PATH, MANIFEST_PATH]:
+        for base_path in [PROJECT_PATH]:#, MANIFEST_PATH]:
             dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
             save_pkl(block, f"{dir_results}/{fname_out}")
 
