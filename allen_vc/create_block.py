@@ -5,7 +5,7 @@ Combine lfp, spiking and behavioral data into a single Neo Block object.
 
 # imports
 import os
-# import numpy as np
+import numpy as np
 import pandas as pd
 import pickle
 from time import time as timer
@@ -18,6 +18,7 @@ PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 RELATIVE_PATH_LFP = "data/lfp_data/lfp_epochs_neo/natural_movie/pkl" # folder containing output of epoch_lfp.py
 RELATIVE_PATH_SPIKES = "data/spike_data/spike_times" # folder containing output of spike_data()
 RELATIVE_PATH_OUT = "data/blocks" # where to save output relative to both paths above
+STIMULUS_NAME = "natural_movie_one_more_repeats"
 
 # spike data regions of interest
 REGIONS = ['VISp','LGd']
@@ -49,22 +50,26 @@ def main():
 
         # load spike data and add to block
         for region in REGIONS:
-            # load list of spiketrains for region
+
+            # Don't add if brain region not recorded in session
             fname_spikes = f"{fname_in.split('_')[0]}_{region}.pkl"
+            if not os.path.exists(f"{PROJECT_PATH}/{RELATIVE_PATH_SPIKES}/{fname_spikes}"):
+                continue
+
+            # load list of spiketrains for region
             spiketrains = pd.read_pickle(f"{PROJECT_PATH}/{RELATIVE_PATH_SPIKES}/{fname_spikes}")
 
             # create Group object for each unit
-            group_names = []
             for spiketrain in spiketrains:
                 group_name = f"unit_{spiketrain.annotations['unit_id']}"
-                group_names.append(group_name)
-                group_u = Group(name=group_name)
+                group_u = Group([spiketrain], name=group_name)
                 block.groups.append(group_u)
 
             # loop through segments
             for i_seg in range(len(block.segments)):
                 # create Group object for each segment-region combination
-                group_sr = Group(name=f"seg_{i_seg}_{region}")
+                group_sr_name = f"seg_{i_seg}_{region}"
+                group_sr = Group(name=group_sr_name)
                 block.groups.append(group_sr)
 
                 # add LFP segment to group
@@ -78,13 +83,10 @@ def main():
                     # add spiketrain to region group
                     group_sr.spiketrains.append(spiketrain)
 
-                    # add spiketrain to unit group
-                    block.groups[group_names==spiketrain.annotations['unit_id']].spiketrains.append(spiketrain)
-
         # load behavioral data
 
         # save results
-        fname_out = fname_in.replace('.npz', '.pkl')
+        fname_out = f"{fname_in.split('_')[0]}_{STIMULUS_NAME}.pkl"
         for base_path in [PROJECT_PATH]:#, MANIFEST_PATH]:
             dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
             save_pkl(block, f"{dir_results}/{fname_out}")

@@ -122,16 +122,18 @@ def gen_neo_spiketrains(session_id, manifest_path, metadata, brain_structure=Non
     # Retrive raw spikes and save as a group containing a single Neo SpikeTrain
     if brain_structure:
         for unit in session.units[session.units.get('ecephys_structure_acronym')==brain_structure].index:
-            annotations = metadata.loc[unit]
+            annotations = dict(metadata.loc[unit])
+            annotations['unit_id'], annotations['region'] = unit, brain_structure
             session_spikes = session.spike_times[unit]
-            spiketrains.append(neo.Group([neo.SpikeTrain(times=session_spikes, \
-                units='sec', t_stop=session_spikes[-1], **annotations)]))
+            spiketrains.append(neo.SpikeTrain(times=session_spikes, \
+                units='sec', t_stop=session_spikes[-1], **annotations))
     else:
         for unit in session.units.index:
-            annotations = metadata.loc[unit]
+            annotations = dict(metadata.loc[unit])
+            annotations['unit_id'] = unit
             session_spikes = session.spike_times[unit]
-            spiketrains.append(neo.Group([neo.SpikeTrain(times=session_spikes, \
-                units='sec', t_stop=session_spikes[-1], **annotations)]))
+            spiketrains.append(neo.SpikeTrain(times=session_spikes, \
+                units='sec', t_stop=session_spikes[-1], **annotations))
 
     return spiketrains
 
