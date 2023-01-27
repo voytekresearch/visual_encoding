@@ -13,10 +13,15 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding"
 RELATIVE_PATH_OUT = "data/behavior/running/natural_movie_one_more_repeats" # where to save output relative to both paths above
+REPO_PATH = "C:/Users/User/visual_encoding"
+
+# Import custom functions
+import sys
+sys.path.append(REPO_PATH)
+from allen_vc.utils import save_pkl
 
 # settings - data of interest
 STIMULUS_NAME = 'natural_movie_one_more_repeats' # name of stimulus in allen dataset
-BLOCK = 1 # index of stimulus block to analyze
 
 # settings - dataset details
 FS = 2500 # sampling frequency for interpolation
@@ -51,16 +56,17 @@ def main():
 
         # get running data for stimulus block
         results = get_stimulus_block_behavioral_series(STIMULUS_NAME, session, data_in['time'], \
-            data_in['velocity'], block=BLOCK, smooth=SMOOTH, kernel_size=KERNEL_SIZE)
-        
+            data_in['velocity'], smooth=SMOOTH, kernel_size=KERNEL_SIZE)
+
         # save results
+        fname_out = f"{fname[:-4]}.pkl"
         for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-            np.savez(f'{base_path}/{RELATIVE_PATH_OUT}/{fname[:-4]}_{BLOCK}.npz', 
-                time=results[0], velocity_raw=results[1], velocity=results[2])
+            dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
+            save_pkl(results, f"{dir_results}/{fname_out}")
 
 
 def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity, \
-    block=0, smooth=True, kernel_size=None):
+    smooth=True, kernel_size=None):
     """
     Retrieves the timeseries of the velocity of an animal's behavior during 
     a stimulus presentation.
@@ -80,34 +86,50 @@ def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity,
     Time, speed, and filtered speed arrays
     """
     # imports
+    import neo
+    import quantities as pq
     from scipy.ndimage import median_filter
 
     # get start and stop time of stimulus block (0-indexec)
     stimuli_df = session.get_stimulus_epochs()
     stimuli_df = stimuli_df[stimuli_df.get('stimulus_name')==stimulus_name].\
     get(['start_time','stop_time'])
-    start_time = stimuli_df.get('start_time').iloc[block]
-    stop_time = stimuli_df.get('stop_time').iloc[block]
 
-    # epoch data
-    epoch_mask = (time>start_time) & (time<stop_time)
-    stim_time = time[epoch_mask]
-    stim_speed = velocity[epoch_mask]
+    # retrieve data for each block and append to group
+    group_name = f"{STIMULUS_NAME}_filtered"
+    stim_group = neo.Group(name=group_name)
 
-    # Apply a median filter
-    if smooth:
-    # make sure kernel size is odd
-        if kernel_size is None:
-            print("Please provide kernel_size")
+    for block in range(len(stimuli_df)):
+        start_time = stimuli_df.get('start_time').iloc[block]
+        stop_time = stimuli_df.get('stop_time').iloc[block]
+
+        # epoch data
+        epoch_mask = (time>start_time) & (time<stop_time)
+        stim_time = time[epoch_mask]
+        stim_speed = velocity[epoch_mask]
+
+        # Apply a median filter
+        if smooth:
+        # make sure kernel size is odd
+            if kernel_size is None:
+                print("Please provide kernel_size")
+            else:
+                if kernel_size % 2 == 0:
+                    ks = kernel_size + 1
+            # filter
+            stim_speed_filt = median_filter(stim_speed, ks)
         else:
-            if kernel_size % 2 == 0:
-                ks = kernel_size + 1
-        # filter
-        stim_speed_filt = median_filter(stim_speed, ks)
-    else:
-        stim_speed_filt = None
+            stim_speed_filt = None
 
-    return stim_time, stim_speed, stim_speed_filt
+        # return stim_time, stim_speed, stim_speed_filt
+
+        # convert to neo.AnalogSignal
+        output = neo.AnalogSignal(stim_speed_filt*(pq.cm/pq.s), sampling_rate=FS*pq.Hz, \
+            block=block, t_start=start_time*pq.s, t_stop=stop_time*pq.s)
+        stim_group.analogsignals.append(output)
+
+    return stim_group
+
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 RELATIVE_PATH_LFP = "data/lfp_data/lfp_epochs_neo/natural_movie/pkl" # folder containing output of epoch_lfp.py
 RELATIVE_PATH_SPIKES = "data/spike_data/spike_times" # folder containing output of spike_data()
+RELATIVE_PATH_RUNNING = "data/behavior/running" # folder containing output of comp_velocity_for_block.py
 RELATIVE_PATH_OUT = "data/blocks" # where to save output relative to both paths above
 STIMULUS_NAME = "natural_movie_one_more_repeats"
 
@@ -83,7 +84,33 @@ def main():
                     # add spiketrain to region group
                     group_sr.spiketrains.append(spiketrain)
 
+
+
+        # Still working on this part/needs to be bug fixed!
+
         # load behavioral data
+        fname_running = f"running_{fname_in.split('_')[0]}.pkl"
+        running_group = pd.read_pickle(f"{PROJECT_PATH}/{RELATIVE_PATH_RUNNING}/{STIMULUS_NAME}/{fname_running}")
+
+        # loop through segments
+        for i_seg in range(len(block.segments)):
+            # filter for correct signal based on start/stop times
+            for signal in running_group.analogsignals:
+                if (signal.t_start<=block.segments[i_seg].t_start) and \
+                signal.t_stop>=block.segments[i_seg].t_stop:
+                    running_series = signal
+                    found = True
+
+            if not found:
+                print(f"Did not find series for {i_seg}th segment!!!")
+
+            # slice signal and append to segment
+            running_seg = running_series.time_slice(block.segments[i_seg].t_start, block.segments[i_seg].t_stop)
+            block.segments[i_seg].analogsignals.append(running_seg)
+
+            # Testing
+            found = False
+
 
         # save results
         fname_out = f"{fname_in.split('_')[0]}_{STIMULUS_NAME}.pkl"
