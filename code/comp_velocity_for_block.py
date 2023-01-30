@@ -24,7 +24,7 @@ from allen_vc.utils import save_pkl
 STIMULUS_NAME = 'natural_movie_one_more_repeats' # name of stimulus in allen dataset
 
 # settings - dataset details
-FS = 2500 # sampling frequency for interpolation
+FS = 1250 # sampling frequency for interpolation
 
 # settings - analysis
 SMOOTH = True # whether to smooth data (median filter)
@@ -125,7 +125,7 @@ def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity,
 
         # convert to neo.AnalogSignal
         output = neo.AnalogSignal(stim_speed_filt*(pq.cm/pq.s), sampling_rate=FS*pq.Hz, \
-            block=block, t_start=start_time*pq.s, t_stop=stop_time*pq.s)
+            block=block, t_start=start_time*pq.s)
         stim_group.analogsignals.append(output)
 
     return stim_group

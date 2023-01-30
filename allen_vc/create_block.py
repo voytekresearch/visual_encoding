@@ -84,10 +84,6 @@ def main():
                     # add spiketrain to region group
                     group_sr.spiketrains.append(spiketrain)
 
-
-
-        # Still working on this part/needs to be bug fixed!
-
         # load behavioral data
         fname_running = f"running_{fname_in.split('_')[0]}.pkl"
         running_group = pd.read_pickle(f"{PROJECT_PATH}/{RELATIVE_PATH_RUNNING}/{STIMULUS_NAME}/{fname_running}")
@@ -99,18 +95,11 @@ def main():
                 if (signal.t_start<=block.segments[i_seg].t_start) and \
                 signal.t_stop>=block.segments[i_seg].t_stop:
                     running_series = signal
-                    found = True
-
-            if not found:
-                print(f"Did not find series for {i_seg}th segment!!!")
+                    break
 
             # slice signal and append to segment
             running_seg = running_series.time_slice(block.segments[i_seg].t_start, block.segments[i_seg].t_stop)
             block.segments[i_seg].analogsignals.append(running_seg)
-
-            # Testing
-            found = False
-
 
         # save results
         fname_out = f"{fname_in.split('_')[0]}_{STIMULUS_NAME}.pkl"
