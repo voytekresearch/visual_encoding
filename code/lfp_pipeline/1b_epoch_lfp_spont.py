@@ -3,8 +3,6 @@ Epoch LFP during longest spontaneous epoch
 
 """
 # Set paths
-REPO_PATH = r"C:\Users\micha\visual_encoding" # github project repo
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/spont" # where to save output relative to both paths above
 
@@ -35,13 +33,12 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-        dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-        if not os.path.exists(dir_results): 
-            os.makedirs(dir_results)
+    dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+    if not os.path.exists(dir_results): 
+        os.makedirs(dir_results)
     
     # Create Allensdk cache object
-    cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
+    cache = EcephysProjectCache.from_warehouse(manifest=f"{PROJECT_PATH}/dataset/manifest.json")
 
     # get session info for dataset of interest
     sessions_all = cache.get_session_table()
@@ -100,9 +97,8 @@ def main():
                 # save results
                 print('    saving data')
                 fname_out = f"{session_id}_{probe_id}_lfp_{STIM_CODE}_{duration}s.npz"
-                for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-                    dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-                    np.savez(f"{dir_results}/{fname_out}", lfp=lfp_a, time=time) 
+                dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+                np.savez(f"{dir_results}/{fname_out}", lfp=lfp_a, time=time) 
 
         # display progress
         _, min, sec = hour_min_sec(timer() - t_start_s)

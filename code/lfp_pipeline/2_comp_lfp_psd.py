@@ -3,8 +3,6 @@ Compute PSD for LFP epochs. Analyzes input of allen_vc.epoch_lfp.py.
 
 """
 # Set paths
-REPO_PATH = r"C:\Users\micha\visual_encoding" # github project repo
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 RELATIVE_PATH_IN = "data/lfp_data/lfp_epochs/natural_movie" # folder containing output of epoch_lfp.py
 RELATIVE_PATH_OUT = "data/lfp_data/lfp_psd/natural_movie" # where to save output relative to both paths above
@@ -18,7 +16,7 @@ from mne.time_frequency import psd_array_multitaper
 
 # imports - custom
 import sys
-sys.path.append(f"{REPO_PATH}/allen_vc")
+sys.path.append("allen_vc")
 from utils import hour_min_sec
 
 # settings - analysis details
@@ -33,13 +31,12 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-        dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-        if not os.path.exists(dir_results): 
-            os.makedirs(dir_results)
+    dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+    if not os.path.exists(dir_results): 
+        os.makedirs(dir_results)
     
     # id files of interst and loop through them
-    files = os.listdir(f'{MANIFEST_PATH}/{RELATIVE_PATH_IN}')
+    files = os.listdir(f'{PROJECT_PATH}/{RELATIVE_PATH_IN}')
     for i_file, fname_in in enumerate(files):
 
 
@@ -49,7 +46,7 @@ def main():
         print(f"    {fname_in}")
 
         # load LFP epochs
-        data_in = np.load(f"{MANIFEST_PATH}/{RELATIVE_PATH_IN}/{fname_in}")
+        data_in = np.load(f"{PROJECT_PATH}/{RELATIVE_PATH_IN}/{fname_in}")
 
         # compute psd
         psd, freq = psd_array_multitaper(data_in['lfp'], FS, 
@@ -57,9 +54,8 @@ def main():
 
         # save results
         fname_out = fname_in.replace('.npz', '_psd.npz')
-        for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-            dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-            np.savez(f"{dir_results}/{fname_out}", psd=psd, freq=freq) 
+        dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+        np.savez(f"{dir_results}/{fname_out}", psd=psd, freq=freq) 
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)

@@ -3,8 +3,6 @@ Parametereize PSDs for LFP epochs. Analyzes output of allen_vc.comp_lfp_psd.py.
 
 """
 # Set paths
-REPO_PATH = r"C:\Users\micha\visual_encoding" # github project repo
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 RELATIVE_PATH_IN = "data/lfp_data/lfp_psd/natural_movie" # folder containing output of epoch_lfp.py
 RELATIVE_PATH_OUT = "data/lfp_data/lfp_params/natural_movie" # where to save output relative to both paths above
@@ -23,7 +21,7 @@ from fooof import FOOOFGroup
 
 # imports - custom
 import sys
-sys.path.append(f"{REPO_PATH}/allen_vc")
+sys.path.append("allen_vc")
 from utils import hour_min_sec
 
 # settings - analysis details
@@ -42,13 +40,12 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-        dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-        if not os.path.exists(dir_results): 
-            os.makedirs(dir_results)
+    dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+    if not os.path.exists(dir_results): 
+        os.makedirs(dir_results)
     
     # id files of interst and loop through them
-    files = os.listdir(f'{MANIFEST_PATH}/{RELATIVE_PATH_IN}')
+    files = os.listdir(f'{PROJECT_PATH}/{RELATIVE_PATH_IN}')
     for i_file, fname_in in enumerate(files):
 
         # display progress
@@ -57,16 +54,15 @@ def main():
         print(f"    {fname_in}")
 
         # load LFP epochs
-        data_in = np.load(f"{MANIFEST_PATH}/{RELATIVE_PATH_IN}/{fname_in}")
+        data_in = np.load(f"{PROJECT_PATH}/{RELATIVE_PATH_IN}/{fname_in}")
 
         # parameterize 
         df = spec_param_3d(data_in['psd'], data_in['freq'])
         
         # save results 
-        for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-            dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-            fname_out = fname_in.replace('_psd.npz', f'_params.pkl')
-            df.to_pickle(f"{dir_results}/{fname_out}")
+        dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+        fname_out = fname_in.replace('_psd.npz', f'_params.pkl')
+        df.to_pickle(f"{dir_results}/{fname_out}")
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)

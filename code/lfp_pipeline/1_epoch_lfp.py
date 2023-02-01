@@ -3,12 +3,10 @@ Epoch LFP arond stimulus presentation time
 
 """
 # Set paths
-REPO_PATH = r"C:\Users\micha\visual_encoding" # github project repo
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/natural_movie" # where to save output relative to both paths above
 
-# imports
+# imports - general
 import os
 import numpy as np
 import pandas as pd
@@ -16,9 +14,12 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 from time import time as timer
 from time import ctime as time_now
 
+# print working dir
+print(f"Working directory: {os.getcwd()}")
+
 # imports - custom
 import sys
-sys.path.append(f"{REPO_PATH}/allen_vc")
+sys.path.append("allen_vc")
 from utils import find_probes_in_region, hour_min_sec, save_pkl
 
 # settings - data of interest
@@ -41,13 +42,12 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-        dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-        if not os.path.exists(f'{dir_results}/npy'): os.makedirs(dir_results)
-        if not os.path.exists(f'{dir_results}/pkl'): os.makedirs(dir_results)
+    dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+    if not os.path.exists(f'{dir_results}/npy'): os.makedirs(f'{dir_results}/npy')
+    if not os.path.exists(f'{dir_results}/pkl'): os.makedirs(f'{dir_results}/pkl')
     
     # Create Allensdk cache object
-    cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
+    cache = EcephysProjectCache.from_warehouse(manifest=f"{PROJECT_PATH}/dataset/manifest.json")
 
     # get session info for dataset of interest
     sessions_all = cache.get_session_table()
@@ -107,14 +107,13 @@ def main():
             # save results
             print('    saving data')
             fname_out = f"{session_id}_{probe_id}_lfp_{STIM_CODE}"
-            for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-                dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-                
-                # save lfp array as .npz
-                np.savez(f"{dir_results}/npy/{fname_out}.npz", lfp=lfp_a, time=time) 
+            dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+            
+            # save lfp array as .npz
+            np.savez(f"{dir_results}/npy/{fname_out}.npz", lfp=lfp_a, time=time) 
 
-                # save Neo object as .pkl
-                save_pkl(block, f"{dir_results}/pkl/{fname_out}.pkl")
+            # save Neo object as .pkl
+            save_pkl(block, f"{dir_results}/pkl/{fname_out}.pkl")
 
         # display progress
         _, min, sec = hour_min_sec(timer() - t_start_s)
