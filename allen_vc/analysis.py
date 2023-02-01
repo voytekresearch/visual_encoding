@@ -14,6 +14,9 @@ def comp_spike_cov(spike_train):
     cov : float
         Coefficient of variation (CoV) of the interspike interval (ISI) distribution.
     """
+    # account for empty spike_train
+    if len(spike_train)==0:
+        return 0
     
     # compute interspike intervals
     isi = np.diff(spike_train.times)
@@ -21,7 +24,8 @@ def comp_spike_cov(spike_train):
     # compute coefficient of variation
     cov = np.std(isi) / np.mean(isi)
     
-    return cov
+    # returns as a 'dimensionless string' without float constructor
+    return float(cov)
 
 
 def calculate_spike_metrics(spiketrains):
@@ -54,19 +58,21 @@ def calculate_spike_metrics(spiketrains):
     import pyspike as spk
     import elephant
     import quantities as pq
+    from allen_vc.utils import gen_pop_spiketrain
 
     # reformat as PySpike object for synchrony analyses
     spk_trains = [spk.SpikeTrain(spiketrain, [spiketrain.t_start, spiketrain.t_stop]) \
         for spiketrain in spiketrains]
 
     # compute metrics
-    mean_firing_rate = sum([len(spiketrain)/float(spiketrain.duration) \
-        for spiketrain in spiketrains])/len(spiketrains)
-    coeff_of_var = (comp_spike_cov(gen_pop_spiketrain(spiketrains)))
+    unit_firing_rates = [len(spiketrain)/float(spiketrain.duration) \
+        for spiketrain in spiketrains]
+    mean_firing_rate = sum(unit_firing_rates)/len(spiketrains)
+    coeff_of_var = (comp_spike_cov(gen_pop_spiketrain(spiketrains, t_stop=spiketrains[0].t_stop)))
     spike_dist = (spk.spike_distance(spk_trains))
     spike_sync = (spk.spike_sync(spk_trains))
     corr_coeff = (elephant.spike_train_correlation.correlation_coefficient(\
         elephant.conversion.BinnedSpikeTrain(spiketrains, bin_size=1 * pq.s)))
 
-    return mean_firing_rate, coeff_of_var, spike_dist, spike_sync, corr_coeff
+    return mean_firing_rate, unit_firing_rates, coeff_of_var, spike_dist, spike_sync, corr_coeff
 

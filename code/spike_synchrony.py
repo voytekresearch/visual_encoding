@@ -26,7 +26,7 @@ from allen_vc.analysis import calculate_spike_metrics
 def main():
     #Initialize space for data storage
     
-    data_mat = [0]*9
+    data_mat = [0]*10
 
     for structure in BRAIN_STRUCTURES:
         print(f"\nAnalyzing Region:\t{structure}")
@@ -55,13 +55,14 @@ def main():
 
                 # Calculate/combine metrics for storage
                 metrics = list(calculate_spike_metrics(spikes))
-                metrics += [list((segment.t_start, segment.t_stop)), segment.name, structure, session_id]
+                metrics.extend([[segment.t_start, segment.t_stop], segment.name, \
+                    structure, session_id])
                 data_mat = np.vstack((data_mat, metrics))
 
     #Save DataFrame including all metrics
     data_mat = np.delete(data_mat, (0), axis=0)
-    labels = ['mean_firing_rate', 'coefficient_of_variation', \
-    'SPIKE-distance','SPIKE-synchrony','correlation coefficient', \
+    labels = ['mean_firing_rate', 'unit_firing_rates', 'coefficient_of_variation', \
+    'SPIKE-distance','SPIKE-synchrony','correlation_coefficient', \
     'epoch', 'state', 'brain_structure','session_id']
 
     for base_path in [PROJECT_PATH, MANIFEST_PATH]:
