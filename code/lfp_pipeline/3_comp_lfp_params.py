@@ -62,7 +62,7 @@ def main():
         # save results 
         dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
         fname_out = fname_in.replace('_psd.npz', f'_params.pkl')
-        df.to_pickle(f"{dir_results}/{fname_out}")
+        df.to_csv(f"{dir_results}/{fname_out}")
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)
