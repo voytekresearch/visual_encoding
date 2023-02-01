@@ -44,6 +44,9 @@ def main():
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
     
+    # initialize output
+    params_list = []
+
     # id files of interst and loop through them
     files = os.listdir(f'{PROJECT_PATH}/{RELATIVE_PATH_IN}')
     for i_file, fname_in in enumerate(files):
@@ -58,6 +61,10 @@ def main():
 
         # parameterize 
         df = spec_param_3d(data_in['psd'], data_in['freq'])
+
+        # aggregate across files
+        df['session'] = fname_in.split('_')[0]
+        params_list.append(df)
         
         # save results 
         dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
@@ -68,6 +75,10 @@ def main():
         hour, min, sec = hour_min_sec(timer() - t_start_s)
         print(f"    file complete in {hour} hour, {min} min, and {sec :0.1f} s")
 
+    # aggregate across files
+    params = pd.concat(params_list, axis=0)
+    params.to_csv(f"{dir_results}/all_params.csv")
+    
     # display progress
     hour, min, sec = hour_min_sec(timer() - t_start)
     print(f"\n\n Total Time: \t {hour} hours, {min} minutes, {sec :0.1f} seconds")
