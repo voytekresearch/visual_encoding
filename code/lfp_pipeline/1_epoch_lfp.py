@@ -67,6 +67,7 @@ def main():
         stim_table = session.stimulus_presentations
         for param_name in STIM_PARAMS.keys():
             stim_table = stim_table[stim_table[param_name] == STIM_PARAMS[param_name]]
+        stim_times = stim_table.start_time.values
 
         # get probe info (for region of interest)
         if REGION is None:
@@ -93,16 +94,23 @@ def main():
                 chan_ids = session.channels[(session.channels.probe_id==probe_id) & \
                     (session.channels.ecephys_structure_acronym==REGION)].index.values
                 lfp = lfp.sel(channel=slice(np.min(chan_ids), np.max(chan_ids)))
+            else:
+                chan_ids = session.channels[session.channels.probe_id==probe_id].index.values
 
             # epoch LFP data around stimulus
             print(f'    aligning to stimulus')
-            lfp_a, time = align_lfp(lfp, stim_table.start_time.values, 
+            lfp_a, time = align_lfp(lfp, stim_times, 
                 stim_table.index.values, t_window=T_WINDOW, dt=1/FS)
 
             # create Neo object
             print('    creating Neo object')
-            t_start = stim_table.start_time.values + T_WINDOW[0]
-            block = create_neo_block(lfp_a, FS, t_start)
+            t_start = stim_times + T_WINDOW[0]
+            block = create_neo_block(lfp_a, FS, chan_ids, t_start)
+
+            # add block annotations
+            block.annotations['session_id'] = session_id
+            block.annotations['probe_id'] = probe_id
+            block.annotations['stimulus_time'] = stim_times
 
             # save results
             print('    saving data')
@@ -138,7 +146,7 @@ def align_lfp(lfp, t_stim, ids, t_window=[-1,1], dt=0.001):
 
     return aligned_lfp, trial_window
 
-def create_neo_block(lfp, fs, t_start, block_name=None, units='uV'):
+def create_neo_block(lfp, fs, chan_id, t_start, block_name=None, units='uV'):
     """
     Creates a Neo Block object from an LFP array and its associated timestamps. 
     A Neo Segment is created within the Block for each trial.
@@ -149,6 +157,8 @@ def create_neo_block(lfp, fs, t_start, block_name=None, units='uV'):
         A 3D array of LFP data in the unconventional order (n_channels, n_trials, n_samples).
     fs : float
         Sampling rate of the LFP data.
+    chan_id : array_like
+        Array of shape (n_channels,) of channel IDs corresponding to the channels in `lfp`.
     t_start : array_like
         Array of shape (n_trials,) of timestamps corresponding to the start of each 
         epoch in `lfp`.
@@ -173,6 +183,13 @@ def create_neo_block(lfp, fs, t_start, block_name=None, units='uV'):
     else:
         block = Block(name=block_name)
 
+    # add block annotations
+    block.annotate(session_type = SESSION_TYPE)
+    block.annotate(stimulus_name = STIM_PARAMS['stimulus_name'])
+    block.annotate(stimulus_frame = STIM_PARAMS['frame'])
+    block.annotate(stimulus_code = STIM_CODE)
+    block.annotate(time_window = T_WINDOW)
+
     # create Neo Segment for each trial
     for epoch in range(lfp.shape[1]):
         segment = Segment(name=f'trial_{epoch}')
@@ -181,6 +198,7 @@ def create_neo_block(lfp, fs, t_start, block_name=None, units='uV'):
         # add LFP data
         lfp_as = AnalogSignal(lfp[:,epoch].T, units=units, sampling_rate=fs*pq.Hz, 
             t_start=t_start[epoch]*pq.s)
+        lfp_as.annotate(label='lfp', ecephys_channel_id=chan_id)
         segment.analogsignals.append(lfp_as)
 
     return block
