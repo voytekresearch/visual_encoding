@@ -2,24 +2,29 @@
 Parametereize PSDs for LFP epochs. Analyzes output of allen_vc.comp_lfp_psd.py.
 
 """
+# Set paths
+REPO_PATH = r"C:\Users\micha\visual_encoding" # github project repo
+MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
+PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
+RELATIVE_PATH_IN = "data/lfp_data/lfp_psd/natural_movie" # folder containing output of epoch_lfp.py
+RELATIVE_PATH_OUT = "data/lfp_data/lfp_params/natural_movie" # where to save output relative to both paths above
+
 # FOOOF is causing some annoying warnings about ragged arrays
 import warnings
 warnings.filterwarnings("ignore")
 
-# imports
+# imports - general
 import os
 import numpy as np
 import pandas as pd
 from time import time as timer
 from time import ctime as time_now
-from utils import hour_min_sec
 from fooof import FOOOFGroup
 
-# settings - directories
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
-PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_IN = "data/lfp_data/lfp_psd/natural_movie" # folder containing output of epoch_lfp.py
-RELATIVE_PATH_OUT = "data/lfp_data/lfp_params/natural_movie" # where to save output relative to both paths above
+# imports - custom
+import sys
+sys.path.append(f"{REPO_PATH}/allen_vc")
+from utils import hour_min_sec
 
 # settings - analysis details
 N_JOBS = 8 # number of jobs to run in parallel for psd_array_multitaper()

@@ -2,6 +2,12 @@
 Compute PSD for LFP epochs. Analyzes input of allen_vc.epoch_lfp.py.
 
 """
+# Set paths
+REPO_PATH = r"C:\Users\micha\visual_encoding" # github project repo
+MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
+PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
+RELATIVE_PATH_IN = "data/lfp_data/lfp_epochs/natural_movie" # folder containing output of epoch_lfp.py
+RELATIVE_PATH_OUT = "data/lfp_data/lfp_psd/natural_movie" # where to save output relative to both paths above
 
 # imports
 import os
@@ -9,13 +15,11 @@ import numpy as np
 import pandas as pd
 from time import time as timer
 from mne.time_frequency import psd_array_multitaper
-from utils import hour_min_sec
 
-# settings - directories
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
-PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_IN = "data/lfp_data/lfp_epochs/natural_movie" # folder containing output of epoch_lfp.py
-RELATIVE_PATH_OUT = "data/lfp_data/lfp_psd/natural_movie" # where to save output relative to both paths above
+# imports - custom
+import sys
+sys.path.append(f"{REPO_PATH}/allen_vc")
+from utils import hour_min_sec
 
 # settings - analysis details
 N_JOBS = 8 # number of jobs to run in parallel for psd_array_multitaper()

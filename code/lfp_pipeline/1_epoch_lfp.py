@@ -2,6 +2,11 @@
 Epoch LFP arond stimulus presentation time
 
 """
+# Set paths
+REPO_PATH = r"C:\Users\micha\visual_encoding" # github project repo
+MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
+PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
+RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/natural_movie" # where to save output relative to both paths above
 
 # imports
 import os
@@ -10,12 +15,11 @@ import pandas as pd
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 from time import time as timer
 from time import ctime as time_now
-from utils import find_probes_in_region, hour_min_sec, save_pkl
 
-# settings - directories
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
-PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/natural_movie" # where to save output relative to both paths above
+# imports - custom
+import sys
+sys.path.append(f"{REPO_PATH}/allen_vc")
+from utils import find_probes_in_region, hour_min_sec, save_pkl
 
 # settings - data of interest
 SESSION_TYPE = 'functional_connectivity' # dataset of interest

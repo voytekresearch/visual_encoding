@@ -2,6 +2,11 @@
 Epoch LFP during longest spontaneous epoch
 
 """
+# Set paths
+REPO_PATH = r"C:\Users\micha\visual_encoding" # github project repo
+MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
+PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
+RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/spont" # where to save output relative to both paths above
 
 # imports
 import os
@@ -11,11 +16,6 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 from time import time as timer
 from time import ctime as time_now
 from utils import find_probes_in_region, hour_min_sec
-
-# settings - directories
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
-PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/spont" # where to save output relative to both paths above
 
 # settings - data of interest
 SESSION_TYPE = 'functional_connectivity' # dataset of interest
