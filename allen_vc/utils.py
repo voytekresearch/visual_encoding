@@ -274,3 +274,24 @@ def save_pkl(dictionary, fname_out, method='pickle'):
     f = open(fname_out, "wb")
     pickle.dump(dictionary, f)
     f.close()
+
+def get_neo_group_names(block):
+    """
+    Get the names of all groups in a Neo block.
+    
+    Parameters
+    ----------
+    block : neo.Block
+        Neo block containing groups.
+
+    Returns
+    -------
+    group_names : list
+        List of group names.   
+    """
+
+    group_names = []
+    for group in block.groups:
+        group_names.append(group.name)
+    
+    return group_names
