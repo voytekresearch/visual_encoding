@@ -8,9 +8,8 @@ import numpy as np
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 
 # settings - directories
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_OUT = "data/behavior/running/session_timeseries" # where to save output relative to both paths above
+MANIFEST_PATH = "D:/datasets/allen_vc" # local dataset directory
 
 # settings - data of interest
 SESSION_TYPE = 'functional_connectivity' # dataset of interest
@@ -21,10 +20,9 @@ FS = 1250 # LFP sampling freq
 #Make sure epoch lengths are in order least to greatest
 def main():
 	# Define/create directories for output
-	for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-		dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-		if not os.path.exists(dir_results): 
-			os.makedirs(dir_results)
+	dir_results = f"{PROJECT_PATH}/data/behavior/running/session_timeseries"
+	if not os.path.exists(dir_results): 
+		os.makedirs(dir_results)
 
 	# load project cache
 	cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
@@ -40,9 +38,7 @@ def main():
 		time, velocity = get_running_timeseries(session, FS)
 
 		# save to file
-		for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-			dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-			np.savez(f'{dir_results}/running_{session_id}', time=time, velocity=velocity)
+		np.savez(f'{dir_results}/running_{session_id}', time=time, velocity=velocity)
 
 
 def get_running_timeseries(session, fs):
