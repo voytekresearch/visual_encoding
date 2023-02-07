@@ -3,22 +3,10 @@ Compute velocity time-series for an experimetnal block.
 A median filter can be applied to smooth data.
 
 """
-
-
-import os
-import numpy as np
-from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
-
 # Settings - directories
-MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
-PROJECT_PATH = "G:/Shared drives/visual_encoding"
-RELATIVE_PATH_OUT = "data/behavior/running/natural_movie_one_more_repeats" # where to save output relative to both paths above
-REPO_PATH = "C:/Users/User/visual_encoding"
-
-# Import custom functions
-import sys
-sys.path.append(REPO_PATH)
-from allen_vc.utils import save_pkl
+PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
+MANIFEST_PATH = "D:/datasets/allen_vc" # local dataset directory
+STIM_CODE = 'natural_movie' # name for output folder (stimulus of interest)
 
 # settings - data of interest
 STIMULUS_NAME = 'natural_movie_one_more_repeats' # name of stimulus in allen dataset
@@ -30,14 +18,27 @@ FS = 1250 # sampling frequency for interpolation
 SMOOTH = True # whether to smooth data (median filter)
 KERNEL_SIZE = 1*FS # kernel size for median filter
 
-#Make sure epoch lengths are in order least to greatest
+# Imports - general
+import os
+import numpy as np
+from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
+import neo
+import quantities as pq
+from scipy.ndimage import median_filter
+
+# Imports - custom
+import sys
+sys.path.append('allen_vc')
+from allen_vc.utils import save_pkl
+
+# Make sure epoch lengths are in order least to greatest
+
 def main():
     # identify / create directories
-    dir_input = PROJECT_PATH + '/data/behavior/running/session_timeseries'
-    for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-        dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-        if not os.path.exists(dir_results): 
-            os.makedirs(dir_results)
+    dir_input = f"{PROJECT_PATH}/data/behavior/running/session_timeseries"
+    dir_results = f"{PROJECT_PATH}/data/behavior/running/{STIM_CODE}"
+    if not os.path.exists(dir_results): 
+        os.makedirs(dir_results)
 
     # load project cache
     manifest_path = f"{MANIFEST_PATH}/manifest_files"
@@ -59,10 +60,8 @@ def main():
             data_in['velocity'], smooth=SMOOTH, kernel_size=KERNEL_SIZE)
 
         # save results
-        fname_out = f"{fname[:-4]}.pkl"
-        for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-            dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-            save_pkl(results, f"{dir_results}/{fname_out}")
+        fname_out = fname.replace('.npz','.pkl')
+        save_pkl(results, f"{dir_results}/{fname_out}")
 
 
 def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity, \
@@ -73,22 +72,24 @@ def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity,
 
     Parameters
     ----------
-    stimulus_name (str): The name of the stimulus being presented.
+    stimulus_name : str
+        The name of the stimulus being presented.
     session (Allen session object): session containing the behavioral data.
-    time (array-like): The time array corresponding to the velocity data.
-    velocity (array-like): The velocity array corresponding to the time data.
-    block (int): The index of the stimulus block. Default is 0.
-    smooth (boolean): If True, the data will be smoothed with median_filter. Default is True.
-    kernel_size (int): The size of the kernel to use for median_filter. Default is None.
+    time : array-like
+        The time array corresponding to the velocity data.
+    velocity : array-like 
+        The velocity array corresponding to the time data.
+    block int: 
+        The index of the stimulus block. Default is 0.
+    smooth : boolean 
+        If True, the data will be smoothed with median_filter. Default is True.
+    kernel_size : int
+        The size of the kernel to use for median_filter. Default is None.
 
     Returns
     -------
     Time, speed, and filtered speed arrays
     """
-    # imports
-    import neo
-    import quantities as pq
-    from scipy.ndimage import median_filter
 
     # get start and stop time of stimulus block (0-indexec)
     stimuli_df = session.get_stimulus_epochs()
@@ -129,7 +130,6 @@ def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity,
         stim_group.analogsignals.append(output)
 
     return stim_group
-
 
 
 if __name__ == "__main__":
