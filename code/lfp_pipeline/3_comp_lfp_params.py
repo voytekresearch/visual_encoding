@@ -56,7 +56,7 @@ def main():
         # display progress
         t_start_s = timer()
         print(f"\nAnalyzing file {i_file+1}/{len(files)}: \t{time_now()}")
-        print(f"    {fname_in}")
+        print(f"    Filename: {fname_in}")
 
         # load LFP power spectra
         data_in = np.load(f"{dir_input}/{fname_in}")
@@ -86,6 +86,9 @@ def main():
 
 
 def spec_param_3d(psd, freq):
+    # display progress
+    print(f"    File contains {psd.shape[0]} channels and {psd.shape[1]} epochs")
+
     for i_chan in range(len(psd)):
         # parameterize
         params = FOOOFGroup(**SPEC_PARAM_SETTINGS)
@@ -105,17 +108,17 @@ def spec_param_3d(psd, freq):
     return df
 
 
-def params_to_df(parmas, max_peaks):
+def params_to_df(params, max_peaks):
     # get per params
-    df_per = pd.DataFrame(parmas.get_params('gaussian'),
+    df_per = pd.DataFrame(params.get_params('gaussian'),
         columns=['cf','pw','bw','idx'])
 
     # get ap parmas
-    df_ap = pd.DataFrame(parmas.get_params('aperiodic'),  
+    df_ap = pd.DataFrame(params.get_params('aperiodic'),  
         columns=['offset', 'knee', 'exponent'])
 
     # get quality metrics
-    df_ap['r_squared'] = parmas.get_params('r_squared')
+    df_ap['r_squared'] = params.get_params('r_squared')
 
     # initiate combined df
     df = df_ap.copy()
