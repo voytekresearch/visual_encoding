@@ -4,6 +4,7 @@ Epoch LFP arond stimulus presentation time
 """
 # Set paths
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
+MANIFEST_PATH = "D:/datasets/allen_vc" # local dataset directory
 RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/natural_movie" # where to save output relative to both paths above
 
 # imports - general
@@ -21,6 +22,7 @@ print(f"Working directory: {os.getcwd()}")
 import sys
 sys.path.append("allen_vc")
 from utils import find_probes_in_region, hour_min_sec, save_pkl
+print('Imports complete...')
 
 # settings - data of interest
 SESSION_TYPE = 'functional_connectivity' # dataset of interest
@@ -47,11 +49,13 @@ def main():
     if not os.path.exists(f'{dir_results}/pkl'): os.makedirs(f'{dir_results}/pkl')
     
     # Create Allensdk cache object
-    cache = EcephysProjectCache.from_warehouse(manifest=f"{PROJECT_PATH}/dataset/manifest.json")
+    cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
+    print('Cache created...')
 
     # get session info for dataset of interest
     sessions_all = cache.get_session_table()
     session_ids = sessions_all[sessions_all['session_type']==SESSION_TYPE].index.values
+    print(f"{len(session_ids)} sessions found for {SESSION_TYPE}")
 
     # loo[ through all session for dataset of interest
     for i_session, session_id in enumerate(session_ids):
@@ -107,21 +111,22 @@ def main():
             t_start = stim_times + T_WINDOW[0]
             block = create_neo_block(lfp_a, FS, chan_ids, t_start)
 
-            # add block annotations
-            block.annotations['session_id'] = session_id
-            block.annotations['probe_id'] = probe_id
-            block.annotations['stimulus_time'] = stim_times
-
+            # add Neo block annotations
+            block.annotate(session_type = SESSION_TYPE)
+            block.annotate(stimulus_name = STIM_PARAMS['stimulus_name'])
+            block.annotate(stimulus_frame = STIM_PARAMS['frame'])
+            block.annotate(stimulus_code = STIM_CODE)
+            block.annotate(time_window = T_WINDOW)
+            block.annotate(session_id = session_id)
+            block.annotate(probe_id = probe_id)
+            block.annotate(stimulus_time = stim_times)
+            
             # save results
             print('    saving data')
             fname_out = f"{session_id}_{probe_id}_lfp_{STIM_CODE}"
             dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
-            
-            # save lfp array as .npz
-            np.savez(f"{dir_results}/npy/{fname_out}.npz", lfp=lfp_a, time=time) 
-
-            # save Neo object as .pkl
-            save_pkl(block, f"{dir_results}/pkl/{fname_out}.pkl")
+            np.savez(f"{dir_results}/npy/{fname_out}.npz", lfp=lfp_a, time=time) # save lfp array as .npz
+            save_pkl(block, f"{dir_results}/pkl/{fname_out}.pkl") # save Neo object as .pkl
 
         # display progress
         _, min, sec = hour_min_sec(timer() - t_start_s)
@@ -182,13 +187,6 @@ def create_neo_block(lfp, fs, chan_id, t_start, block_name=None, units='uV'):
         block = Block()
     else:
         block = Block(name=block_name)
-
-    # add block annotations
-    block.annotate(session_type = SESSION_TYPE)
-    block.annotate(stimulus_name = STIM_PARAMS['stimulus_name'])
-    block.annotate(stimulus_frame = STIM_PARAMS['frame'])
-    block.annotate(stimulus_code = STIM_CODE)
-    block.annotate(time_window = T_WINDOW)
 
     # create Neo Segment for each trial
     for epoch in range(lfp.shape[1]):
