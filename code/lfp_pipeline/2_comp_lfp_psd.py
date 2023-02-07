@@ -30,22 +30,22 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_epochs/{STIM_CODE}'
+    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_psd/{STIM_CODE}'
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
     
     # id files of interst and loop through them
-    files = os.listdir(f'{PROJECT_PATH}/{RELATIVE_PATH_IN}')
+    dir_input = f'{PROJECT_PATH}/data/lfp_data/lfp_epochs/{STIM_CODE}'
+    files = os.listdir(dir_input)
     for i_file, fname_in in enumerate(files):
-
-
+        
         # display progress
         t_start_s = timer()
         print(f"\nAnalyzing file {i_file+1}/{len(files)}")
         print(f"    {fname_in}")
 
         # load LFP epochs
-        data_in = np.load(f"{PROJECT_PATH}/{RELATIVE_PATH_IN}/{fname_in}")
+        data_in = np.load(f"{dir_input}/{fname_in}")
 
         # compute psd
         psd, freq = psd_array_multitaper(data_in['lfp'], FS, 

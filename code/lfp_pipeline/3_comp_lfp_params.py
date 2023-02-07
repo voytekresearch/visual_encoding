@@ -39,7 +39,7 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_psd/{STIM_CODE}'
+    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_params/{STIM_CODE}'
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
     
@@ -47,7 +47,8 @@ def main():
     params_list = []
 
     # id files of interst and loop through them
-    files = os.listdir(f'{PROJECT_PATH}/{RELATIVE_PATH_IN}')
+    dir_input = f"{PROJECT_PATH}/data/lfp_data/lfp_psd{STIM_CODE}"
+    files = os.listdir(dir_input)
     for i_file, fname_in in enumerate(files):
 
         # display progress
@@ -55,10 +56,10 @@ def main():
         print(f"\nAnalyzing file {i_file+1}/{len(files)}: \t{time_now()}")
         print(f"    {fname_in}")
 
-        # load LFP epochs
-        data_in = np.load(f"{PROJECT_PATH}/{RELATIVE_PATH_IN}/{fname_in}")
+        # load LFP power spectra
+        data_in = np.load(f"{dir_input}/{fname_in}")
 
-        # parameterize 
+        # parameterize PSDs
         df = spec_param_3d(data_in['psd'], data_in['freq'])
 
         # aggregate across files
@@ -67,7 +68,7 @@ def main():
         
         # save results 
         dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_params/{STIM_CODE}'
-        fname_out = fname_in.replace('_psd.npz', f'_params.pkl')
+        fname_out = fname_in.replace('_psd.npz', f'_params.csv')
         df.to_csv(f"{dir_results}/{fname_out}")
 
         # display progress
