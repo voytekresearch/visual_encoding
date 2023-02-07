@@ -49,7 +49,7 @@ def main():
     params_list = []
 
     # id files of interst and loop through them
-    dir_input = f"{PROJECT_PATH}/data/lfp_data/lfp_psd{STIM_CODE}"
+    dir_input = f"{PROJECT_PATH}/data/lfp_data/lfp_psd/{STIM_CODE}"
     files = os.listdir(dir_input)
     for i_file, fname_in in enumerate(files):
 
@@ -69,7 +69,6 @@ def main():
         params_list.append(df)
         
         # save results 
-        dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_params/{STIM_CODE}'
         fname_out = fname_in.replace('_psd.npz', f'_params.csv')
         df.to_csv(f"{dir_results}/{fname_out}")
 

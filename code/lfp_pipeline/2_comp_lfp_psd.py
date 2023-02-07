@@ -9,7 +9,6 @@ STIM_CODE = 'natural_movie' # name of input/output folders (stimulus of interest
 # imports
 import os
 import numpy as np
-import pandas as pd
 from time import time as timer
 from mne.time_frequency import psd_array_multitaper
 
@@ -35,7 +34,7 @@ def main():
         os.makedirs(dir_results)
     
     # id files of interst and loop through them
-    dir_input = f'{PROJECT_PATH}/data/lfp_data/lfp_epochs/{STIM_CODE}'
+    dir_input = f'{PROJECT_PATH}/data/lfp_data/lfp_epochs/{STIM_CODE}/npy'
     files = os.listdir(dir_input)
     for i_file, fname_in in enumerate(files):
         

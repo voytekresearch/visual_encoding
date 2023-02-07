@@ -45,7 +45,7 @@ def main():
     # Define/create directories for outout
     dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_epochs/{STIM_CODE}'
     if not os.path.exists(f'{dir_results}/npy'): os.makedirs(f'{dir_results}/npy')
-    if not os.path.exists(f'{dir_results}/pkl'): os.makedirs(f'{dir_results}/pkl')
+    if not os.path.exists(f'{dir_results}/neo'): os.makedirs(f'{dir_results}/neo')
     
     # Create Allensdk cache object
     cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
@@ -124,7 +124,7 @@ def main():
             print('    saving data')
             fname_out = f"{session_id}_{probe_id}_lfp_epochs"
             np.savez(f"{dir_results}/npy/{fname_out}.npz", lfp=lfp_a, time=time) # save lfp array as .npz
-            save_pkl(block, f"{dir_results}/pkl/{fname_out}.pkl") # save Neo object as .pkl
+            save_pkl(block, f"{dir_results}/neo/{fname_out}.pkl") # save Neo object as .pkl
 
         # display progress
         _, min, sec = hour_min_sec(timer() - t_start_s)
