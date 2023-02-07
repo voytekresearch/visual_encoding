@@ -24,12 +24,14 @@ sys.path.append("allen_vc")
 from utils import hour_min_sec
 
 # settings - analysis details
-N_JOBS = 8 # number of jobs to run in parallel for psd_array_multitaper()
-PEAK_WIDTH_LIMITS = [2, 20] # default: (0.5, 12.0))
-MAX_N_PEAKS = 4 # (default: inf)
-MIN_PEAK_HEIGHT = 0 # (default: 0)
-PEAK_THRESHOLD =  2 # (default: 2)
-AP_MODE = 'knee'
+N_JOBS = -1 # number of jobs for parallel processing, psd_array_multitaper()
+SPEC_PARAM_SETTINGS = {
+    'peak_width_limits' :   [2, 20], # default: (0.5, 12.0)) - reccomends at least frequency resolution * 2
+    'min_peak_height'   :   0, # (default: 0) 
+    'max_n_peaks'       :   4, # (default: inf)
+    'peak_threshold'    :   2, # (default: 2.0)
+    'aperiodic_mode'    :   'knee',
+    'verbose'           :   False}
 
 # settings - dataset details
 FS = 1250 # LFP sampling freq
@@ -87,15 +89,11 @@ def main():
 def spec_param_3d(psd, freq):
     for i_chan in range(len(psd)):
         # parameterize
-        params = FOOOFGroup(peak_width_limits = PEAK_WIDTH_LIMITS,
-                        max_n_peaks = MAX_N_PEAKS,
-                        min_peak_height = MIN_PEAK_HEIGHT,
-                        peak_threshold=PEAK_THRESHOLD,
-                        aperiodic_mode=AP_MODE, verbose=False)
+        params = FOOOFGroup(**SPEC_PARAM_SETTINGS)
         params.fit(freq, psd[i_chan], n_jobs=N_JOBS)
 
         # convert results to df
-        df_i = params_to_df(params, MAX_N_PEAKS)
+        df_i = params_to_df(params, SPEC_PARAM_SETTINGS['max_n_peaks'])
         df_i['chan_idx'] = i_chan
         df_i['epoch_idx'] = np.arange(len(df_i))
 
