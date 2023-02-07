@@ -5,7 +5,21 @@ Epoch LFP arond stimulus presentation time
 # Set paths
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 MANIFEST_PATH = "D:/datasets/allen_vc" # local dataset directory
-RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/natural_movie" # where to save output relative to both paths above
+STIM_CODE = 'natural_movie' # name for output folder (stimulus of interest)
+
+# settings - data of interest
+SESSION_TYPE = 'functional_connectivity' # dataset of interest
+REGION = "VISp" # brain structure of interest
+
+# settings - stimulus epoch of interest
+STIM_PARAMS = dict({
+    'stimulus_name' : 'natural_movie_one_more_repeats',
+    'frame' : 0
+    }) # other stim params
+T_WINDOW = [0, 30]  # epoch bounds (sec) [time_before_stim, tiimem_aftfer_stim]
+
+# settings - dataset details
+FS = 1250 # LFP sampling freq
 
 # imports - general
 import os
@@ -24,27 +38,12 @@ sys.path.append("allen_vc")
 from utils import find_probes_in_region, hour_min_sec, save_pkl
 print('Imports complete...')
 
-# settings - data of interest
-SESSION_TYPE = 'functional_connectivity' # dataset of interest
-REGION = "VISp" # brain structure of interest
-
-# settings - stimulus epoch of interest
-STIM_PARAMS = dict({
-    'stimulus_name' : 'natural_movie_one_more_repeats',
-    'frame' : 0
-    }) # other stim params
-T_WINDOW = [0, 30]  # epoch bounds (sec) [time_before_stim, tiimem_aftfer_stim]
-STIM_CODE = 'movie' # alternate stimulus name for output filename
-
-# settings - dataset details
-FS = 1250 # LFP sampling freq
-
 def main():
     # time it
     t_start = timer()
 
     # Define/create directories for outout
-    dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_epochs/{STIM_CODE}'
     if not os.path.exists(f'{dir_results}/npy'): os.makedirs(f'{dir_results}/npy')
     if not os.path.exists(f'{dir_results}/pkl'): os.makedirs(f'{dir_results}/pkl')
     
@@ -123,8 +122,7 @@ def main():
             
             # save results
             print('    saving data')
-            fname_out = f"{session_id}_{probe_id}_lfp_{STIM_CODE}"
-            dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+            fname_out = f"{session_id}_{probe_id}_lfp_epochs"
             np.savez(f"{dir_results}/npy/{fname_out}.npz", lfp=lfp_a, time=time) # save lfp array as .npz
             save_pkl(block, f"{dir_results}/pkl/{fname_out}.pkl") # save Neo object as .pkl
 

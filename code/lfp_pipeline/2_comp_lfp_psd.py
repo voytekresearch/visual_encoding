@@ -4,8 +4,7 @@ Compute PSD for LFP epochs. Analyzes input of allen_vc.epoch_lfp.py.
 """
 # Set paths
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_IN = "data/lfp_data/lfp_epochs/natural_movie" # folder containing output of epoch_lfp.py
-RELATIVE_PATH_OUT = "data/lfp_data/lfp_psd/natural_movie" # where to save output relative to both paths above
+STIM_CODE = 'natural_movie' # name of input/output folders (stimulus of interest)
 
 # imports
 import os
@@ -31,7 +30,7 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_epochs/{STIM_CODE}'
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
     
@@ -53,8 +52,7 @@ def main():
             fmin=F_RANGE[0], fmax=F_RANGE[1], n_jobs=N_JOBS)
 
         # save results
-        fname_out = fname_in.replace('.npz', '_psd.npz')
-        dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+        fname_out = fname_in.replace('_epochs', '_psd')
         np.savez(f"{dir_results}/{fname_out}", psd=psd, freq=freq) 
 
         # display progress

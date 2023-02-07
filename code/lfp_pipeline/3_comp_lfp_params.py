@@ -4,8 +4,7 @@ Parametereize PSDs for LFP epochs. Analyzes output of allen_vc.comp_lfp_psd.py.
 """
 # Set paths
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_IN = "data/lfp_data/lfp_psd/natural_movie" # folder containing output of epoch_lfp.py
-RELATIVE_PATH_OUT = "data/lfp_data/lfp_params/natural_movie" # where to save output relative to both paths above
+STIM_CODE = 'natural_movie' # name of input/output folders (stimulus of interest)
 
 # FOOOF is causing some annoying warnings about ragged arrays
 import warnings
@@ -40,7 +39,7 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_psd/{STIM_CODE}'
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
     
@@ -67,7 +66,7 @@ def main():
         params_list.append(df)
         
         # save results 
-        dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+        dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_params/{STIM_CODE}'
         fname_out = fname_in.replace('_psd.npz', f'_params.pkl')
         df.to_csv(f"{dir_results}/{fname_out}")
 
