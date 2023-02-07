@@ -3,42 +3,42 @@ Combine lfp, spiking and behavioral data into a single Neo Block object.
 
 """
 
-# imports
-import os
-import numpy as np
-import pandas as pd
-import pickle
-from time import time as timer
-from utils import hour_min_sec, save_pkl
-from neo.core import Group
-
 # settings - directories
 MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_LFP = "data/lfp_data/lfp_epochs_neo/natural_movie/pkl" # folder containing output of epoch_lfp.py
-RELATIVE_PATH_SPIKES = "data/spike_data/spike_times" # folder containing output of spike_data()
-RELATIVE_PATH_RUNNING = "data/behavior/running" # folder containing output of comp_velocity_for_block.py
-RELATIVE_PATH_OUT = "data/blocks" # where to save output relative to both paths above
-STIMULUS_NAME = "natural_movie_one_more_repeats"
+STIM_CODE = 'natural_movie' # name for output folder (stimulus of interest)
 
 # spike data regions of interest
 REGIONS = ['VISp','LGd']
 
 # settings - dataset details
 FS = 1250 # LFP sampling freq
+# imports
+import os
+import numpy as np
+import pandas as pd
+import pickle
+from time import time as timer
+from neo.core import Group
+
+# Imports - custom
+import sys
+sys.path.append('allen_vc')
+from allen_vc.utils import hour_min_sec, save_pkl, get_neo_group_names
 
 def main():
     # time it
     t_start = timer()
 
-    # Define/create directories for outout
-    for base_path in [PROJECT_PATH]:#, MANIFEST_PATH]:
-        dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-        if not os.path.exists(dir_results): 
-            os.makedirs(dir_results)
+    # Define/create directories for inputs/outputs
+    path_lfp = f"{PROJECT_PATH}/data/lfp_data/lfp_epochs/{STIM_CODE}/neo/"
+    path_spikes = f"{PROJECT_PATH}/data/spike_data/spike_times/"
+    dir_results = f"{PROJECT_PATH}/data/blocks" 
+    if not os.path.exists(dir_results): 
+        os.makedirs(dir_results)
     
     # id files of interst and loop through them
-    files = os.listdir(f'{PROJECT_PATH}/{RELATIVE_PATH_LFP}')
+    files = os.listdir(path_lfp)
     for i_file, fname_in in enumerate(files):
 
         # display progress
@@ -47,18 +47,18 @@ def main():
         print(f"    {fname_in}")
 
         # load Neo Block containing LFP
-        block = pickle.load(open(f"{PROJECT_PATH}/{RELATIVE_PATH_LFP}/{fname_in}", "rb"))
+        block = pickle.load(open(f"{path_lfp}/{fname_in}", "rb"))
 
         # load spike data and add to block
         for region in REGIONS:
 
             # Don't add if brain region not recorded in session
             fname_spikes = f"{fname_in.split('_')[0]}_{region}.pkl"
-            if not os.path.exists(f"{PROJECT_PATH}/{RELATIVE_PATH_SPIKES}/{fname_spikes}"):
+            if not os.path.exists(f"{path_spikes}/{fname_spikes}"):
                 continue
 
             # load list of spiketrains for region
-            spiketrains = pd.read_pickle(f"{PROJECT_PATH}/{RELATIVE_PATH_SPIKES}/{fname_spikes}")
+            spiketrains = pd.read_pickle(f"{path_spikes}/{fname_spikes}")
 
             # create Group object for each unit
             for spiketrain in spiketrains:
@@ -86,7 +86,7 @@ def main():
 
         # load behavioral data
         fname_running = f"running_{fname_in.split('_')[0]}.pkl"
-        running_group = pd.read_pickle(f"{PROJECT_PATH}/{RELATIVE_PATH_RUNNING}/{STIMULUS_NAME}/{fname_running}")
+        running_group = pd.read_pickle(f"{PROJECT_PATH}/data/behavior/running/{STIM_CODE}/{fname_running}")
 
         # loop through segments
         for i_seg in range(len(block.segments)):
@@ -101,11 +101,12 @@ def main():
             running_seg = running_series.time_slice(block.segments[i_seg].t_start, block.segments[i_seg].t_stop)
             block.segments[i_seg].analogsignals.append(running_seg)
 
+        # annotate block
+        block.annotate(group_list=get_neo_group_names(block))
+
         # save results
-        fname_out = f"{fname_in.split('_')[0]}_{STIMULUS_NAME}.pkl"
-        for base_path in [PROJECT_PATH]:#, MANIFEST_PATH]:
-            dir_results = f'{base_path}/{RELATIVE_PATH_OUT}'
-            save_pkl(block, f"{dir_results}/{fname_out}")
+        fname_out = f"{fname_in.split('_')[0]}_{STIM_CODE}.pkl"
+        save_pkl(block, f"{dir_results}/{fname_out}")
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)
