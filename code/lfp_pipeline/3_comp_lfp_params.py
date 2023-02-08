@@ -42,8 +42,8 @@ def main():
 
     # Define/create directories for outout
     dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_params/{STIM_CODE}'
-    if not os.path.exists(dir_results): 
-        os.makedirs(dir_results)
+    if not os.path.exists(f"{dir_results}/by_session"):
+        os.makedirs(f"{dir_results}/by_session")
     
     # initialize output
     params_list = []
@@ -70,7 +70,7 @@ def main():
         
         # save results 
         fname_out = fname_in.replace('_psd.npz', f'_params.csv')
-        df.to_csv(f"{dir_results}/{fname_out}")
+        df.to_csv(f"{dir_results}/by_session/{fname_out}")
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)
@@ -78,7 +78,7 @@ def main():
 
     # aggregate across files
     params = pd.concat(params_list, axis=0)
-    params.to_csv(f"{dir_results}/all_params.csv")
+    params.to_csv(f"{dir_results}/lfp_params.csv")
     
     # display progress
     hour, min, sec = hour_min_sec(timer() - t_start)
