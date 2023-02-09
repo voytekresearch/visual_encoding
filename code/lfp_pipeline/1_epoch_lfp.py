@@ -5,7 +5,7 @@ Epoch LFP arond stimulus presentation time
 # Set paths
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 MANIFEST_PATH = "D:/datasets/allen_vc" # local dataset directory
-STIM_CODE = 'natural_movie' # name for output folder (stimulus of interest)
+STIM_CODE = 'natural_movie_shuffled' # name for output folder (stimulus of interest)
 
 # settings - data of interest
 SESSION_TYPE = 'functional_connectivity' # dataset of interest
@@ -13,7 +13,7 @@ REGION = "VISp" # brain structure of interest
 
 # settings - stimulus epoch of interest
 STIM_PARAMS = dict({
-    'stimulus_name' : 'natural_movie_one_more_repeats',
+    'stimulus_name' : 'natural_movie_one_shuffled',
     'frame' : 0
     }) # other stim params
 T_WINDOW = [0, 30]  # epoch bounds (sec) [time_before_stim, tiimem_aftfer_stim]
@@ -112,14 +112,13 @@ def main():
 
             # add Neo block annotations
             block.annotate(session_type = SESSION_TYPE)
-            block.annotate(stimulus_name = STIM_PARAMS['stimulus_name'])
-            block.annotate(stimulus_frame = STIM_PARAMS['frame'])
-            block.annotate(stimulus_code = STIM_CODE)
+            block.annotate(region = REGION)
             block.annotate(time_window = T_WINDOW)
+            block.annotate(stimulus_code = STIM_CODE)
             block.annotate(session_id = session_id)
             block.annotate(probe_id = probe_id)
             block.annotate(stimulus_time = stim_times)
-            
+
             # save results
             print('    saving data')
             fname_out = f"{session_id}_{probe_id}_lfp_epochs"
