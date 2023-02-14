@@ -55,20 +55,19 @@ def main():
 
                 # Calculate/combine metrics for storage
                 metrics = list(calculate_spike_metrics(spikes))
-                metrics.extend([[segment.t_start, segment.t_stop], segment.name, \
+                metrics.extend([[segment.t_start, segment.t_stop], int(segment.name.split('_')[1]), \
                     structure, session_id])
                 data_mat = np.vstack((data_mat, metrics))
 
     #Save DataFrame including all metrics
     data_mat = np.delete(data_mat, (0), axis=0)
     labels = ['mean_firing_rate', 'unit_firing_rates', 'coefficient_of_variation', \
-    'SPIKE-distance','SPIKE-synchrony','correlation_coefficient', \
-    'epoch', 'state', 'brain_structure','session_id']
+    'spike_distance','spike_synchrony','correlation_coefficient', \
+    'epoch_times', 'epoch_idx', 'brain_structure','session']
 
-    for base_path in [PROJECT_PATH, MANIFEST_PATH]:
-        fname_out = "-".join(BRAIN_STRUCTURES) + "_" + STIMULUS_NAME
-        pd.DataFrame(data=data_mat, columns=labels).to_csv(f'{PROJECT_PATH}/data/spike_data'+\
-            f'/synchrony_data/{fname_out}.csv', index=False)
+    fname_out = "-".join(BRAIN_STRUCTURES) + "_" + STIMULUS_NAME
+    pd.DataFrame(data=data_mat, columns=labels).to_csv(f'{PROJECT_PATH}/data/spike_data'+\
+        f'/synchrony_data/{fname_out}.csv', index=False)
 
 if __name__ == '__main__':
     main()
