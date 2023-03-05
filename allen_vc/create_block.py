@@ -88,6 +88,9 @@ def main():
         fname_running = f"running_{fname_in.split('_')[0]}.pkl"
         running_group = pd.read_pickle(f"{PROJECT_PATH}/data/behavior/running/{STIM_CODE}/{fname_running}")
 
+        # initialize array for running annotation
+        running = np.zeros(len(block.segments))
+
         # loop through segments
         for i_seg in range(len(block.segments)):
             # filter for correct signal based on start/stop times
@@ -100,6 +103,14 @@ def main():
             # slice signal and append to segment
             running_seg = running_series.time_slice(block.segments[i_seg].t_start, block.segments[i_seg].t_stop)
             block.segments[i_seg].analogsignals.append(running_seg)
+
+            # determine if running during segment then annotate segment
+            speed = running_seg.magnitude
+            running[i_seg] = np.any(speed > 1)
+            block.segments[i_seg].annotations['running'] = running[i_seg].astype(bool)
+
+        # save running boolean array to block
+        block.annotations['running'] = running.astype(bool)
 
         # annotate block
         block.annotate(group_list=get_neo_group_names(block))
