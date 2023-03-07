@@ -6,10 +6,10 @@ A median filter can be applied to smooth data.
 # Settings - directories
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 MANIFEST_PATH = "D:/datasets/allen_vc" # local dataset directory
-STIM_CODE = 'natural_movie' # name for output folder (stimulus of interest)
+STIM_CODE = 'spontaneous' # name for output folder (stimulus of interest)
 
 # settings - data of interest
-STIMULUS_NAME = 'natural_movie_one_more_repeats' # name of stimulus in allen dataset
+STIMULUS_NAME = 'spontaneous' # name of stimulus in allen dataset
 
 # settings - dataset details
 FS = 1250 # sampling frequency for interpolation
@@ -25,15 +25,18 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 import neo
 import quantities as pq
 from scipy.ndimage import median_filter
+from time import time as timer
 
 # Imports - custom
 import sys
 sys.path.append('allen_vc')
-from allen_vc.utils import save_pkl
-
-# Make sure epoch lengths are in order least to greatest
+from utils import save_pkl, hour_min_sec
+print('Imports complete.')
 
 def main():
+    # time it
+    t_start = timer()
+
     # identify / create directories
     dir_input = f"{PROJECT_PATH}/data/behavior/running/session_timeseries"
     dir_results = f"{PROJECT_PATH}/data/behavior/running/{STIM_CODE}"
@@ -41,14 +44,19 @@ def main():
         os.makedirs(dir_results)
 
     # load project cache
-    manifest_path = f"{MANIFEST_PATH}/manifest_files"
-    cache = EcephysProjectCache.from_warehouse(manifest=f"{manifest_path}/manifest.json")
+    cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
     sessions = cache.get_session_table()
+    print('Project cache loaded.')
 
     # Iterate over each session
-    for session_id in sessions[sessions.get('session_type')=='functional_connectivity'].index:
-        # get session data and display progress 
-        print(f'Analyzing session: \t{session_id}')
+    session_ids = sessions[sessions.get('session_type')=='functional_connectivity'].index
+    print(f'{len(session_ids)} sessions identified...')
+    for i_session, session_id in enumerate(session_ids):
+        # display progress
+        t_start_i = timer()
+        print(f"    Analyzing session: {session_id} ({i_session+1}/{len(session_ids)})")
+
+        # get session data
         session = cache.get_session_data(session_id)
 
         # load session velocity timeseries
@@ -62,6 +70,14 @@ def main():
         # save results
         fname_out = fname.replace('.npz','.pkl')
         save_pkl(results, f"{dir_results}/{fname_out}")
+
+        # display progress
+        _, min, sec = hour_min_sec(timer() - t_start_i)
+        print(f"\tsession complete in {min} min and {sec :0.1f} s")
+
+    # display progress
+    hour, min, sec = hour_min_sec(timer() - t_start)
+    print(f"\n\n Total Time: \t {hour} hours, {min} minutes, {sec :0.1f} seconds")
 
 
 def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity, \
