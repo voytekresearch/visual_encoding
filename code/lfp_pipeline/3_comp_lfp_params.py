@@ -120,7 +120,7 @@ def spec_param_3d(psd, freq):
 
 def params_to_df(params, max_peaks):
     # get per params
-    df_per = pd.DataFrame(params.get_params('gaussian'),
+    df_per = pd.DataFrame(params.get_params('peak'),
         columns=['cf','pw','bw','idx'])
 
     # get ap parmas
@@ -138,7 +138,7 @@ def params_to_df(params, max_peaks):
     df_init = pd.DataFrame(columns=np.ravel(columns))
     df = df.join(df_init)
 
-    # app gaussian params for each peak fouond
+    # app peak params for each peak fouond
     for i_row in range(len(df)):
         # check if row had peaks
         if df.index[ii] in df_per['idx']:
