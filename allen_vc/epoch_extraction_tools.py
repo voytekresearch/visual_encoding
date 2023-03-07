@@ -268,36 +268,36 @@ def get_movie_times(session, block):
     return np.append(starts, end)
 
 
-    def split_epochs(epochs, epoch_length):
-        """
-        Split a list of epochs into sub-epochs of a specified length.
+def split_epochs(epochs, epoch_length):
+    """
+    Split a list of epochs into sub-epochs of a specified length.
 
-        Parameters
-        ----------
-        epochs : list
-            List of epochs to split. Each epoch is a list of two integers 
-            specifying the start and end time.
-        epoch_length : int
-            Length of each sub-epoch, in milliseconds.
+    Parameters
+    ----------
+    epochs : list
+        List of epochs to split. Each epoch is a list of two integers 
+        specifying the start and end time.
+    epoch_length : int
+        Length of each sub-epoch, in milliseconds.
 
-        Returns
-        -------
-        split_epochs : list
-            List of sub-epochs, each is a list of two integers specifying 
-            the start and end time.
-        """
-        split_epochs = []
+    Returns
+    -------
+    split_epochs : list
+        List of sub-epochs, each is a list of two integers specifying 
+        the start and end time.
+    """
+    split_epochs = []
+    
+    # define inner recursive function to split each epoch
+    def inner(epoch, epoch_length):
+        if (epoch[1]-epoch[0])<epoch_length:
+            return []
+        else:
+            return [[epoch[0], epoch[0]+epoch_length]] + \
+        inner([epoch[0]+epoch_length, epoch[1]], epoch_length)
         
-        # define inner recursive function to split each epoch
-        def inner(epoch, epoch_length):
-            if (epoch[1]-epoch[0])<epoch_length:
-                return []
-            else:
-                return [[epoch[0], epoch[0]+epoch_length]] + \
-            inner([epoch[0]+epoch_length, epoch[1]], epoch_length)
-            
-        # apply inner function to full list of epochs
-        for epoch in epochs:
-            split_epochs.extend(inner(epoch, epoch_length))
-            
-        return split_epochs
+    # apply inner function to full list of epochs
+    for epoch in epochs:
+        split_epochs.extend(inner(epoch, epoch_length))
+        
+    return split_epochs
