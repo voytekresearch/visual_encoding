@@ -21,7 +21,7 @@ from fooof import FOOOFGroup
 # imports - custom
 import sys
 sys.path.append("allen_vc")
-from utils import hour_min_sec
+from utils import params_to_df, hour_min_sec
 
 # settings - analysis details
 N_JOBS = -1 # number of jobs for parallel processing, psd_array_multitaper()
@@ -115,41 +115,6 @@ def spec_param_3d(psd, freq):
         else:
             df = pd.concat([df, df_r], axis=0)
 
-    return df
-
-
-def params_to_df(params, max_peaks):
-    # get per params
-    df_per = pd.DataFrame(params.get_params('peak'),
-        columns=['cf','pw','bw','idx'])
-
-    # get ap parmas
-    df_ap = pd.DataFrame(params.get_params('aperiodic'),  
-        columns=['offset', 'knee', 'exponent'])
-
-    # get quality metrics
-    df_ap['r_squared'] = params.get_params('r_squared')
-
-    # initiate combined df
-    df = df_ap.copy()
-    columns = []
-    for ii in range(max_peaks):
-        columns.append([f'cf_{ii}',f'pw_{ii}',f'bw_{ii}'])
-    df_init = pd.DataFrame(columns=np.ravel(columns))
-    df = df.join(df_init)
-
-    # app peak params for each peak fouond
-    for i_row in range(len(df)):
-        # check if row had peaks
-        if df.index[ii] in df_per['idx']:
-            # get peak info for row
-            df_ii = df_per.loc[df_per['idx']==i_row].reset_index()
-            # loop through peaks
-            for i_peak in range(len(df_ii)):
-                # add peak info to df
-                for var_str in ['cf','pw','bw']:
-                    df.at[i_row, f'{var_str}_{i_peak}'] = df_ii.at[i_peak, var_str]
-    
     return df
 
 
