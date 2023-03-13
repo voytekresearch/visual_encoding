@@ -48,3 +48,47 @@ def sync_stats(df, metrics, condition, paired_ttest=False):
             print(f'Paired T-Test\n{p}\n')
 
         print('\n\n\n')
+
+
+def create_r_matrix(statistics, mat):    
+    """
+    Create a matrix of Pearson correlation coefficients between spike statistics and PSD data.
+
+    Parameters
+    ----------
+    statistics : array_like
+        Array of spike statistics.
+    mat : array_like
+        3D array of PSD data.
+
+    Returns
+    -------
+    r_mat : array_like
+        2D array of Pearson correlation coefficients.
+    """
+    import scipy.stats as sts
+
+    # initialize matrix for storage of r values
+    r_mat = []
+    p_mat = []
+    
+    # loop through data in mat
+    for i, row in enumerate(mat):
+        r_mat_row = []
+        p_mat_row = []
+        for j, col in enumerate(row):
+            all_trials = mat[i,j,:]
+            
+            # disregard invalid ranges
+            if all(np.isnan(all_trials)):
+                results = [np.nan, np.nan]
+            else:
+                # some trials have NaN PSD data so filter those out
+                results = sts.pearsonr(statistics[~np.isnan(all_trials)], \
+                                      all_trials[~np.isnan(all_trials)])
+            r_mat_row.append(results[0])
+            p_mat_row.append(results[1])
+        r_mat.append(r_mat_row)
+        p_mat.append(p_mat_row)
+        
+    return np.array(r_mat), np.array(p_mat)

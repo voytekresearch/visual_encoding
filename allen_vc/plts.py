@@ -77,9 +77,42 @@ def sync_plot(df, metrics, condition):
         vp = sns.violinplot(**plotting_params, ax=ax, color = 'magenta')
         sp = sns.swarmplot(**plotting_params, ax=ax, color=[0,0,0])
 
-# compare linear regression plots between movie and shuffled conditions for two variables
+
 def linregress_movie_v_shuffled_plot(x1, y1, x2=None, y2=None, title=None, 
                                      xlabel=None, ylabel=None, fname_out=None, show=False):
+    """
+    Calculate and plot the linear regression for two datasets, with optional labels and file output.
+
+    Parameters
+    ----------
+    x1 : 1-d array_like
+        x-values of the first dataset
+    y1 : 1-d array_like
+        y-values of the first dataset
+    x2 : 1-d array_like, optional
+        x-values of the second dataset
+    y2 : 1-d array_like, optional
+        y-values of the second dataset
+    title : str, optional
+        Title of the plot
+    xlabel : str, optional
+        x-axis label of the plot
+    ylabel : str, optional
+        y-axis label of the plot
+    fname_out : str, optional
+        Filename of the output figure
+    show : bool, optional
+        Whether to show the figure or not
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The linear slopes, r-values, p-values, and intercepts of both 
+    datasets will be printed on the plot.
+    """
     import scipy.stats as sts
     
     #natural_movie
@@ -158,6 +191,7 @@ def plot_sa_heat_map(r_mat, xlabels, ylabels, graph_title=None,
     None
 
     """
+    import seaborn as sns
 
     # set non-significant values to 0
     if not sig_mask is None:
@@ -186,4 +220,48 @@ def plot_sa_heat_map(r_mat, xlabels, ylabels, graph_title=None,
         plt.show()
     else:
         plt.close()
+
+
+def running_segment_plot(block, title):
+    """
+    Plot the running speed of a given block of data.
+
+    Parameters
+    ----------
+    block : ndx.Block
+        Block of data to plot running speed.
+    title : str
+        Title of the plot.
+
+    Returns
+    -------
+    None
+        Prints the number of running and stationary segments, proportions 
+        of time running in run segments, and the average proportion.
+    """
+    run_proportions = []
+    running = block.annotations['running']
+    
+    fig, ax = plt.subplots(2,1, sharex=True, sharey=True, figsize=(14,6))
+    
+    for i_seg in range(len(block.segments)):
+        # get running speed for segment
+        data = block.segments[i_seg].analogsignals[1]
+        speed = data.magnitude
+        
+        state = block.segments[i_seg].annotations['running']
+        
+        if state:
+            run_proportions.append(sum(np.hstack(speed) > 1)/len(np.hstack(speed)))
+
+        # plot speed
+        ax[int(state)].plot(speed)
+        
+    # print number of running and stationary segments
+    print(f"Running segments: {int(np.sum(running))}")
+    print(f"Stationary segments: {int(len(running)-np.sum(running))}")
+    print(f"Proportions of time running in run segments: \n\n{run_proportions}\n")
+    print(f"Average proportion: {np.mean(run_proportions)}\n\n")
+    
+    plt.title(title)
 
