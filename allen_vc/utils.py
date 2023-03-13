@@ -330,3 +330,43 @@ def params_to_df(params, max_peaks):
                     df.at[i_row, f'{var_str}_{i_peak}'] = df_ii.at[i_peak, var_str]
     
     return df
+    
+
+def combine_spike_lfp_dfs(spike_df, lfp_df, ses_id, region, state=None):
+    '''
+    Combines spike and LFP dataframes given session ID and region.
+
+    Parameters
+    ----------
+    spike_df : dataframe
+        Dataframe containing spike parameters.
+    lfp_df : dataframe
+        Dataframe containing LFP parameters.
+    ses_id : int
+        Session ID for dataframes.
+    region : str
+        Brain region for dataframes.
+    state : str, optional
+        Running state for dataframes.
+
+    Returns
+    -------
+    df : dataframe
+        Combined dataframe of spike and LFP parameters.
+    '''
+
+    # filter region
+    reg_spike_df = spike_df[spike_df.get("brain_structure")==region]
+
+    # filter session
+    ses_spike_df = reg_spike_df[reg_spike_df.get("session")==ses_id]
+    ses_lfp_df = lfp_df[lfp_df.get("session")==ses_id]
+    
+    # take median across channels for param data
+    chan_med_lfp_df = channel_medians(ses_lfp_df, ses_lfp_df.columns).drop(columns="chan_idx")
+    
+    if state is not None:
+        state_spike_df = ses_spike_df[ses_spike_df.get("running")==state]
+        return chan_med_lfp_df.merge(state_spike_df)
+    
+    return chan_med_lfp_df.merge(ses_spike_df)
