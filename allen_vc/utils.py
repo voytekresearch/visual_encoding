@@ -370,3 +370,32 @@ def combine_spike_lfp_dfs(spike_df, lfp_df, ses_id, region, state=None):
         return chan_med_lfp_df.merge(state_spike_df)
     
     return chan_med_lfp_df.merge(ses_spike_df)
+
+
+def channel_medians(lfp_df, col_names):
+    """
+    This function takes in a dataframe of LFP data and a list of column names and returns a dataframe of the medians for each channel for each epoch.
+
+    Parameters
+    ----------
+    lfp_df : dataframe
+        A dataframe of LFP data
+    col_names : list
+        A list of column names
+
+    Returns
+    -------
+    dataframe
+        A dataframe of the medians for each channel for each epoch
+    """
+    
+    #imports
+    import pandas as pd
+    
+    medians = [0]*len(col_names)
+    for epoch in lfp_df.get("epoch_idx").unique():
+        epoch_df = lfp_df[lfp_df.get("epoch_idx")==epoch]
+        medians = np.vstack((medians, epoch_df.median()))
+
+    medians = np.delete(medians, (0), axis=0)
+    return pd.DataFrame(data = medians, columns = col_names)#.drop(columns = 'chan_idx')
