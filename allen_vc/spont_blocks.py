@@ -13,6 +13,7 @@ SESSION_TYPE = 'functional_connectivity'
 RUNNING_IN = f"{PROJECT_PATH}/data/lfp_data/lfp_epochs/spont"
 THRESHOLD = 1 # Threshold for identifying behavioral epochs
 MIN_DURATION = 1 # Minimum duration of determined epochs
+MIN_GAP = 0.1 # Minimum gap between epochs so as not to be joined
 
 # spike data regions of interest
 REGIONS = ['VISp','LGd']
@@ -117,8 +118,12 @@ def init_spont_blocks(series, fs, above_below_names=None, block_name=None):
     else:
         block = Block(name=block_name)
 
-    # Segment behavioral data. NOTE: need to make sure signal is handled properly and proper timescale
-    above_epochs, below_epochs = get_epoch_times(series.signal, THRESHOLD, MIN_DURATION)
+    # Segment behavioral data. NOTE: check that parameters are ok
+    above_epochs = find_segments(series.signal, THRESHOLD)/fs
+    above_epochs = join_epochs_with_gap(above_epochs, min_gap=MIN_GAP)
+    above_epochs = drop_short_epochs(above_epochs, min_duration=MIN_DURATION)
+    below_epochs = get_inverse_epochs(above_epochs, series.signal)
+    below_epochs = drop_short_epochs(below_epochs, min_duration)
 
     def add_segments(block, epochs, name=None):
         # Create Neo segments based on positive/negative behavioral epochs and add to block
