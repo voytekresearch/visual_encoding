@@ -399,3 +399,21 @@ def channel_medians(lfp_df, col_names):
 
     medians = np.delete(medians, (0), axis=0)
     return pd.DataFrame(data = medians, columns = col_names)#.drop(columns = 'chan_idx')
+
+def ellipse_area(a, b):
+    """
+    This function takes in the radii of an an ellipse in arbitrary order and returns the ellipse's area.
+
+    Parameters
+    ----------
+    a : float/int
+        radius 1
+    b : float/int
+        radius 2
+
+    Returns
+    -------
+    float
+        Area of the ellipse
+    """
+    return np.pi*a*b
