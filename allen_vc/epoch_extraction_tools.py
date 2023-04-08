@@ -183,13 +183,13 @@ def get_inverse_epochs(epochs, signal):
     return epochs_inv
 
 
-def get_epoch_times(signal, threshold, min_duration):
+def get_epoch_times(signal, threshold, min_gap, min_duration, fs=1):
 
     # id epochs above threshold
-    epochs_above = find_segments(signal, threshold=threshold, return_below=False)
+    epochs_above = find_segments(signal, threshold=threshold, return_below=False)/fs
 
     # join epochs
-    epochs_above = join_epochs_with_gap(epochs_above, min_gap=min_duration)
+    epochs_above = join_epochs_with_gap(epochs_above, min_gap=min_gap)
 
     # drop short epochs
     epochs_above = drop_short_epochs(epochs_above, min_duration=min_duration)
