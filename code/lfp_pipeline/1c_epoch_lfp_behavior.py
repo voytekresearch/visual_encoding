@@ -4,7 +4,7 @@ Epoch LFP during longest spontaneous epoch according to running/stationary behav
 """
 # Set paths
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/spont/running" # where to save output relative to both paths above 
+RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/spont" # where to save output relative to both paths above 
 # (will have both running and pupil folders ideally)
 
 # imports
@@ -14,7 +14,11 @@ import pandas as pd
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 from time import time as timer
 from time import ctime as time_now
-from utils import find_probes_in_region, hour_min_sec
+
+# imports - custom
+import sys
+sys.path.append("allen_vc")
+from utils import find_probes_in_region, hour_min_sec, save_pkl
 from epoch_extraction_tools import get_epoch_times
 from 1_epoch_lfp import create_neo_block
 
@@ -41,8 +45,8 @@ def main():
 
     # Define/create directories for outout
     dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
-    if not os.path.exists(dir_results): 
-        os.makedirs(dir_results)
+    if not os.path.exists(f'{dir_results}/npy'): os.makedirs(f'{dir_results}/npy')
+    if not os.path.exists(f'{dir_results}/neo'): os.makedirs(f'{dir_results}/neo')
     
     # Create Allensdk cache object
     cache = EcephysProjectCache.from_warehouse(manifest=f"{PROJECT_PATH}/dataset/manifest.json")
@@ -105,23 +109,24 @@ def main():
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
                 above.append(lfp_seg.to_numpy())
-            above = np.concatenate(above, axis=1)
+            above = np.concatenate(above, axis=1) # ! check axis is correct here
 
             for epoch in below_epochs:
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
                 below.append(lfp_seg.to_numpy())
-            below = np.concatenate(below, axis=1)
+            below = np.concatenate(below, axis=1) # ! check axis is correct here
 
             # how should channels be selected/aggregated here?
-            for epochs, label in zip([above, below], ['running', 'stationary']):
-                create_neo_block(epochs, FS, STIM_CODE, session_id, probe_id, chan_ids)
+            for lfp_epochs, label in zip([above, below], ['running', 'stationary']):
+                block = create_neo_block(lfp_epochs, FS, STIM_CODE, session_id, probe_id, chan_ids)
 
                 # save results
                 print('    saving data')
-                fname_out = f"{session_id}_{probe_id}_lfp_{chan_ids}_{label}.npz" # channel id?
+                fname_out = f"{session_id}_{probe_id}_lfp_{label}"
                 dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
-                np.savez(f"{dir_results}/{fname_out}", above=above, below=below)
+                np.savez(f"{dir_results}/npy/{fname_out}.npz", lfp=lfp_epochs) # save lfp array as .npz
+                save_pkl(block, f"{dir_results}/neo/{fname_out}.pkl") # save Neo object as .pkl
 
 
         # display progress
