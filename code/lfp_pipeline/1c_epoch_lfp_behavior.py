@@ -97,7 +97,7 @@ def main():
             running_series = running_group.analogsignals[4] # this is only the case for running, make general
 
             # Segment behavioral data. NOTE: check that parameters are ok
-            above_epochs, below_epochs = get_epoch_times(series.signal, THRESHOLD, MIN_GAP, MIN_DURATION, FS) # Running FS and LFP FS the same?
+            above_epochs, below_epochs = get_epoch_times(running_series.signal, THRESHOLD, MIN_GAP, MIN_DURATION, FS) # Running FS and LFP FS the same?
 
             # epoch LFP data for above and below
             above, below = [], []
@@ -114,8 +114,8 @@ def main():
             below = np.concatenate(below, axis=1)
 
             # how should channels be selected/aggregated here?
-            for epochcs, label in zip([above,below], ['running.npy', 'stationary.npy']):
-                create_neo_block(epochcs, FS, STIM_CODE, session_id, probe_id, chan_ids)
+            for epochs, label in zip([above, below], ['running', 'stationary']):
+                create_neo_block(epochs, FS, STIM_CODE, session_id, probe_id, chan_ids)
 
                 # save results
                 print('    saving data')
