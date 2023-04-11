@@ -105,19 +105,23 @@ def main():
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
                 above.append(lfp_seg.to_numpy())
+            above = np.concatenate(above, axis=1)
 
             for epoch in below_epochs:
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
                 below.append(lfp_seg.to_numpy())
+            below = np.concatenate(below, axis=1)
 
             # how should channels be selected/aggregated here?
+            for epochcs, label in zip([above,below], ['running.npy', 'stationary.npy']):
+                create_neo_block(epochcs, FS, STIM_CODE, session_id, probe_id, chan_ids)
 
-            # save results
-            print('    saving data')
-            fname_out = f"{session_id}_{probe_id}_lfp_{chan_ids}.npz" # channel id?
-            dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
-            np.savez(f"{dir_results}/{fname_out}", above=above, below=below)
+                # save results
+                print('    saving data')
+                fname_out = f"{session_id}_{probe_id}_lfp_{chan_ids}_{label}.npz" # channel id?
+                dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+                np.savez(f"{dir_results}/{fname_out}", above=above, below=below)
 
 
         # display progress
