@@ -59,17 +59,23 @@ def main():
         running_group = pd.read_pickle(f"{PROJECT_PATH}/{RUNNING_IN}/running_{session_id}.pkl")
         running_series = running_group.analogsignals[4] # make sure proper index
 
-        block = init_spont_blocks(running_series, FS, ['running', 'stationary'])
+        block = init_spont_blocks(running_series, ['running', 'stationary'])
 
         # Load lfp array, create AnalogSignal and add to all segments
-        lfp_series = np.load(fname_in)
-        lfp_sig = AnalogSignal(lfp_series, units="uV", sampling_rate=FS*pq.Hz, 
-            t_start=lfp_series[0])
-        lfp_sig.annotate(label='lfp', ecephys_channel_id=fname_in.split("_")[1])
+        lfp_above, lfp_below = np.load(fname_in)
 
         for i_seg, seg in enumerate(block.segments):
-            sliced = lfp_seg.time_slice(seg.t_start, seg.t_stop)
-            seg.analogsignals.append(sliced)
+            if i_seg < len(lfp_above):
+                lfp_epoch = lfp_above[i_seg]
+            else:
+                lfp_epoch = lfp_below[i_seg]
+
+            # Theoretically should not have out of bounds exception here assuming epochs are identical
+
+            lfp_sig = AnalogSignal(lfp_epoch, units="uV", sampling_rate=FS*pq.Hz, 
+            t_start=lfp_epoch[0])
+            lfp_sig.annotate(label='lfp', ecephys_channel_id=fname_in.split("_")[1])
+            seg.analogsignals.append(lfp_sig)
 
         for region in REGIONS:
             # Load spike trains, and add to all segments
@@ -111,7 +117,7 @@ def main():
 
 
 
-def init_spont_blocks(series, fs, above_below_names=None, block_name=None):
+def init_spont_blocks(series, above_below_names=None, block_name=None):
 
     if block_name is None:
         block = Block()
@@ -119,11 +125,7 @@ def init_spont_blocks(series, fs, above_below_names=None, block_name=None):
         block = Block(name=block_name)
 
     # Segment behavioral data. NOTE: check that parameters are ok
-    above_epochs = find_segments(series.signal, THRESHOLD)/fs
-    above_epochs = join_epochs_with_gap(above_epochs, min_gap=MIN_GAP)
-    above_epochs = drop_short_epochs(above_epochs, min_duration=MIN_DURATION)
-    below_epochs = get_inverse_epochs(above_epochs, series.signal)
-    below_epochs = drop_short_epochs(below_epochs, min_duration)
+    above_epochs, below_epochs = get_epoch_times(series.signal, THRESHOLD, MIN_GAP, MIN_DURATION, FS)
 
     def add_segments(block, epochs, name=None):
         # Create Neo segments based on positive/negative behavioral epochs and add to block
