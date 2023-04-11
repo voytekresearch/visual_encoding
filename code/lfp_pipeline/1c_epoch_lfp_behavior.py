@@ -2,9 +2,13 @@
 Epoch LFP during longest spontaneous epoch according to running/stationary behavior
 
 """
+# Names/labels
+STIM_CODE = 'spontaneous' # alternate stimulus name for output filename
+BEHAVIOR_NAME = 'running'
+
 # Set paths
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-RELATIVE_PATH_OUT = "data/lfp_data/lfp_epochs/spont" # where to save output relative to both paths above 
+RELATIVE_PATH_OUT = f"data/lfp_data/lfp_epochs/{STIM_CODE}/{BEHAVIOR_NAME}" # where to save output relative to both paths above 
 # (will have both running and pupil folders ideally)
 
 # imports
@@ -20,24 +24,21 @@ import sys
 sys.path.append("allen_vc")
 from utils import find_probes_in_region, hour_min_sec, save_pkl
 from epoch_extraction_tools import get_epoch_times
-from 1_epoch_lfp import create_neo_block
 
 # settings - data of interest
 SESSION_TYPE = 'functional_connectivity' # dataset of interest
 REGION = "VISp" # brain structure of interest
-BEHAVIOR_PATH = "C:/.."
+BEHAVIOR_PATH = f"{PROJECT_PATH}/data/behavior/{BEHAVIOR_NAME}/{STIM_CODE}"
+BLOCK_POS = 4
 
 # settings - stimulus epoch of interest
 STIM_PARAMS = dict({'stimulus_name' : 'spontaneous'})
-# DURATIONS = [1, 30]  # duration of arbitrary epochs (s)
-STIM_CODE = 'spont' # alternate stimulus name for output filename
 THRESHOLD = 1 # Threshold for identifying behavioral epochs
 MIN_DURATION = 1 # Minimum duration of determined epochs
 MIN_GAP = 0.1 # Minimum gap between epochs so as not to be joined
 
 # settings - dataset details
 FS = 1250 # LFP sampling freq
-# EXPECTED_DURATION = 30*60 # duration of spontaneous epoch (s)
 
 def main():
     # time it
@@ -78,6 +79,15 @@ def main():
 
         # display progress
         print(f"    {len(probe_ids)} probe(s) in ROI")
+
+        # load and epoch behavioral data
+        behavior_group = pd.read_pickle(f"{BEHAVIOR_PATH}/running_{session_id}.pkl")
+        behavior_series = behavior_group.analogsignals[BLOCK_POS] # this is only the case for running, make general
+
+        # Segment behavioral data. NOTE: check that parameters are ok
+        # (get)
+        above_epochs, below_epochs = get_epoch_times(behavior_series.magnitude.T[0], THRESHOLD, MIN_GAP, MIN_DURATION, FS) # Running FS and LFP FS the same?
+        print(f"Found {len(above_epochs)} above epochs and {len(below_epochs)} below epochs")
             
         # loop through all probes for region of interst
         for probe_id in probe_ids:
@@ -95,38 +105,31 @@ def main():
                 chan_ids = session.channels[(session.channels.probe_id==probe_id) & \
                     (session.channels.ecephys_structure_acronym==REGION)].index.values
                 lfp = lfp.sel(channel=slice(np.min(chan_ids), np.max(chan_ids)))
-
-            # load and epoch behavioral data
-            running_group = pd.read_pickle(f"{BEHAVIOR_PATH}")
-            running_series = running_group.analogsignals[4] # this is only the case for running, make general
-
-            # Segment behavioral data. NOTE: check that parameters are ok
-            above_epochs, below_epochs = get_epoch_times(running_series.signal, THRESHOLD, MIN_GAP, MIN_DURATION, FS) # Running FS and LFP FS the same?
+            else:
+                chan_ids = session.channels[session.channels.probe_id==probe_id].index.values
 
             # epoch LFP data for above and below
             above, below = [], []
             for epoch in above_epochs:
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
-                above.append(lfp_seg.to_numpy())
-            above = np.concatenate(above, axis=1) # ! check axis is correct here
+                above.append(lfp_seg.values)
 
             for epoch in below_epochs:
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
-                below.append(lfp_seg.to_numpy())
-            below = np.concatenate(below, axis=1) # ! check axis is correct here
+                below.append(lfp_seg.values)
 
-            # how should channels be selected/aggregated here?
-            for lfp_epochs, label in zip([above, below], ['running', 'stationary']):
-                block = create_neo_block(lfp_epochs, FS, STIM_CODE, session_id, probe_id, chan_ids)
+            t_start = {'above': [t[0] for t in above_epochs], 
+            'below': [t[0] for t in below_epochs]}
+            block = create_spont_neo_block(above, below, FS, chan_ids, t_start)
 
-                # save results
-                print('    saving data')
-                fname_out = f"{session_id}_{probe_id}_lfp_{label}"
-                dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
-                np.savez(f"{dir_results}/npy/{fname_out}.npz", lfp=lfp_epochs) # save lfp array as .npz
-                save_pkl(block, f"{dir_results}/neo/{fname_out}.pkl") # save Neo object as .pkl
+            # save results
+            print('    saving data')
+            fname_out = f"{session_id}_{probe_id}_lfp"
+            dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
+            # np.savez(f"{dir_results}/npy/{fname_out}.npz", lfp=lfp_epochs) # save lfp array as .npz
+            save_pkl(block, f"{dir_results}/neo/{fname_out}.pkl") # save Neo object as .pkl
 
 
         # display progress
@@ -138,6 +141,31 @@ def main():
     print(f"\n\n Total Time: \t {hour} hours, {min} minutes, {sec :0.1f} seconds")
 
 
+def create_spont_neo_block(above, below, fs, chan_id, t_start, block_name=None, units = 'uV'):
+
+    # imports
+    from neo.core import Block, Segment, AnalogSignal
+    import quantities as pq
+    
+    # create Neo Block object
+    if block_name is None:
+        block = Block()
+    else:
+        block = Block(name=block_name)
+
+    for epoch_type, label in zip([above, below], ['above', 'below']):
+        # create Neo Segment for each trial
+        for epoch_idx in range(len(epoch_type)):
+            segment = Segment(name=f'trial_{epoch_idx}_{label}')
+            block.segments.append(segment)
+
+            # add LFP data
+            lfp_as = AnalogSignal(epoch_type[epoch_idx], units=units, sampling_rate=fs*pq.Hz, 
+                t_start=t_start[label][epoch_idx]*pq.s)
+            lfp_as.annotate(label='lfp', ecephys_channel_id=chan_id)
+            segment.analogsignals.append(lfp_as)
+
+    return block
 
 if __name__ == '__main__':
     main()
