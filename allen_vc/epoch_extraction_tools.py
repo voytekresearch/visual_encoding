@@ -144,7 +144,7 @@ def drop_short_epochs(epochs, min_duration):
     return epochs_clean
 
 
-def get_inverse_epochs(epochs, signal):
+def get_inverse_epochs(epochs, signal, fs=1):
     """
     Get inverse epochs from a given epoch array and signal.
 
@@ -165,7 +165,7 @@ def get_inverse_epochs(epochs, signal):
     # start_times = epochs[:,1]
     # stop_times = epochs[:,0]
     start_times = np.insert(epochs[:,1], 0, 0)
-    stop_times = np.append(epochs[:,0], len(signal)-1)
+    stop_times = np.append(epochs[:,0], (len(signal)-1)/fs)
 
     # if first epoch start on first time point, drop first stop time
     if epochs[0,0] == 0:
@@ -173,7 +173,7 @@ def get_inverse_epochs(epochs, signal):
         stop_times = stop_times[1:]
 
     # if last epoch ends on last time point
-    if epochs[-1,1] == len(signal)-1:
+    if epochs[-1,1] == (len(signal)-1)/fs:
         start_times = start_times[:-1]
         stop_times = stop_times[:-1]
 
@@ -200,7 +200,7 @@ def get_epoch_times(signal, threshold, min_gap, min_duration, fs=1):
 
     else:
         # get below-threshold epoch times
-        epochs_below = get_inverse_epochs(epochs_above, signal)
+        epochs_below = get_inverse_epochs(epochs_above, signal, fs)
 
         # drop short epochs
         epochs_below = drop_short_epochs(epochs_below, min_duration)
