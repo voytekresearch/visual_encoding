@@ -32,7 +32,7 @@ BEHAVIOR_PATH = f"{PROJECT_PATH}/data/behavior/{BEHAVIOR_NAME}/{STIM_CODE}"
 BLOCK_POS = 4
 
 # settings - stimulus epoch of interest
-STIM_PARAMS = dict({'stimulus_name' : 'spontaneous'})
+#STIM_PARAMS = dict({'stimulus_name' : 'spontaneous'})
 THRESHOLD = 1 # Threshold for identifying behavioral epochs
 MIN_DURATION = 1 # Minimum duration of determined epochs
 MIN_GAP = 0.1 # Minimum gap between epochs so as not to be joined
@@ -66,10 +66,13 @@ def main():
         # load session data
         session = cache.get_session_data(session_id)
 
-        # get stim info for session - find longest spont epoch
+        # get stim info for session - find longest spont epoch (does this work)?
         stim_table = session.stimulus_presentations
-        for param_name in STIM_PARAMS.keys():
-            stim_table = stim_table[stim_table[param_name] == STIM_PARAMS[param_name]]
+        stim_times = stim_table.sort_values('duration', 
+            ascending=False).iloc[0][['start_time','stop_time']].to_numpy()
+
+        # for param_name in STIM_PARAMS.keys():
+        #     stim_table = stim_table[stim_table[param_name] == STIM_PARAMS[param_name]]
 
         # get probe info (for region of interest)
         if REGION is None:
@@ -88,6 +91,9 @@ def main():
         # (get)
         above_epochs, below_epochs = get_epoch_times(behavior_series.magnitude.T[0], THRESHOLD, MIN_GAP, MIN_DURATION, FS) # Running FS and LFP FS the same?
         print(f"Found {len(above_epochs)} above epochs and {len(below_epochs)} below epochs")
+
+        above_epochs += float(behavior_series.t_start)
+        below_epochs += float(behavior_series.t_start)
             
         # loop through all probes for region of interst
         for probe_id in probe_ids:
@@ -124,6 +130,14 @@ def main():
             'below': [t[0] for t in below_epochs]}
             block = create_spont_neo_block(above, below, FS, chan_ids, t_start)
 
+            # add Neo block annotations
+            block.annotate(session_type = SESSION_TYPE)
+            block.annotate(region = REGION)
+            block.annotate(stimulus_code = STIM_CODE)
+            block.annotate(session_id = session_id)
+            block.annotate(probe_id = probe_id)
+            block.annotate(stimulus_time = stim_times)
+
             # save results
             print('    saving data')
             fname_out = f"{session_id}_{probe_id}_lfp"
@@ -144,7 +158,7 @@ def main():
 def create_spont_neo_block(above, below, fs, chan_id, t_start, block_name=None, units = 'uV'):
 
     # imports
-    from neo.core import Block, Segment, AnalogSignal
+    from neo.core import Block, Group, Segment, AnalogSignal
     import quantities as pq
     
     # create Neo Block object
@@ -155,6 +169,7 @@ def create_spont_neo_block(above, below, fs, chan_id, t_start, block_name=None, 
 
     for epoch_type, label in zip([above, below], ['above', 'below']):
         # create Neo Segment for each trial
+        epoch_group = Group(name=f'behavior_{label}')
         for epoch_idx in range(len(epoch_type)):
             segment = Segment(name=f'trial_{epoch_idx}_{label}')
             block.segments.append(segment)
@@ -164,6 +179,9 @@ def create_spont_neo_block(above, below, fs, chan_id, t_start, block_name=None, 
                 t_start=t_start[label][epoch_idx]*pq.s)
             lfp_as.annotate(label='lfp', ecephys_channel_id=chan_id)
             segment.analogsignals.append(lfp_as)
+            epoch_group.segments.append(segment)
+            
+        block.groups.append(epoch_group)
 
     return block
 
