@@ -8,13 +8,14 @@ BEHAVIOR_NAME = 'running'
 
 # Set paths
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
+MANIFEST_PATH = "E:/datasets/allen_vc/manifest_files"
 RELATIVE_PATH_OUT = f"data/lfp_data/lfp_epochs/{STIM_CODE}/{BEHAVIOR_NAME}" # where to save output relative to both paths above 
-# (will have both running and pupil folders ideally)
 
 # imports
 import os
 import numpy as np
 import pandas as pd
+import quantities as pq
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 from time import time as timer
 from time import ctime as time_now
@@ -32,7 +33,6 @@ BEHAVIOR_PATH = f"{PROJECT_PATH}/data/behavior/{BEHAVIOR_NAME}/{STIM_CODE}"
 BLOCK_POS = 4
 
 # settings - stimulus epoch of interest
-#STIM_PARAMS = dict({'stimulus_name' : 'spontaneous'})
 THRESHOLD = 1 # Threshold for identifying behavioral epochs
 MIN_DURATION = 1 # Minimum duration of determined epochs
 MIN_GAP = 0.1 # Minimum gap between epochs so as not to be joined
@@ -42,7 +42,7 @@ FS = 1250 # LFP sampling freq
 
 def main():
     # time it
-    t_start = timer()
+    t_start_script = timer()
 
     # Define/create directories for outout
     dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
@@ -50,7 +50,7 @@ def main():
     if not os.path.exists(f'{dir_results}/neo'): os.makedirs(f'{dir_results}/neo')
     
     # Create Allensdk cache object
-    cache = EcephysProjectCache.from_warehouse(manifest=f"{PROJECT_PATH}/dataset/manifest.json")
+    cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
 
     # get session info for dataset of interest
     sessions_all = cache.get_session_table()
@@ -59,20 +59,17 @@ def main():
     # loo[ through all session for dataset of interest
     for i_session, session_id in enumerate(session_ids):
         # display progress
-        t_start_s = timer()
+        t_start_session = timer()
         print(f"\n\n Beginning session {i_session+1}/{len(session_ids)}: \t{time_now()}")
         print(f"    session ID: {session_id}")
 
         # load session data
         session = cache.get_session_data(session_id)
 
-        # get stim info for session - find longest spont epoch (does this work)?
+        # get stim info for session - find longest spont epoch and get start/stop time
         stim_table = session.stimulus_presentations
         stim_times = stim_table.sort_values('duration', 
             ascending=False).iloc[0][['start_time','stop_time']].to_numpy()
-
-        # for param_name in STIM_PARAMS.keys():
-        #     stim_table = stim_table[stim_table[param_name] == STIM_PARAMS[param_name]]
 
         # get probe info (for region of interest)
         if REGION is None:
@@ -85,10 +82,9 @@ def main():
 
         # load and epoch behavioral data
         behavior_group = pd.read_pickle(f"{BEHAVIOR_PATH}/running_{session_id}.pkl")
-        behavior_series = behavior_group.analogsignals[BLOCK_POS] # this is only the case for running, make general
+        behavior_series = behavior_group.analogsignals[BLOCK_POS]
 
         # Segment behavioral data. NOTE: check that parameters are ok
-        # (get)
         above_epochs, below_epochs = get_epoch_times(behavior_series.magnitude.T[0], THRESHOLD, MIN_GAP, MIN_DURATION, FS) # Running FS and LFP FS the same?
         print(f"Found {len(above_epochs)} above epochs and {len(below_epochs)} below epochs")
 
@@ -136,22 +132,24 @@ def main():
             block.annotate(stimulus_code = STIM_CODE)
             block.annotate(session_id = session_id)
             block.annotate(probe_id = probe_id)
-            block.annotate(stimulus_time = stim_times)
+            block.annotate(stimulus_start_time = stim_times[0]*pq.s)
+            block.annotate(stimulus_stop_time = stim_times[1]*pq.s)
 
             # save results
             print('    saving data')
             fname_out = f"{session_id}_{probe_id}_lfp"
             dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
-            # np.savez(f"{dir_results}/npy/{fname_out}.npz", lfp=lfp_epochs) # save lfp array as .npz
+            np.savez(f"{dir_results}/npy/{fname_out}_above.npz", *above) # save lfp array as .npz
+            np.savez(f"{dir_results}/npy/{fname_out}_below.npz", *below)
             save_pkl(block, f"{dir_results}/neo/{fname_out}.pkl") # save Neo object as .pkl
 
 
         # display progress
-        _, min, sec = hour_min_sec(timer() - t_start_s)
+        _, min, sec = hour_min_sec(timer() - t_start_session)
         print(f"    session complete in {min} min and {sec :0.1f} s")
 
     # display progress
-    hour, min, sec = hour_min_sec(timer() - t_start)
+    hour, min, sec = hour_min_sec(timer() - t_start_script)
     print(f"\n\n Total Time: \t {hour} hours, {min} minutes, {sec :0.1f} seconds")
 
 
@@ -159,7 +157,6 @@ def create_spont_neo_block(above, below, fs, chan_id, t_start, block_name=None, 
 
     # imports
     from neo.core import Block, Group, Segment, AnalogSignal
-    import quantities as pq
     
     # create Neo Block object
     if block_name is None:
