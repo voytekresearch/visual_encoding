@@ -5,18 +5,18 @@ A median filter can be applied to smooth data.
 """
 # Settings - directories
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-MANIFEST_PATH = "D:/datasets/allen_vc" # local dataset directory
+MANIFEST_PATH = "C:/datasets/allen_vc/manifest_files" # local dataset directory
 STIM_CODE = 'spontaneous' # name for output folder (stimulus of interest)
 
 # settings - data of interest
 STIMULUS_NAME = 'spontaneous' # name of stimulus in allen dataset
 
 # settings - dataset details
-FS = 1250 # sampling frequency for interpolation
+RF = 50 # sampling frequency for interpolation
 
 # settings - analysis
 SMOOTH = True # whether to smooth data (median filter)
-KERNEL_SIZE = 1*FS # kernel size for median filter
+KERNEL_SIZE = 1*RF # kernel size for median filter
 
 # Imports - general
 import os
@@ -141,7 +141,7 @@ def get_stimulus_block_behavioral_series(stimulus_name, session, time, velocity,
         # return stim_time, stim_speed, stim_speed_filt
 
         # convert to neo.AnalogSignal
-        output = neo.AnalogSignal(stim_speed_filt*(pq.cm/pq.s), sampling_rate=FS*pq.Hz, \
+        output = neo.AnalogSignal(stim_speed_filt*(pq.cm/pq.s), sampling_rate=RF*pq.Hz, \
             block=block, t_start=start_time*pq.s)
         stim_group.analogsignals.append(output)
 

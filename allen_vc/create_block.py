@@ -11,8 +11,6 @@ STIM_CODE = 'natural_movie' # name for output folder (stimulus of interest)
 # spike data regions of interest
 REGIONS = ['VISp','LGd']
 
-# settings - dataset details
-FS = 1250 # LFP sampling freq
 # imports
 import os
 import numpy as np

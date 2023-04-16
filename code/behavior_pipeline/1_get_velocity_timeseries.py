@@ -9,13 +9,13 @@ from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProj
 
 # settings - directories
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-MANIFEST_PATH = "D:/datasets/allen_vc" # local dataset directory
+MANIFEST_PATH = "C:/datasets/allen_vc/manifest_files" # local dataset directory
 
 # settings - data of interest
 SESSION_TYPE = 'functional_connectivity' # dataset of interest
 
 # settings - dataset details
-FS = 1250 # LFP sampling freq
+RF = 50 # Running interpolation frequency
 
 #Make sure epoch lengths are in order least to greatest
 def main():
@@ -35,13 +35,13 @@ def main():
 		session = cache.get_session_data(session_id)
 
 		# create uniform set of data using interpolation
-		time, velocity = get_running_timeseries(session, FS)
+		time, velocity = get_running_timeseries(session, RF)
 
 		# save to file
 		np.savez(f'{dir_results}/running_{session_id}', time=time, velocity=velocity)
 
 
-def get_running_timeseries(session, fs):
+def get_running_timeseries(session, rf):
 	"""
 	load running wheel data for a given session. velocity data are interpolated
 	to a sampling frequnecy of 'fs.'
@@ -73,7 +73,7 @@ def get_running_timeseries(session, fs):
 	
 	#Create uniform set of data using interpolation
 	model = interpolate.interp1d(time_points, values)
-	time = np.arange(time_points[0], time_points[-1], 1/fs)
+	time = np.arange(time_points[0], time_points[-1], 1/rf)
 	velocity = model(time)
 
 	return time, velocity
