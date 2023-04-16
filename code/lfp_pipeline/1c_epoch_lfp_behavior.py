@@ -24,7 +24,7 @@ from time import ctime as time_now
 import sys
 sys.path.append("allen_vc")
 from utils import find_probes_in_region, hour_min_sec, save_pkl
-from epoch_extraction_tools import get_epoch_times
+from epoch_extraction_tools import get_epoch_times, split_epochs
 
 # settings - data of interest
 SESSION_TYPE = 'functional_connectivity' # dataset of interest
@@ -34,11 +34,12 @@ BLOCK_POS = 4
 
 # settings - stimulus epoch of interest
 THRESHOLD = 1 # Threshold for identifying behavioral epochs
-MIN_DURATION = 1 # Minimum duration of determined epochs
-MIN_GAP = 0.1 # Minimum gap between epochs so as not to be joined
+MIN_DURATION = 30 # Minimum duration of determined epochs
+MIN_GAP = 3 # Minimum gap between epochs so as not to be joined
 
 # settings - dataset details
 FS = 1250 # LFP sampling freq
+RF = 50 # Running sampling freq
 
 def main():
     # time it
@@ -81,15 +82,17 @@ def main():
         print(f"    {len(probe_ids)} probe(s) in ROI")
 
         # load and epoch behavioral data
-        behavior_group = pd.read_pickle(f"{BEHAVIOR_PATH}/running_{session_id}.pkl")
+        behavior_group = pd.read_pickle(f"{BEHAVIOR_PATH}/{BEHAVIOR_NAME}_{session_id}.pkl")
         behavior_series = behavior_group.analogsignals[BLOCK_POS]
 
         # Segment behavioral data. NOTE: check that parameters are ok
-        above_epochs, below_epochs = get_epoch_times(behavior_series.magnitude.T[0], THRESHOLD, MIN_GAP, MIN_DURATION, FS) # Running FS and LFP FS the same?
+        above_epochs, below_epochs = get_epoch_times(behavior_series.magnitude.T[0], THRESHOLD, MIN_GAP, MIN_DURATION, RF)
         print(f"Found {len(above_epochs)} above epochs and {len(below_epochs)} below epochs")
 
         above_epochs += float(behavior_series.t_start)
         below_epochs += float(behavior_series.t_start)
+        above_epochs = np.array(split_epochs(above_epochs, MIN_DURATION))
+        below_epochs = np.array(split_epochs(below_epochs, MIN_DURATION))
             
         # loop through all probes for region of interst
         for probe_id in probe_ids:
@@ -112,15 +115,22 @@ def main():
 
             # epoch LFP data for above and below
             above, below = [], []
+            time_a, time_b = [], []
             for epoch in above_epochs:
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
                 above.append(lfp_seg.values)
+                time_a.append(np.linspace(start_time, end_time, FS))
 
             for epoch in below_epochs:
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
                 below.append(lfp_seg.values)
+                time_b.append(np.linspace(start_time, end_time, FS))
+
+            # convert to np.array (each epoch should be the same shape)
+            above, below = np.array(above), np.array(below)
+            time_a, time_b = np.array(time_a), np.array(time_b)
 
             t_start = {'above': [t[0] for t in above_epochs], 
             'below': [t[0] for t in below_epochs]}
@@ -129,6 +139,7 @@ def main():
             # add Neo block annotations
             block.annotate(session_type = SESSION_TYPE)
             block.annotate(region = REGION)
+            block.annotate(epoch_behavior = BEHAVIOR_NAME)
             block.annotate(stimulus_code = STIM_CODE)
             block.annotate(session_id = session_id)
             block.annotate(probe_id = probe_id)
@@ -139,9 +150,11 @@ def main():
             print('    saving data')
             fname_out = f"{session_id}_{probe_id}_lfp"
             dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
-            np.savez(f"{dir_results}/npy/{fname_out}_above.npz", *above) # save lfp array as .npz
-            np.savez(f"{dir_results}/npy/{fname_out}_below.npz", *below)
-            save_pkl(block, f"{dir_results}/neo/{fname_out}.pkl") # save Neo object as .pkl
+            np.save(f"{dir_results}/npy/{fname_out}_above_epochs.npz", 
+            lfp=np.swapaxes(above, 0, 1), time=time_a) # save lfp array as .npz
+            np.save(f"{dir_results}/npy/{fname_out}_below_epochs.npz", 
+                lfp=np.swapaxes(below, 0, 1), time=time_b)
+            save_pkl(block, f"{dir_results}/neo/{fname_out}_epochs.pkl") # save Neo object as .pkl
 
 
         # display progress
@@ -166,7 +179,7 @@ def create_spont_neo_block(above, below, fs, chan_id, t_start, block_name=None, 
 
     for epoch_type, label in zip([above, below], ['above', 'below']):
         # create Neo Segment for each trial
-        epoch_group = Group(name=f'behavior_{label}')
+        epoch_group = Group(name=f'{BEHAVIOR_NAME}_{label}')
         for epoch_idx in range(len(epoch_type)):
             segment = Segment(name=f'trial_{epoch_idx}_{label}')
             block.segments.append(segment)
