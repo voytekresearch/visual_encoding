@@ -87,12 +87,13 @@ def main():
 
         # Segment behavioral data. NOTE: check that parameters are ok
         above_epochs, below_epochs = get_epoch_times(behavior_series.magnitude.T[0], THRESHOLD, MIN_GAP, MIN_DURATION, RF)
-        print(f"Found {len(above_epochs)} above epochs and {len(below_epochs)} below epochs")
-
+    
         above_epochs += float(behavior_series.t_start)
         below_epochs += float(behavior_series.t_start)
         above_epochs = np.array(split_epochs(above_epochs, MIN_DURATION))
         below_epochs = np.array(split_epochs(below_epochs, MIN_DURATION))
+        print(f"Found {len(above_epochs)} above epochs and {len(below_epochs)} below epochs")
+
             
         # loop through all probes for region of interst
         for probe_id in probe_ids:
@@ -116,21 +117,37 @@ def main():
             # epoch LFP data for above and below
             above, below = [], []
             time_a, time_b = [], []
+
             for epoch in above_epochs:
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
+                if lfp_seg.values.shape[0] != FS*MIN_DURATION:
+                    print("LFP segment for epoch incorrect dimensions")
+                    continue
                 above.append(lfp_seg.values)
                 time_a.append(np.linspace(start_time, end_time, FS))
+                
+            if len(above) > 0:
+                above = np.stack(above)
+            else:
+                above = np.array([])
+            time_a = np.array(time_a)
 
             for epoch in below_epochs:
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
+                if lfp_seg.values.shape[0] != FS*MIN_DURATION:
+                    print("LFP segment for epoch incorrect dimensions")
+                    continue
                 below.append(lfp_seg.values)
                 time_b.append(np.linspace(start_time, end_time, FS))
+                
+            if len(below) > 0:
+                below = np.stack(below)
+            else:
+                below = np.array([])
+            time_b = np.array(time_b)
 
-            # convert to np.array (each epoch should be the same shape)
-            above, below = np.array(above), np.array(below)
-            time_a, time_b = np.array(time_a), np.array(time_b)
 
             t_start = {'above': [t[0] for t in above_epochs], 
             'below': [t[0] for t in below_epochs]}
@@ -150,10 +167,13 @@ def main():
             print('    saving data')
             fname_out = f"{session_id}_{probe_id}_lfp"
             dir_results = f'{PROJECT_PATH}/{RELATIVE_PATH_OUT}'
-            np.save(f"{dir_results}/npy/{fname_out}_above_epochs.npz", 
-            lfp=np.swapaxes(above, 0, 1), time=time_a) # save lfp array as .npz
-            np.save(f"{dir_results}/npy/{fname_out}_below_epochs.npz", 
-                lfp=np.swapaxes(below, 0, 1), time=time_b)
+            # Only save if epochs exist
+            if len(above) > 0:
+                np.savez(f"{dir_results}/npy/{fname_out}_above_epochs.npz", 
+                lfp=np.swapaxes(np.swapaxes(above, 0, 2), 1, 2), time=time_a) # save lfp array as .npz
+            if len(below) > 0:
+                np.savez(f"{dir_results}/npy/{fname_out}_below_epochs.npz", 
+                    lfp=np.swapaxes(np.swapaxes(below, 0, 2), 1, 2), time=time_b)
             save_pkl(block, f"{dir_results}/neo/{fname_out}_epochs.pkl") # save Neo object as .pkl
 
 
