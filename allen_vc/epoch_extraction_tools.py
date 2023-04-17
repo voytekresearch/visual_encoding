@@ -196,7 +196,7 @@ def get_epoch_times(signal, threshold, min_gap, min_duration, fs=1):
 
     # if no above-threshold epochs identified
     if len(epochs_above) == 0:
-        epochs_below = np.array([[0, len(signal)-1]])
+        epochs_below = np.array([[0, (len(signal)-1)/fs]])
 
     else:
         # get below-threshold epoch times
