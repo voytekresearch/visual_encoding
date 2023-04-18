@@ -320,7 +320,7 @@ def params_to_df(params, max_peaks):
     # app peak params for each peak fouond
     for i_row in range(len(df)):
         # check if row had peaks
-        if df.index[ii] in df_per['idx']:
+        if df.index[i_row] in df_per['idx']:
             # get peak info for row
             df_ii = df_per.loc[df_per['idx']==i_row].reset_index()
             # loop through peaks
