@@ -25,22 +25,28 @@ def find_segments(signal, threshold, return_below=False):
     # get indices of segments above threshold
     above_threshold = np.where(signal > threshold)[0]
     if len(above_threshold) == 0:
-        return np.array([])
+        if return_below:
+            return np.array([]), np.array([0, len(signal) - 1])
+        else:
+            return np.array([])
 
     # get start and end of segments
     starts = above_threshold[np.where(np.diff(above_threshold) != 1)[0] + 1]
     ends = above_threshold[np.where(np.diff(above_threshold) != 1)[0]]
 
-    # handle missing data
-    if len(starts)==0 or len(ends)==0:
-        starts = np.insert(starts, 0, above_threshold[0])
-        ends = np.append(ends, above_threshold[-1])
+    starts = np.insert(starts, 0, above_threshold[0])
+    ends = np.append(ends, above_threshold[-1])
 
-    # add first and last index if needed
-    if starts[0] > ends[0]:
-        starts = np.insert(starts, 0, 0)
-    if ends[-1] < starts[-1]:
-        ends = np.append(ends, len(signal)-1)
+    # # handle missing data
+    # if len(starts)==0 or len(ends)==0:
+    #     starts = np.insert(starts, 0, above_threshold[0])
+    #     ends = np.append(ends, above_threshold[-1])
+
+    # # add first and last index if needed
+    # if starts[0] > ends[0]:
+    #     starts = np.insert(starts, 0, 0)
+    # if ends[-1] < starts[-1]:
+    #     ends = np.append(ends, len(signal)-1)
 
     # join epoch times as array
     epoch_times = np.array([starts, ends]).T
@@ -50,8 +56,19 @@ def find_segments(signal, threshold, return_below=False):
 
     # return segments below threshold if requested
     if return_below:
-        epochs_below = np.vstack([np.insert(epoch_times[:,1], 0, 0),
-            np.insert(epoch_times[:,0], -1, -1)]).T
+        if epoch_times[0][0] == 0:
+            below_starts = ends
+            below_ends = starts[1:]
+        else:
+            below_starts = np.insert(ends, 0, 0)
+            below_ends = starts
+
+        if epoch_times[-1][-1] == len(signal) - 1:
+            below_starts = below_starts[:-1]
+        else:
+            below_ends = np.append(below_ends, len(signal) - 1)
+
+        epochs_below = np.vstack([below_starts, below_ends]).T
 
         return epoch_times, epochs_below
 
@@ -103,6 +120,12 @@ def join_epochs_with_gap(epochs, min_gap):
                     continue
                 else:
                     epochs_clean.append(epochs[ii])
+
+    if len(epochs_clean) > 0:
+        if epochs_clean[-1][1] == epochs[-1, 1]:
+            pass
+        else:
+            epochs_clean.append(epochs[-1])
 
     epochs_clean = np.array(epochs_clean)
 
@@ -186,24 +209,26 @@ def get_inverse_epochs(epochs, signal, fs=1):
 def get_epoch_times(signal, threshold, min_gap, min_duration, fs=1):
 
     # id epochs above threshold
-    epochs_above = find_segments(signal, threshold=threshold, return_below=False)/fs
+    epochs_above, epochs_below = find_segments(signal, threshold=threshold, return_below=True)
 
     # join epochs
-    epochs_above = join_epochs_with_gap(epochs_above, min_gap=min_gap)
+    epochs_above = join_epochs_with_gap(epochs_above/fs, min_gap=min_gap)
+    epochs_below = join_epochs_with_gap(epochs_below/fs, min_gap=min_gap)
 
     # drop short epochs
     epochs_above = drop_short_epochs(epochs_above, min_duration=min_duration)
+    epochs_below = drop_short_epochs(epochs_below, min_duration=min_duration)
 
-    # if no above-threshold epochs identified
-    if len(epochs_above) == 0:
-        epochs_below = np.array([[0, (len(signal)-1)/fs]])
+    # # if no above-threshold epochs identified
+    # if len(epochs_above) == 0:
+    #     epochs_below = np.array([[0, (len(signal)-1)/fs]])
 
-    else:
-        # get below-threshold epoch times
-        epochs_below = get_inverse_epochs(epochs_above, signal, fs)
+    # else:
+    #     # get below-threshold epoch times
+    #     epochs_below = get_inverse_epochs(epochs_above, signal, fs)
 
-        # drop short epochs
-        epochs_below = drop_short_epochs(epochs_below, min_duration)
+    #     # drop short epochs
+    #     epochs_below = drop_short_epochs(epochs_below, min_duration)
 
     return epochs_above, epochs_below
 
