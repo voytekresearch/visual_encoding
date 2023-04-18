@@ -78,8 +78,8 @@ def sync_plot(df, metrics, condition):
         sp = sns.swarmplot(**plotting_params, ax=ax, color=[0,0,0])
 
 
-def linregress_movie_v_shuffled_plot(x1, y1, x2=None, y2=None, title=None, 
-                                     xlabel=None, ylabel=None, fname_out=None, show=False):
+def scatter_2_conditions(x1, y1, x2, y2, conditions=['cond 1', 'cond 2'],
+                         title=None, xlabel=None, ylabel=None, fname_out=None, show=False):
     """
     Calculate and plot the linear regression for two datasets, with optional labels and file output.
 
@@ -89,10 +89,12 @@ def linregress_movie_v_shuffled_plot(x1, y1, x2=None, y2=None, title=None,
         x-values of the first dataset
     y1 : 1-d array_like
         y-values of the first dataset
-    x2 : 1-d array_like, optional
+    x2 : 1-d array_like
         x-values of the second dataset
-    y2 : 1-d array_like, optional
+    y2 : 1-d array_like
         y-values of the second dataset
+    conditions : list, optional
+        List of strings containing the names of the conditions to be plotted.
     title : str, optional
         Title of the plot
     xlabel : str, optional
@@ -113,49 +115,49 @@ def linregress_movie_v_shuffled_plot(x1, y1, x2=None, y2=None, title=None,
     The linear slopes, r-values, p-values, and intercepts of both 
     datasets will be printed on the plot.
     """
-    import scipy.stats as sts
+
+    # imports
+    from scipy.stats import linregress
     
-    #natural_movie
-    m1 = sts.linregress(x1, y1)
-    l1 = np.linspace(min(x1), max(x1), 1000)
-    t1 = m1.slope * l1 + m1.intercept
+    # create figure
+    fig, ax = plt.subplots(figsize=(8,6), constrained_layout=True)
+    fig.patch.set_facecolor('white') # set background color to white for text legibility
     
-    #shuffled
-    m2 = sts.linregress(x2, y2)
-    l2 = np.linspace(min(x2), max(x2), 1000)
-    t2 = m2.slope * l2 + m2.intercept
-    
-    plt.style.use('bmh')
-    fig = plt.figure(figsize=(8,6))
-    ax = fig.add_subplot()
-    
-    plt.scatter(x1, y1)
-    plt.plot(l1, t1, label='natural_movie (1)')
-    plt.scatter(x2, y2)
-    plt.plot(l2, t2, label='shuffled (2)')
-    plt.legend()
-    
-    # add labels
-    plt.text(1.05, 0.95, f"Slope1: {round(m1.slope, 5)}", transform = ax.transAxes)
-    plt.text(1.05, 0.9, f"R1: {round(m1.rvalue, 5)}", transform = ax.transAxes)
-    plt.text(1.05, 0.85, f"p: {round(m1.pvalue, 5)}", transform = ax.transAxes)
-    plt.text(1.05, 0.8, f"Intercept1: {round(m1.intercept, 5)}", transform = ax.transAxes)
-    
-    plt.text(1.05, 0.7, f"Slope2: {round(m2.slope, 5)}", transform = ax.transAxes)
-    plt.text(1.05, 0.65, f"R2: {round(m2.rvalue, 5)}", transform = ax.transAxes)
-    plt.text(1.05, 0.6, f"p: {round(m2.pvalue, 5)}", transform = ax.transAxes)
-    plt.text(1.05, 0.55, f"Intercept2: {round(m2.intercept, 5)}", transform = ax.transAxes)
-    
-    if title:
+    # loop through conditions
+    for x_data, y_data, label, offset in zip([x1, x2], [y1, y2], conditions, [0, 0.2]):
+        # plot data
+        ax.scatter(x_data, y_data)
+
+        # run regression and plot results
+        results = linregress(x_data, y_data)
+        t_lin = np.linspace(np.nanmin(x_data), np.nanmax(x_data), 100)
+        lin = results.slope * t_lin + results.intercept
+        ax.plot(t_lin, lin, label=label)
+
+        # add regression results text
+        if results.pvalue < 0.001:
+            pval = f"{results.pvalue:.2e}"
+        else:
+            pval = f"{results.pvalue:.3f}"
+        plt.text(1.05, 0.9 - offset, 
+                 f"Regression ({label}):\n" +
+                 f"    Slope: {results.slope:.3f}\n" +
+                 f"    Intercept: {results.intercept:.3f}\n" +
+                 f"    R: {results.rvalue:.3f}\n" +
+                 f"    p: {pval}", transform = ax.transAxes)
+
+    # label figure
+    ax.legend()
+    if title is not None:
         plt.title(title)
-    if xlabel:
+    if xlabel is not None:
         plt.xlabel(xlabel)
-    if ylabel:
+    if ylabel is not None:
         plt.ylabel(ylabel)
         
+    # save/show figure
     if not fname_out is None:
-        plt.savefig(fname_out)
-        
+        fig.savefig(fname_out)
     if show:
         plt.show()
     else:
