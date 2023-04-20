@@ -35,9 +35,9 @@ def plot_epochs(signal, time, epochs, threshold=None):
         ax.axhline(threshold, color='k')
 
     # annotate epochs
-    for t_start in np.array(time[epochs[:,0]]):
+    for t_start in np.array(epochs[:,0]):
         ax.axvline(t_start, color='b')
-    for t_stop in np.array(time[epochs[:,1]]):
+    for t_stop in np.array(epochs[:,1]):
         ax.axvline(t_stop, color='r')
 
     return fig, ax
