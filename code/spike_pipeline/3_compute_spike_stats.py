@@ -16,12 +16,13 @@ REPO_PATH = 'C:/Users/User/visual_encoding' # code repo r'C:\Users\micha\visual_
 
 # settings - data of interest
 BRAIN_STRUCTURES = ['VISp', 'LGd']
-STIMULUS_NAME = "natural_movie_one_more_repeats"
+STIM_CODE = "spontaneous"
+BEHAVIOR_LABEL = True # whether or not to include column denoted 'above' or 'below' behavior
 
 # Import custom functions
 import sys
-sys.path.append(REPO_PATH)
-from allen_vc.analysis import calculate_spike_metrics
+sys.path.append('allen_vc')
+from analysis import calculate_spike_metrics
 
 def main():
     #Initialize space for data storage
@@ -37,16 +38,16 @@ def main():
             print(f"\n\tAnalyzing Session:\t{session_id}")
 
             # skip over weird session
-            if (STIMULUS_NAME == 'natural_movie_one_more_repeats' or \
-                STIMULUS_NAME == 'natural_movie_one_more_repeats_all') and \
+            if (STIM_CODE == 'natural_movie_one_more_repeats' or \
+                STIM_CODE == 'natural_movie_one_more_repeats_all') and \
             session_id==793224716:
                 continue
 
             # not all sessions have been loaded yet so put this in for safety
-            if not os.path.exists(f"{PROJECT_PATH}/data/blocks/{session_id}_{STIMULUS_NAME}.pkl"):
+            if not os.path.exists(f"{PROJECT_PATH}/data/blocks/{session_id}_{STIM_CODE}.pkl"):
                 continue
 
-            block = pd.read_pickle(f"{PROJECT_PATH}/data/blocks/{session_id}_{STIMULUS_NAME}.pkl")
+            block = pd.read_pickle(f"{PROJECT_PATH}/data/blocks/{session_id}_{STIM_CODE}.pkl")
 
             # Calculate spike metrics for both states
             for segment in block.segments:
@@ -55,8 +56,12 @@ def main():
 
                 # Calculate/combine metrics for storage
                 metrics = list(calculate_spike_metrics(spikes))
-                metrics.extend([[segment.t_start, segment.t_stop], int(segment.name.split('_')[1]), \
-                    segment.annotations['running'], structure, session_id])
+                if BEHAVIOR_LABEL:
+                    metrics.extend([[segment.t_start, segment.t_stop], int(segment.name.split('_')[1]), \
+                        segment.name.split('_')[-1], structure, session_id])
+                else:
+                    metrics.extend([[segment.t_start, segment.t_stop], int(segment.name.split('_')[1]), \
+                        segment.annotations['running'], structure, session_id])
                 data_mat = np.vstack((data_mat, metrics))
 
     #Save DataFrame including all metrics
@@ -65,7 +70,7 @@ def main():
     'spike_distance','spike_synchrony','correlation_coefficient', \
     'epoch_times', 'epoch_idx', 'running', 'brain_structure','session']
 
-    fname_out = "-".join(BRAIN_STRUCTURES) + "_" + STIMULUS_NAME
+    fname_out = "-".join(BRAIN_STRUCTURES) + "_" + STIM_CODE
     pd.DataFrame(data=data_mat, columns=labels).to_csv(f'{PROJECT_PATH}/data/spike_data'+\
         f'/synchrony_data/{fname_out}.csv', index=False)
 

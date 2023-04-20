@@ -121,6 +121,10 @@ def main():
             for epoch in above_epochs:
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
+                if lfp_seg.values.shape[0] == FS*MIN_DURATION - 1:
+                    lfp_seg = lfp.sel(time = slice(start_time, end_time + 1/FS))
+                if lfp_seg.values.shape[0] == FS*MIN_DURATION + 1:
+                    lfp_seg = lfp.sel(time = slice(start_time + 1/FS, end_time))
                 if lfp_seg.values.shape[0] != FS*MIN_DURATION:
                     print("LFP segment for epoch incorrect dimensions")
                     continue
@@ -136,6 +140,10 @@ def main():
             for epoch in below_epochs:
                 start_time, end_time = epoch
                 lfp_seg = lfp.sel(time = slice(start_time, end_time))
+                if lfp_seg.values.shape[0] == FS*MIN_DURATION - 1:
+                    lfp_seg = lfp.sel(time = slice(start_time, end_time + 1/FS))
+                if lfp_seg.values.shape[0] == FS*MIN_DURATION + 1:
+                    lfp_seg = lfp.sel(time = slice(start_time + 1/FS, end_time))
                 if lfp_seg.values.shape[0] != FS*MIN_DURATION:
                     print("LFP segment for epoch incorrect dimensions")
                     continue

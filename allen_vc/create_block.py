@@ -6,10 +6,14 @@ Combine lfp, spiking and behavioral data into a single Neo Block object.
 # settings - directories
 MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-STIM_CODE = 'natural_movie' # name for output folder (stimulus of interest)
+STIM_CODE = 'spontaneous' # name for output folder (stimulus of interest)
+LFP_BLOCKS = f"{PROJECT_PATH}/data/lfp_data/lfp_epochs/spontaneous/running/neo/"
 
 # spike data regions of interest
 REGIONS = ['VISp','LGd']
+
+# settings - annotations
+RUNNING_ANNOTATIONS = False
 
 # imports
 import os
@@ -22,21 +26,20 @@ from neo.core import Group
 # Imports - custom
 import sys
 sys.path.append('allen_vc')
-from allen_vc.utils import hour_min_sec, save_pkl, get_neo_group_names
+from utils import hour_min_sec, save_pkl, get_neo_group_names
 
 def main():
     # time it
     t_start = timer()
 
     # Define/create directories for inputs/outputs
-    path_lfp = f"{PROJECT_PATH}/data/lfp_data/lfp_epochs/{STIM_CODE}/neo/"
     path_spikes = f"{PROJECT_PATH}/data/spike_data/spike_times/"
     dir_results = f"{PROJECT_PATH}/data/blocks" 
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
     
     # id files of interst and loop through them
-    files = os.listdir(path_lfp)
+    files = os.listdir(LFP_BLOCKS)
     for i_file, fname_in in enumerate(files):
 
         # display progress
@@ -45,7 +48,7 @@ def main():
         print(f"    {fname_in}")
 
         # load Neo Block containing LFP
-        block = pickle.load(open(f"{path_lfp}/{fname_in}", "rb"))
+        block = pickle.load(open(f"{LFP_BLOCKS}/{fname_in}", "rb"))
 
         # load spike data and add to block
         for region in REGIONS:
@@ -103,12 +106,14 @@ def main():
             block.segments[i_seg].analogsignals.append(running_seg)
 
             # determine if running during segment then annotate segment
-            speed = running_seg.magnitude
-            running[i_seg] = np.any(speed > 1)
-            block.segments[i_seg].annotations['running'] = running[i_seg].astype(bool)
+            if RUNNING_ANNOTATIONS:
+                speed = running_seg.magnitude
+                running[i_seg] = np.any(speed > 1)
+                block.segments[i_seg].annotations['running'] = running[i_seg].astype(bool)
 
         # save running boolean array to block
-        block.annotations['running'] = running.astype(bool)
+        if RUNNING_ANNOTATIONS:
+            block.annotations['running'] = running.astype(bool)
 
         # annotate block
         block.annotate(group_list=get_neo_group_names(block))

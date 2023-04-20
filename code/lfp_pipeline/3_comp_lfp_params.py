@@ -4,7 +4,8 @@ Parametereize PSDs for LFP epochs. Analyzes output of allen_vc.comp_lfp_psd.py.
 """
 # Set paths
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-STIM_CODE = 'natural_movie' # name of input/output folders (stimulus of interest)
+STIM_CODE = 'spontaneous/running' # name of input/output folders (stimulus of interest)
+BEHAVIOR_LABEL = True # whether or not to include column denoted 'above' or 'below' behavior
 
 # FOOOF is causing some annoying warnings about ragged arrays
 import warnings
@@ -63,6 +64,9 @@ def main():
 
         # parameterize PSDs
         df = spec_param_3d(data_in['psd'], data_in['freq'])
+
+        if BEHAVIOR_LABEL:
+            df['behavior'] = fname_in.split('_')[-2]
 
         # aggregate across files
         df['session'] = fname_in.split('_')[0]
