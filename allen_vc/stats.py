@@ -24,30 +24,34 @@ def sync_stats(df, metrics, condition, paired_ttest=False):
     import scipy.stats as sts
     
     states = df.get(condition).unique()
+    regions  = df.get('brain_structure').unique()
     
-    for metric in metrics:
-        print(f'Metric: {metric}\n')
-            
-        s_data = df[df.get('state')==states[0]]
-        s = s_data.get(metric).dropna()
-        print(f'State: {states[0]}\nN = {len(s)}\nMean = {np.mean(s)}\nStdev = {np.std(s)}\n')
-            
-        r_data = df[df.get('state')==states[-1]]
-        r = r_data.get(metric).dropna()
-        print(f'State: {states[-1]}\nN = {len(r)}\nMean = {np.mean(r)}\nStdev = {np.std(r)}\n')
+    for region in regions:
+        print(f'REGION: {region}\n\n' + 'x'*100 + '\n')
+        rdf = df[df['brain_structure']==region]
+        for metric in metrics:
+            print(f'METRIC: {metric}\n')
+                
+            s_data = rdf[rdf.get(condition)==states[0]]
+            s = s_data.get(metric).dropna()
+            print(f'Behavior: {states[0]}\nN = {len(s)}\nMean = {np.mean(s)}\nStdev = {np.std(s)}\n')
+                
+            r_data = rdf[rdf.get(condition)==states[-1]]
+            r = r_data.get(metric).dropna()
+            print(f'Behavior: {states[-1]}\nN = {len(r)}\nMean = {np.mean(r)}\nStdev = {np.std(r)}\n')
 
-        i = sts.ttest_ind(s, r)
-        print(f'Independent T-Test (All data)\n{i}\n')
-        
-        if paired_ttest:
-            valid_sessions = df[np.array([False if any(df[df.get('session_id')==ses_id]\
-                .get(metric).isnull()) else True for ses_id in df.get('session_id')])]
-            s = valid_sessions[valid_sessions.get('state')==states[0]].get(metric)
-            r = valid_sessions[valid_sessions.get('state')==states[1]].get(metric)
-            p = sts.ttest_rel(s, r)
-            print(f'Paired T-Test\n{p}\n')
+            i = sts.ttest_ind(s, r)
+            print(f'Independent T-Test (All data)\n{i}\n')
+            
+            if paired_ttest:
+                valid_sessions = rdf[np.array([False if len(rdf[rdf.get('session')==ses_id])!=2 \
+                    else True for ses_id in rdf.get('session')])]
+                s = valid_sessions[valid_sessions.get('behavior')==states[0]].get(metric)
+                r = valid_sessions[valid_sessions.get('behavior')==states[1]].get(metric)
+                p = sts.ttest_rel(s, r)
+                print(f'Paired T-Test\n{p}\n')
 
-        print('\n\n\n')
+            print('\n' + '-'*100 + '\n')
 
 
 def create_r_matrix(statistics, mat):    

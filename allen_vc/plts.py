@@ -42,7 +42,7 @@ def plot_epochs(signal, time, epochs, threshold=None):
 
     return fig, ax
 
-def sync_plot(df, metrics, condition):
+def sync_plot(df, metrics, condition, markersize=5):
     """
     Plot violin plots for each spike statistic in the given dataframe (df) for the given condition.
 
@@ -72,10 +72,12 @@ def sync_plot(df, metrics, condition):
         }
 
         # create figure
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(15,10))
         plt.title(f'{metric}')
-        vp = sns.violinplot(**plotting_params, ax=ax, color = 'magenta')
-        sp = sns.swarmplot(**plotting_params, ax=ax, color=[0,0,0])
+        vp = sns.violinplot(**plotting_params, ax=ax, palette='Blues')
+        sp = sns.swarmplot(**plotting_params, ax=ax, color=[0,0,0], size=markersize)
+        #sp.get_legend().remove()
+        # having trouble removing swarmplot legend ONLY
 
 
 def scatter_2_conditions(x1, y1, x2, y2, conditions=['cond 1', 'cond 2'],
