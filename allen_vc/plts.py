@@ -73,9 +73,12 @@ def sync_plot(df, metrics, condition, markersize=5):
 
         # create figure
         fig, ax = plt.subplots(figsize=(15,10))
-        plt.title(f'{metric}')
+        #plt.title(f'{metric}')
         vp = sns.violinplot(**plotting_params, ax=ax, palette='Blues')
         sp = sns.swarmplot(**plotting_params, ax=ax, color=[0,0,0], size=markersize)
+        plt.ylabel(' '.join(metric.split('_')))
+        plt.xlabel('brain structure')
+        plt.legend(fontsize=15)
         #sp.get_legend().remove()
         # having trouble removing swarmplot legend ONLY
 
