@@ -272,3 +272,88 @@ def running_segment_plot(block, title):
     
     plt.title(title)
 
+
+# create plotting function
+def plot_segment(block, i_seg, n_trains_visp=71):
+    """
+    Plot the LFP, spike trains, running speed, and pupil area for a given segment.
+
+    Parameters
+    ----------
+    block : Neo Block object
+        Neo block containing segment to plot.
+    i_seg : int
+        Index of segment to plot.
+    n_trains_visp : int
+        Number of spike trains recorded from n_trains_vispp in the segment.
+        Default is 71. NOTE: this is a temporary parameter for testing purposes.
+
+    Returns
+    -------
+    None
+
+    NOTE: This function contains temporary code for testing purposes. 
+    code/allen_vc/create_block.py must be updated; it currently contains 
+    a bug in the Neo Group creation.
+    """
+
+    # imports
+    from matplotlib import gridspec
+
+    # settings
+    col_0 = np.array([52,148,124]) /255
+    col_1 = np.array([244,157,70]) /255
+
+    # get data of interest
+    segment = block.segments[i_seg]
+    lfp = segment.analogsignals[np.argwhere(np.array(block.annotations['analogsignals'])=='lfp')[0][0]]
+    running_speed = segment.analogsignals[np.argwhere(np.array(block.annotations['analogsignals'])=='running_speed')[0][0]]
+    pupil_area = segment.analogsignals[np.argwhere(np.array(block.annotations['analogsignals'])=='pupil_area')[0][0]]
+
+    # get spike times for each region
+    spiketrains = segment.spiketrains # TEMP
+    st_visp = [st.times for st in spiketrains[:n_trains_visp]]  # TEMP
+    st_lgd = [st.times for st in spiketrains[n_trains_visp:]] # TEMP
+    # spikes_lgd = block.groups[block.groups==f'seg{i_seg}_LGd']
+    # spikes_visp = block.groups[block.groups==f'seg{i_seg}_VISp']
+    # st_visp = [st.times for st in spikes_visp.spiketrains]
+    # st_lgd = [st.times for st in spikes_lgd.spiketrains]
+
+    # create figure and gridspec
+    fig = plt.figure(figsize=[8,4])#, constrained_layout=True)
+    spec = gridspec.GridSpec(figure=fig, ncols=1, nrows=5, height_ratios=[1,1,1,1,1])
+    ax_a = fig.add_subplot(spec[0,0])
+    ax_b = fig.add_subplot(spec[1,0], sharex=ax_a)
+    ax_c = fig.add_subplot(spec[2,0], sharex=ax_a)
+    ax_d = fig.add_subplot(spec[3,0], sharex=ax_a)
+    ax_e = fig.add_subplot(spec[4,0], sharex=ax_a)
+
+    # plot subplot a: LFP
+    lfp_signal = lfp.magnitude.T
+    ax_a.pcolormesh(lfp.times, np.arange(0, len(lfp_signal)), lfp_signal, shading='auto')
+    ax_a.set_ylabel("LFP", rotation=0, labelpad=40)
+
+    # plot subplot b: spikes (VISp)
+    ax_b.eventplot(st_visp, color='k')
+    ax_b.set_ylabel("VISp units", rotation=0, labelpad=40)
+
+    # plot subplot c: spikes (LGd)
+    ax_c.eventplot(st_lgd, color='grey')
+    ax_c.set_ylabel("LGd units", rotation=0, labelpad=40)
+
+    # plot subplot d: running speed
+    ax_d.plot(running_speed.times, running_speed.magnitude, color=col_0)
+    ax_d.set_ylabel("velocity", rotation=0, labelpad=40)
+
+    # plot subplot e : pupil area
+    ax_e.plot(pupil_area.times, pupil_area.magnitude, color=col_1)
+    ax_e.set_ylabel("pupil size", rotation=0, labelpad=40)
+
+    # remove axes, axes ticks, and adjust spacing
+    for ax in [ax_a, ax_b, ax_c, ax_d, ax_e]:
+            ax.set_xlabel("") 
+            ax.set_yticks([])
+            for loc in ['left', 'right', 'top', 'bottom']:
+                ax.spines[loc].set_visible(False)
+    fig.subplots_adjust(hspace=0)
+
