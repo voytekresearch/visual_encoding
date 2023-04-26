@@ -118,6 +118,7 @@ def main():
 
         # annotate block
         block.annotate(group_list=get_neo_group_names(block))
+        block.annotate(analogsignals=['lfp', 'running_speed', 'pupil_area'])
 
         # save results
         fname_out = f"{fname_in.split('_')[0]}_{STIM_CODE}.pkl"
