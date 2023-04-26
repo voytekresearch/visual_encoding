@@ -193,7 +193,8 @@ def create_neo_block(lfp, fs, chan_id, t_start, block_name=None, units='uV'):
         # add LFP data
         lfp_as = AnalogSignal(lfp[:,epoch].T, units=units, sampling_rate=fs*pq.Hz, 
             t_start=t_start[epoch]*pq.s)
-        lfp_as.annotate(label='lfp', ecephys_channel_id=chan_id)
+        lfp_as.name = 'lfp'
+        lfp_as.annotate(ecephys_channel_id=chan_id)
         segment.analogsignals.append(lfp_as)
 
     return block

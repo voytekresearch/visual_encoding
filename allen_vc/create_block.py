@@ -104,6 +104,7 @@ def main():
             # slice signal and append to segment
             running_seg = running_series.time_slice(block.segments[i_seg].t_start, block.segments[i_seg].t_stop)
             block.segments[i_seg].analogsignals.append(running_seg)
+            block.segments[i_seg].analogsignals[-1].name = 'running_speed'
 
             # determine if running during segment then annotate segment
             if RUNNING_ANNOTATIONS:
