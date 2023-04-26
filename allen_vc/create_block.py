@@ -83,7 +83,7 @@ def main():
                     block.segments[i_seg].spiketrains.append(spiketrain_seg)
                     
                     # add spiketrain to region group
-                    group_sr.spiketrains.append(spiketrain)
+                    group_sr.spiketrains.append(spiketrain_seg)
 
         # load behavioral data
         fname_running = f"running_{fname_in.split('_')[0]}.pkl"
