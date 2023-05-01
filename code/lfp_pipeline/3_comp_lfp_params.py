@@ -91,14 +91,15 @@ def main():
 
 def spec_param_3d(psd, freq):
     # display progress
-    print(f"    File contains {psd.shape[0]} channels and {psd.shape[1]} epochs")
+    print(f"    File contains {psd.shape[1]} channels and {psd.shape[0]} epochs")
 
-    for i_chan in range(len(psd)):
+    # loop through trials
+    for i_trial in range(len(psd)):
         # drop trials containing NaNs
-        nan_trials = np.isnan(psd[i_chan]).any(axis=1)
-        psd_i = psd[i_chan, ~nan_trials]
-        if sum(nan_trials) > 0:
-            print(f"    Channel {i_chan} has {sum(nan_trials)} trials containing NaNs")
+        nan_chans = np.isnan(psd[i_trial]).any(axis=1)
+        psd_i = psd[i_trial, ~nan_chans]
+        if sum(nan_chans) > 0:
+            print(f"    Trial {i_trial} has {sum(nan_chans)} channels containing NaNs")
 
         # parameterize
         params = FOOOFGroup(**SPEC_PARAM_SETTINGS)
@@ -106,18 +107,18 @@ def spec_param_3d(psd, freq):
 
         # convert results to df
         df_i = params_to_df(params, SPEC_PARAM_SETTINGS['max_n_peaks'])
-        df_i['chan_idx'] = i_chan
-        df_i['epoch_idx'] = np.arange(len(df_i))
+        df_i['epoch_idx'] = i_trial
+        df_i['chan_idx'] = np.arange(psd.shape[1])[~nan_chans]
 
         # restore NaN trials
-        df_r = pd.DataFrame(np.nan, index=np.arange(len(nan_trials)), columns=df_i.columns)
-        df_r.loc[~nan_trials] = df_i
+        df_e = pd.DataFrame(np.nan, index=np.arange(psd.shape[1]), columns=df_i.columns)
+        df_e.loc[~nan_chans] = df_i
 
         # aggregate across channels
-        if i_chan == 0:
-            df = df_r.copy()
+        if i_trial == 0:
+            df = df_e.copy()
         else:
-            df = pd.concat([df, df_r], axis=0)
+            df = pd.concat([df, df_e], axis=0)
 
     return df
 
