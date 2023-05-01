@@ -159,24 +159,25 @@ def align_lfp(lfp, t_stim, ids, t_window=[-1,1], dt=0.001):
     Returns
     -------
     aligned_lfp : xarray.core.dataarray.DataArray
-        LFP data aligned to stimulus presentation times. The first dimension is
-        the presentation ID and the second dimension is the time from stimulus
-        presentation onset.
+        LFP data aligned to stimulus presentation times. (n_trials, n_channels, n_timepoints)
     trial_window : array_like
         Array of shape (n_timepoints,) of the time window (in seconds) around each
         stimulus presentation.
     """
 
+    # determine indices of time window around stimulus presentation
     trial_window = np.arange(t_window[0], t_window[1], dt)
     time_selection = np.concatenate([trial_window + t for t in t_stim])
-
     inds = pd.MultiIndex.from_product((ids, trial_window), 
                                     names=('presentation_id', 'time_from_presentation_onset'))
 
+    # epoch LFP data around stimulus presentation
     ds = lfp.sel(time = time_selection, method='nearest').to_dataset(name='aligned_lfp')
     ds = ds.assign(time=inds).unstack('time')
 
+    # reshape data (n_trials, n_channels, n_timepoints)
     aligned_lfp = ds['aligned_lfp']
+    aligned_lfp = np.swapaxes(aligned_lfp, 0, 1)
 
     return aligned_lfp, trial_window
 
@@ -188,7 +189,7 @@ def create_neo_block(lfp, fs, chan_id, t_start, block_name=None, units='uV'):
     Parameters
     ----------
     lfp : array_like
-        A 3D array of LFP data in the unconventional order (n_channels, n_trials, n_samples).
+        A 3D array of LFP data. (n_trials, n_channels, n_timepoints)
     fs : float
         Sampling rate of the LFP data.
     chan_id : array_like
@@ -218,13 +219,13 @@ def create_neo_block(lfp, fs, chan_id, t_start, block_name=None, units='uV'):
         block = Block(name=block_name)
 
     # create Neo Segment for each trial
-    for epoch in range(lfp.shape[1]):
+    for epoch in range(len(lfp)):
         segment = Segment(name=f'trial_{epoch}')
         block.segments.append(segment)
 
         # add LFP data
-        lfp_as = AnalogSignal(lfp[:,epoch].T, units=units, sampling_rate=fs*pq.Hz, 
-            t_start=t_start[epoch]*pq.s)
+        lfp_as = AnalogSignal(lfp[epoch], units=units, sampling_rate=fs*pq.Hz, 
+                              t_start=t_start[epoch]*pq.s)
         lfp_as.name = 'lfp'
         lfp_as.annotate(ecephys_channel_id=chan_id)
         segment.analogsignals.append(lfp_as)
