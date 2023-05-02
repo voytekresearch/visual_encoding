@@ -5,6 +5,30 @@ Ploting utility function
 # imports
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
+
+# Matplotlib rcParams ---------------------------------------------------------
+# misc
+rcParams['figure.constrained_layout.use'] = True
+
+# font
+rcParams['figure.titlesize'] = 20
+rcParams['axes.titlesize'] = 20
+rcParams['axes.labelsize'] = 14
+rcParams['axes.labelsize'] = 12
+rcParams['xtick.labelsize'] = 10
+rcParams['ytick.labelsize'] = 10
+rcParams['legend.fontsize'] = 10
+
+# Figure output
+rcParams['savefig.dpi'] = 300
+rcParams['savefig.format'] = 'png'
+
+# background color
+rcParams['figure.facecolor'] = 'w'
+rcParams['axes.facecolor'] = 'w'
+
+# -----------------------------------------------------------------------------
 
 def plot_epochs(signal, time, epochs, threshold=None):
     """Plots a signal over time, with annotations for epochs.
