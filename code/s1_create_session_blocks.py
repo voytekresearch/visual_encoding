@@ -1,5 +1,8 @@
 """
-Combine lfp, spiking and behavioral data into a single Neo Block object.
+Step 1: create session blocks.
+Create a Neo Block object for each session. Include spiking, running wheel, and pupil 
+tracking data. Step 2 can then be used to segment these blocks around different
+stimulus events.
 
 """
 
