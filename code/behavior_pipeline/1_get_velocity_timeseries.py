@@ -7,6 +7,11 @@ import os
 import numpy as np
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 
+# imports - custom
+import sys
+sys.path.append('allen_vc')
+from allen_utils import compute_running_speed
+
 # settings - directories
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 MANIFEST_PATH = "C:/datasets/allen_vc/manifest_files" # local dataset directory
@@ -35,48 +40,10 @@ def main():
 		session = cache.get_session_data(session_id)
 
 		# create uniform set of data using interpolation
-		time, velocity = get_running_timeseries(session, RF)
+		time, velocity = compute_running_speed(session, RF)
 
 		# save to file
 		np.savez(f'{dir_results}/running_{session_id}', time=time, velocity=velocity)
-
-
-def get_running_timeseries(session, rf):
-	"""
-	load running wheel data for a given session. velocity data are interpolated
-	to a sampling frequnecy of 'fs.'
-
-	Parameters
-	----------
-	session : AllenSDK session object
-		AllenSDK session object.
-	fs : int
-		sampling frequency.
-
-	Returns
-	-------
-	time : float, array
-		time vector.
-	velocity : float, array
-		velocity (interpolated).
-
-	"""
-    
-	# imports
-	from scipy import interpolate
-
-	# get running data
-	run_data = session.running_speed
-	run_data = run_data.assign(mid_time=(run_data.get('start_time')+run_data.get('end_time'))/2)
-	time_points = np.array(run_data.get('mid_time'))
-	values = np.array(run_data.get('velocity'))
-	
-	#Create uniform set of data using interpolation
-	model = interpolate.interp1d(time_points, values)
-	time = np.arange(time_points[0], time_points[-1], 1/rf)
-	velocity = model(time)
-
-	return time, velocity
 
 
 if __name__ == "__main__":

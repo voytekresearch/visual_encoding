@@ -7,10 +7,10 @@ import os
 import numpy as np
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 
-# imports- custom
+# imports - custom
 import sys
 sys.path.append('allen_vc')
-from allen_utils import get_pupil_timeseries
+from allen_utils import compute_pupil_area
 
 # settings - directories
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
@@ -40,7 +40,7 @@ def main():
 		session = cache.get_session_data(session_id)
 
 		# create uniform set of data using interpolation
-		time, velocity = get_pupil_timeseries(session, PF)
+		time, velocity = compute_pupil_area(session, PF)
 
 		# save to file
 		if velocity is not None:

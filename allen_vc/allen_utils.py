@@ -51,7 +51,7 @@ def get_unit_info(manifest_path, brain_structure=None, session_type=None):
 
     return unit_info
 
-def get_running_timeseries(session, fs):
+def compute_running_speed(session, fs):
     """
     load running wheel data for a given session. velocity data are interpolated
     to a sampling frequnecy of 'fs.'
@@ -89,7 +89,7 @@ def get_running_timeseries(session, fs):
     return time, velocity
 
 
-def get_pupil_timeseries(session, pf):
+def compute_pupil_area(session, pf):
 	"""
 	load screen gaze data for a given session. pupil area data are interpolated
 	to a sampling frequnecy of 'pf.'
