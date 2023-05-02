@@ -110,18 +110,23 @@ def create_neo_spiketrains(session, brain_structure=None):
     # Init list of Neo SpikeTrain objects
     spiketrains = []
 
-    # Get units of interest
+    # Get unit info
     if brain_structure:
-        units = session.units[session.units.get('ecephys_structure_acronym')==brain_structure].index
+        unit_info = session.units[session.units.get('ecephys_structure_acronym')==brain_structure]
     else:
-        units = session.units.index
+        unit_info = session.units
 
     # Loop through units and create Neo SpikeTrain objects
-    for unit in session.units.index:
-        session_spikes = session.spike_times[unit]
-        spiketrains.append(SpikeTrain(times=session_spikes, \
-            units='sec', t_stop=session_spikes[-1], \
-                name=f"unit_{unit}"))
+    for i_row, row in unit_info.iterrows():
+        # Get spike times
+        spike_times = session.spike_times[row['unit_id']]
+
+        # Create Neo SpikeTrain object
+        spiketrain = SpikeTrain(times=spike_times, units='sec', t_stop=spike_times[-1], \
+            name=row['unit_id'])
+        spiketrain.annotate(unit_id=row['unit_id'], probe_id=row['probe_id'], \
+            channel_id=row['peak_channel_id'], brain_structure=row['ecephys_structure_acronym'])
+        spiketrains.append(spiketrain)
 
     return spiketrains
 
