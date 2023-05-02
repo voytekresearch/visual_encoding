@@ -13,10 +13,8 @@ SESSION_TYPE = 'functional_connectivity'
 BRAIN_STRUCTURES = ['VISp', 'LGd']
 
 # imports
-import sys
 import os
-sys.path.append(REPO_PATH)
-from allen_vc.utils import get_unit_info
+from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 
 def main():
 
@@ -38,6 +36,50 @@ def main():
 		# save to file (csv)
 		for base_path in [PROJECT_PATH, MANIFEST_PATH]:
 			unit_info.to_csv(f'{base_path}/{RELATIVE_PATH_OUT}/{structure}_DataFrame.csv')
+
+
+def get_unit_info(manifest_path, brain_structure=None, session_type=None):
+    """
+    get info about single-units, including session, subject, probe, and channel
+
+    Parameters
+    ----------
+    manifest_path : str
+        path to AllenSDK manifest file.
+    brain_structure : str, optional
+        include to filter results by brain structure. The default is None.
+    session_type : TYPE, optional
+        include to filter data by session type. Options include:
+            'brain_observatory_1.1' and 'functional_connectivity'
+            The default is None.
+
+    Returns
+    -------
+    unit_info : DataFrame, optional
+        unit info DataFrame
+
+    """
+
+    # Create Allensdk cache object
+    cache = EcephysProjectCache.from_warehouse(manifest=manifest_path)
+
+    # Get all unit info
+    unit_info = cache.get_units()
+
+    # filter by session type
+    if session_type:
+        unit_info = unit_info[unit_info.get('session_type')==session_type]
+
+    # filter by brain structure
+    if brain_structure:
+        unit_info = unit_info[unit_info.get('ecephys_structure_acronym')==brain_structure]
+
+    # get info of interest
+    unit_info = unit_info.get(['ecephys_session_id','specimen_id',\
+        'ecephys_probe_id','ecephys_channel_id'])#.drop_duplicates()
+
+    return unit_info
+
 
 # Can be ran as script
 if __name__ == "__main__":
