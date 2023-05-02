@@ -89,6 +89,48 @@ def get_running_timeseries(session, fs):
     return time, velocity
 
 
+def get_pupil_timeseries(session, pf):
+	"""
+	load screen gaze data for a given session. pupil area data are interpolated
+	to a sampling frequnecy of 'pf.'
+
+	Parameters
+	----------
+	session : AllenSDK session object
+		AllenSDK session object.
+	pf : int
+		sampling frequency.
+
+	Returns
+	-------
+	time : float, array
+		time vector.
+	velocity : float, array
+		velocity (interpolated).
+
+	"""
+    
+	# imports
+	from scipy import interpolate
+
+	# get running data
+	pupil_data = session.get_screen_gaze_data()
+
+	if pupil_data is None:
+		return None, None
+
+	pupil_data = pupil_data[pupil_data['raw_pupil_area'].notna()]
+	values = pupil_data['raw_pupil_area']
+	time_points = pupil_data.index
+	
+	#Create uniform set of data using interpolation
+	model = interpolate.interp1d(time_points, values)
+	time = np.arange(time_points[0], time_points[-1], 1/pf)
+	velocity = model(time)
+
+	return time, velocity
+
+
 def gen_neo_spiketrains(session_id, manifest_path, metadata, brain_structure=None):
     """
     load spiking data for a session and reformat as Neo object.
