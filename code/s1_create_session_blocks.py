@@ -4,7 +4,7 @@ Combine lfp, spiking and behavioral data into a single Neo Block object.
 """
 
 # settings - directories
-MANIFEST_PATH = "D:/datasets/allen_vc" # Allen manifest.json
+MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 
 # settings - regions of interest for spike data
@@ -26,6 +26,7 @@ import sys
 sys.path.append('allen_vc')
 from utils import hour_min_sec, save_pkl
 from allen_utils import create_neo_spiketrains, compute_running_speed, compute_pupil_area
+print('Imports complete...')
 
 
 def main():
@@ -38,7 +39,8 @@ def main():
         os.makedirs(dir_results)
 
     # load Allen project cache
-    cache = EcephysProjectCache.from_warehouse(manifest=MANIFEST_PATH)
+    cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
+    print('Project cache loaded...')
     
     # loop through all sessions
     sessions = ['766640955', '767871931', '768515987', '771160300', '771990200', 
@@ -47,37 +49,38 @@ def main():
                 '816200189', '821695405', '829720705', '831882777', '835479236', 
                 '839068429', '840012044', '847657808']
     
-    for i_session, session_id in sessions:
+    for i_session, session_id in enumerate(sessions):
 
         # display progress
         t_start_s = timer()
-        print(f"\nAnalyzing session {i_session+1}/{len(sessions)}")
-        print(f"    {session_id}")
+        print(f"\nAnalyzing session {session_id} ({i_session+1}/{len(sessions)})")
 
         # load session data
-        session = cache.get_session_data(session_id)
+        session = cache.get_session_data(int(session_id))
 
-        # init Neo Block
+        # init Neo Block and segment
         block = neo.Block()
-        segment = neo.Segment()
+        segment = neo.Segment(name=f'session_{session_id}')
+        block.segments.append(segment)
 
         # add spike data to block
         for brain_structure in BRAIN_STRUCTURES:
-            spike_trains = create_neo_spiketrains(session, brain_structure)
-            segment.spiketrains.append(spike_trains)
+            spiketrain_list = create_neo_spiketrains(session, brain_structure)
+            for spiketrain in spiketrain_list:
+                segment.spiketrains.append(spiketrain)
 
         # add running wheel data to block
-        running_speed, time_rs = compute_running_speed(session, FS_RUNNING)
+        running_speed, _ = compute_running_speed(session, FS_RUNNING)
         running_speed_as = neo.AnalogSignal(running_speed, units=pq.CompoundUnit("cm/s"), sampling_rate=FS_RUNNING*pq.Hz, name='running_speed')
         segment.analogsignals.append(running_speed_as)
 
         # add pupil data to block
-        pupil_area, time_pa = compute_pupil_area(session, FS_PUPIL)
+        pupil_area, _ = compute_pupil_area(session, FS_PUPIL)
         pupil_area_as = neo.AnalogSignal(pupil_area, units=pq.cm**2, sampling_rate=FS_PUPIL*pq.Hz, name='pupil_area')
         segment.analogsignals.append(pupil_area_as)
 
         # save results
-        fname_out = f"block_{session}.pkl"
+        fname_out = f"block_{session_id}.pkl"
         save_pkl(block, f"{dir_results}/{fname_out}")
 
         # display progress
