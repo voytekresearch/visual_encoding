@@ -57,6 +57,11 @@ def main():
         t_start_s = timer()
         print(f"\nAnalyzing session {session_id} ({i_file+1}/{len(files)})")
 
+        # BUG: this files produces an error
+        if ((session_id == '768515987') | (session_id == '840012044')):
+            print('    Skipping...')
+            continue
+
         # get stim info for session
         session = cache.get_session_data(int(session_id))
         stim_table = session.stimulus_presentations
