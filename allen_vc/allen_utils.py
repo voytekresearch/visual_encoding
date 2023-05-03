@@ -23,8 +23,8 @@ def compute_running_speed(session, fs):
     -------
     time : float, array
         time vector.
-    velocity : float, array
-        velocity (interpolated).
+    running_speed : float, array
+        running speed (interpolated).
 
     """
     
@@ -40,9 +40,9 @@ def compute_running_speed(session, fs):
     #Create uniform set of data using interpolation
     model = interpolate.interp1d(time_points, values)
     time = np.arange(time_points[0], time_points[-1], 1/fs)
-    velocity = model(time)
+    running_speed = model(time)
 
-    return time, velocity
+    return time, running_speed
 
 
 def compute_pupil_area(session, fs):
@@ -61,8 +61,8 @@ def compute_pupil_area(session, fs):
 	-------
 	time : float, array
 		time vector.
-	velocity : float, array
-		velocity (interpolated).
+	pupil_area : float, array
+		pupil area (interpolated).
 
 	"""
     
@@ -82,9 +82,9 @@ def compute_pupil_area(session, fs):
 	#Create uniform set of data using interpolation
 	model = interpolate.interp1d(time_points, values)
 	time = np.arange(time_points[0], time_points[-1], 1/fs)
-	velocity = model(time)
+	pupil_area = model(time)
 
-	return time, velocity
+	return time, pupil_area
 
 
 def create_neo_spiketrains(session, brain_structure=None):
