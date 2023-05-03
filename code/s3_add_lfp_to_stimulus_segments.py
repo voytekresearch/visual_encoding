@@ -10,7 +10,7 @@ windows of interest.
 # settings - directories
 MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-STIM_CODE = '' # this will be used to identify input/output folders
+STIM_CODE = 'natural_movie_one_shuffled' # this will be used to identify input/output folders
 
 # settings - regions of interest for LFP data
 BRAIN_STRUCTURE = ['VISp']
@@ -92,10 +92,13 @@ def main():
             else:
                 chan_ids = session.channels[session.channels.probe_id==probe_id].index.values
 
-            # create Neo AnalogSignal object
+            # create Neo AnalogSignal for LFP data for the whole session
             annotations = {'data_type' : 'lfp', 'probe_id': probe_id, 'brain_structure': BRAIN_STRUCTURE, 
                            'channel_ids': chan_ids}
             lfp = neo.AnalogSignal(lfp, units=UNITS, sampling_rate=FS*pq.Hz, name=f"lfp_{probe_id}", **annotations)
+
+            # create group for probe
+            group = neo.Group(name=f"lfp_{probe_id}")
 
             # loop through segments and add LFP data
             for segment in block.segments:
@@ -103,8 +106,12 @@ def main():
                 lfp_segment = lfp.time_slice(segment.annotations['t_start'], 
                                             segment.annotations['t_stop'])
 
-                # add LFP data to segment
+                # add LFP data to segment and group
                 segment.analogsignals.append(lfp_segment)
+                group.analogsignals.append(lfp_segment)
+
+            # add group to block
+            block.groups.append(group)
 
         # save results
         save_pkl(block, f"{dir_results}/{fname}")
