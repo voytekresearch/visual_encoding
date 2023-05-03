@@ -72,7 +72,7 @@ def main():
         # create Neo Semgments based on stimulus times
         for i_seg, t_stim in enumerate(stim_times):
                 # define time window of interest
-                t_seg = [t_stim+T_WINDOW[0]*pq.s, t_stim+T_WINDOW[1]*pq.s]
+                t_seg = [t_stim+T_WINDOW[0], t_stim+T_WINDOW[1]]*pq.s
 
                 # create segment and add annotations
                 annotations = {'index' : i_seg, 'stimulus_onset' : t_stim, 'time_window' : T_WINDOW,
