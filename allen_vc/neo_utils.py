@@ -40,7 +40,7 @@ def gen_pop_spiketrain(spike_trains, units='s', t_stop=None):
     return pop_spiketrain
 
 
-def get_neo_group_names(block):
+def get_group_names(block):
     """
     Get the names of all groups in a Neo block.
     
