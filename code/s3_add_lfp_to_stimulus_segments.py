@@ -13,7 +13,7 @@ PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 STIM_CODE = 'natural_movie_one_shuffled' # this will be used to identify input/output folders
 
 # settings - regions of interest for LFP data
-BRAIN_STRUCTURE = ['VISp']
+BRAIN_STRUCTURE = 'VISp'
 
 # settings - dataset details
 FS = 1250 # LFP sampling freq
@@ -95,7 +95,11 @@ def main():
             # create Neo AnalogSignal for LFP data for the whole session
             annotations = {'data_type' : 'lfp', 'probe_id': probe_id, 'brain_structure': BRAIN_STRUCTURE, 
                            'channel_ids': chan_ids}
-            lfp = neo.AnalogSignal(lfp, units=UNITS, sampling_rate=FS*pq.Hz, name=f"lfp_{probe_id}", **annotations)
+            if len(probe_ids) == 1:
+                lfp_name = "lfp"
+            else:
+                lfp_name = f"lfp_{probe_id}"
+            lfp = neo.AnalogSignal(lfp, units=UNITS, sampling_rate=FS*pq.Hz, name=lfp_name, **annotations)
 
             # create group for probe
             group = neo.Group(name=f"lfp_{probe_id}")
@@ -103,8 +107,7 @@ def main():
             # loop through segments and add LFP data
             for segment in block.segments:
                 # slice LFP data according to segment start/end times
-                lfp_segment = lfp.time_slice(segment.annotations['t_start'], 
-                                            segment.annotations['t_stop'])
+                lfp_segment = lfp.time_slice(segment.t_start, segment.t_stop)
 
                 # add LFP data to segment and group
                 segment.analogsignals.append(lfp_segment)
