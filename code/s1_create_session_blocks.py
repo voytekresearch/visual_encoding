@@ -73,12 +73,12 @@ def main():
                 segment.spiketrains.append(spiketrain)
 
         # add running wheel data to block
-        running_speed, _ = compute_running_speed(session, FS_RUNNING)
+        _, running_speed = compute_running_speed(session, FS_RUNNING)
         running_speed_as = neo.AnalogSignal(running_speed, units=pq.CompoundUnit("cm/s"), sampling_rate=FS_RUNNING*pq.Hz, name='running_speed')
         segment.analogsignals.append(running_speed_as)
 
         # add pupil data to block
-        pupil_area, _ = compute_pupil_area(session, FS_PUPIL)
+        _, pupil_area = compute_pupil_area(session, FS_PUPIL)
         pupil_area_as = neo.AnalogSignal(pupil_area, units=pq.cm**2, sampling_rate=FS_PUPIL*pq.Hz, name='pupil_area')
         segment.analogsignals.append(pupil_area_as)
 
