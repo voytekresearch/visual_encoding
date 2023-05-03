@@ -96,11 +96,10 @@ def get_analogsignal_names(block, segment_idx=None, lfp_only=False):
     return signal_names
 
 
-def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
+def get_analogsignal(block, name, segment_idx=None):
     """
     Returns an analog signal from a Neo Block object. If multiple segments are
-    present, the signal from each segment is returned as a list. Output can be
-    returned as a numpy array or a Neo AnalogSignal object.
+    present, the signal from each segment is returned as a list.
 
     Parameters
     ----------
@@ -111,15 +110,11 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
     segment_idx : int, optional
         Index of the segment containing the analog signal. If None, the signal
         from all segments is returned. Default is None.
-    return_numpy : bool, optional
-        If True, the analog signal is returned as a numpy array. If False, the
-        analog signal is returned as a Neo AnalogSignal object. Default is True.
 
     Returns
     -------
-    a_signal : array_like or neo.core.AnalogSignal
-        Analog signal from the Neo Block object. The data type depends on the
-        value of `return_numpy`.
+    a_signal : neo.core.AnalogSignal or list
+        Analog signal(s) from the Neo Block object.
 
     """
     # get signal index
@@ -130,24 +125,11 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
     if segment_idx is None:
         a_signal = []
         for segment in block.segments:
-            a_sig = segment.analogsignals[signal_idx]
-
-            # convert to numpy array
-            if return_numpy:
-                a_signal.append(np.array(a_sig).squeeze())
-            else:
-                a_signal.append(a_sig)
-        # join list as 3d array
-        a_signal = np.concatenate(a_signal).T
-
+            a_signal.append(segment.analogsignals[signal_idx])
 
     # get analog signal from block for a single segment
     else:
         a_signal = block.segments[segment_idx].analogsignals[signal_idx]
-
-        # convert to numpy array
-        if return_numpy:
-            a_signal = np.array(a_signal).squeeze()
         
     return a_signal
 
