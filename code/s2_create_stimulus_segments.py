@@ -10,7 +10,7 @@ windows of interest.
 # settings - directories
 MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-STIM_CODE = '' # this will be used to name output folders and files
+STIM_CODE = 'natural_movie_one_shuffled' # this will be used to name output folders and files
 
 # settings - stimulus epoch of interest
 STIM_PARAMS = dict({
@@ -73,29 +73,40 @@ def main():
         for spiketrain in session_seg.spiketrains:
             group = neo.Group(name=f"unit_{spiketrain.name}")
             block.groups.append(group)
+        
+        # create Neo Group for eah analog signal type
+        signal_groups = dict()
+        signal_groups['running_speed'] = neo.Group(name='running_speed')
+        signal_groups['pupil_area'] = neo.Group(name='pupil_area')
 
         # create Neo Semgments based on stimulus times
         for i_seg, t_stim in enumerate(stim_times):
-                # define time window of interest
-                t_seg = [t_stim+T_WINDOW[0], t_stim+T_WINDOW[1]]*pq.s
+            # define time window of interest
+            t_seg = [t_stim+T_WINDOW[0], t_stim+T_WINDOW[1]]*pq.s
 
-                # create segment and add annotations
-                annotations = {'index' : i_seg, 'stimulus_onset' : t_stim, 'time_window' : T_WINDOW,
-                               'stimulus_parameters' : STIM_PARAMS}
-                segment = neo.Segment(**annotations)
+            # create segment and add annotations
+            annotations = {'index' : i_seg, 'stimulus_onset' : t_stim, 'time_window' : T_WINDOW,
+                            'stimulus_parameters' : STIM_PARAMS}
+            segment = neo.Segment(**annotations)
 
-                # add each spiketrain to segment after slicing in time
-                for i_unit, spiketrain in enumerate(session_seg.spiketrains):
-                    spiketrain_seg = spiketrain.time_slice(*t_seg)
-                    segment.spiketrains.append(spiketrain_seg)
-                    block.groups[i_unit].spiketrains.append(spiketrain_seg)
+            # add each spiketrain to segment after slicing in time
+            for i_unit, spiketrain in enumerate(session_seg.spiketrains):
+                spiketrain_seg = spiketrain.time_slice(*t_seg)
+                segment.spiketrains.append(spiketrain_seg)
+                block.groups[i_unit].spiketrains.append(spiketrain_seg)
 
-                # add running wheel and pupil tracking data to segments
-                for a_signal in session_seg.analogsignals:
-                    segment.analogsignals.append(a_signal.time_slice(*t_seg))
+            # add running wheel and pupil tracking data to segments
+            for a_signal in session_seg.analogsignals:
+                signal = a_signal.time_slice(*t_seg)
+                segment.analogsignals.append(signal)
+                signal_groups[signal.name].analogsignals.append(signal)
 
-                # add segment to block
-                block.segments.append(segment)
+            # add segment to block
+            block.segments.append(segment)
+
+        # add signal groups to block
+        for group in signal_groups.values():
+            block.groups.append(group)
 
         # save results
         save_pkl(block, f"{dir_results}/{fname}")
