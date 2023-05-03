@@ -69,6 +69,11 @@ def main():
         session_seg = block.segments[0] # unpack session data
         block = neo.Block() # init new block
 
+        # create Neo Group for each unit
+        for spiketrain in session_seg.spiketrains:
+            group = neo.Group(name=f"unit_{spiketrain.name}")
+            block.groups.append(group)
+
         # create Neo Semgments based on stimulus times
         for i_seg, t_stim in enumerate(stim_times):
                 # define time window of interest
@@ -80,9 +85,10 @@ def main():
                 segment = neo.Segment(**annotations)
 
                 # add each spiketrain to segment after slicing in time
-                for spiketrain in session_seg.spiketrains:
+                for i_unit, spiketrain in enumerate(session_seg.spiketrains):
                     spiketrain_seg = spiketrain.time_slice(*t_seg)
                     segment.spiketrains.append(spiketrain_seg)
+                    block.groups[i_unit].spiketrains.append(spiketrain_seg)
 
                 # add running wheel and pupil tracking data to segments
                 for a_signal in session_seg.analogsignals:
