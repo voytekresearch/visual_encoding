@@ -63,15 +63,26 @@ def main():
 
         # init Neo Block and segment
         block = neo.Block()
-        block.annotate({'session_id': session_id, 'spike_brain_structures': BRAIN_STRUCTURES})
         segment = neo.Segment(name=f'session_{session_id}')
         block.segments.append(segment)
 
-        # add spike data to block
+        # get spike data for each region of interest
+        structures = []
         for brain_structure in BRAIN_STRUCTURES:
             spiketrain_list = create_neo_spiketrains(session, brain_structure)
+
+            # check if there are any spikes in brain structure
+            if len(spiketrain_list) == 0:
+                print(f"No spikes in {brain_structure} for session {session_id}")
+            else:
+                structures.append(brain_structure)
+
+            # add spiketrains to segment    
             for spiketrain in spiketrain_list:
                 segment.spiketrains.append(spiketrain)
+
+        # annotate block
+        block.annotate({'session_id': session_id, 'spike_brain_structures': structures})
 
         # add running wheel data to block
         _, running_speed = compute_running_speed(session, FS_RUNNING)
