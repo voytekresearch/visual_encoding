@@ -196,3 +196,53 @@ def find_probes_in_region(session, region):
     names = session.probes.description.values[has_region]
 
     return ids, names
+
+
+def align_lfp(lfp, t_stim, t_window=[-1,1], dt=0.001):
+    """
+    Modified from AllenSDK example code:
+    https://allensdk.readthedocs.io/en/latest/_static/examples/nb/ecephys_lfp_analysis.html
+
+    Aligns LFP data to stimulus presentation times.
+
+    Parameters
+    ----------
+    lfp : xarray.core.dataarray.DataArray
+        LFP data to be aligned. Must have a time coordinate.
+    t_stim : array_like
+        Array of shape (n_trials,) of timestamps corresponding to the start of each
+        epoch in `lfp`.
+    t_window : array_like, optional
+        Array of shape (2,) of the time window (in seconds) to be extracted around
+        each stimulus presentation. Default is [-1,1].
+    dt : float, optional
+        Time resolution (in seconds) of the aligned LFP data. Default is 0.001.
+
+    Returns
+    -------
+    aligned_lfp : xarray.core.dataarray.DataArray
+        LFP data aligned to stimulus presentation times. (n_trials, n_channels, n_timepoints)
+    trial_window : array_like
+        Array of shape (n_timepoints,) of the time window (in seconds) around each
+        stimulus presentation.
+    """
+
+    # imports
+    import pandas as pd
+
+    # determine indices of time window around stimulus presentation
+    trial_window = np.arange(t_window[0], t_window[1], dt)
+    time_selection = np.concatenate([trial_window + t for t in t_stim])
+    inds = pd.MultiIndex.from_product((np.arange(len(t_stim)), trial_window), 
+                                    names=('presentation_id', 'time_from_presentation_onset'))
+
+    # epoch LFP data around stimulus presentation
+    ds = lfp.sel(time = time_selection, method='nearest').to_dataset(name='aligned_lfp')
+    ds = ds.assign(time=inds).unstack('time')
+
+    # reshape data (n_trials, n_channels, n_timepoints)
+    aligned_lfp = ds['aligned_lfp']
+    aligned_lfp = np.swapaxes(aligned_lfp, 0, 1)
+
+    return aligned_lfp, trial_window
+
