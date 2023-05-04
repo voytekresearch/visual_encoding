@@ -96,7 +96,7 @@ def get_analogsignal_names(block, segment_idx=None, lfp_only=False):
     return signal_names
 
 
-def get_analogsignal(block, name, segment_idx=None):
+def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
     """
     Returns an analog signal from a Neo Block object. If multiple segments are
     present, the signal from each segment is returned as a list.
@@ -110,11 +110,18 @@ def get_analogsignal(block, name, segment_idx=None):
     segment_idx : int, optional
         Index of the segment containing the analog signal. If None, the signal
         from all segments is returned. Default is None.
+    return_numpy : bool, optional
+        If True, the analog signal is returned as a numpy array. If False, the
+        analog signal is returned as a Neo AnalogSignal object or a list of 
+        AnalogSignal objects. Default is True.
 
     Returns
     -------
-    a_signal : neo.core.AnalogSignal or list
-        Analog signal(s) from the Neo Block object.
+    a_signal : array_like or neo.core.AnalogSignal or list
+        Analog signal from the Neo Block object. If return_numpy is True,
+        the analog signal is returned as a numpy array. If return_numpy is False,
+        the analog signal is returned as a Neo AnalogSignal object or a list of
+        AnalogSignal objects.
 
     """
     # get signal index
@@ -127,9 +134,27 @@ def get_analogsignal(block, name, segment_idx=None):
         for segment in block.segments:
             a_signal.append(segment.analogsignals[signal_idx])
 
+        # convert to numpy array
+        if return_numpy:
+            a_signal_list = []
+            for signal in a_signal:
+                a_signal_list.append(np.array(signal))
+            # join as matrix
+            if len(a_signal[0].shape) == 1:
+                a_signal = np.concatenate(a_signal_list)
+            elif len(a_signal[0].shape) == 2:
+                a_signal = np.concatenate(a_signal_list, axis=1)
+            else:
+                raise ValueError('Analog signal has too many dimensions.')
+
     # get analog signal from block for a single segment
     else:
         a_signal = block.segments[segment_idx].analogsignals[signal_idx]
+
+        # convert to numpy array
+        if return_numpy:
+            a_signal = np.array(a_signal)
+
         
     return a_signal
 
