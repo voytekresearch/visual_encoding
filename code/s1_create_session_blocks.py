@@ -27,7 +27,7 @@ import quantities as pq
 # Imports - custom
 import sys
 sys.path.append('allen_vc')
-from utils import hour_min_sec, save_pkl
+from utils import hour_min_sec
 from allen_utils import create_neo_spiketrains, compute_running_speed, compute_pupil_area
 print('Imports complete...')
 
@@ -96,8 +96,8 @@ def main():
             segment.analogsignals.append(pupil_area_as)
 
         # save results
-        fname_out = f"block_{session_id}.pkl"
-        neo.io.PickleIO(f"{dir_results}/{fname_out}").write(block)
+        fname_out = f"block_{session_id}.mat"
+        neo.io.NeoMatlabIO(f"{dir_results}/{fname_out}").write_block(block)
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)

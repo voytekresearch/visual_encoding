@@ -26,12 +26,11 @@ from time import time as timer
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 import neo
 import quantities as pq
-import pandas as pd
 
 # Imports - custom
 import sys
 sys.path.append('allen_vc')
-from utils import hour_min_sec, save_pkl
+from utils import hour_min_sec
 from allen_utils import find_probes_in_region, align_lfp
 print('Imports complete...')
 
@@ -60,7 +59,7 @@ def main():
         print(f"\nAnalyzing session {session_id} ({i_file+1}/{len(files)})")
 
         # load segmented Neo Block for session (Step 2 results)
-        block = pd.read_pickle(f"{dir_input}/{fname}")
+        block = neo.io.NeoMatlabIO(f"{dir_input}/{fname}").read_block()
 
         # load session data (for LFP dataset)
         session = cache.get_session_data(int(session_id))
@@ -128,7 +127,7 @@ def main():
             block.groups.append(group)
 
         # save results
-        save_pkl(block, f"{dir_results}/{fname}")
+        neo.io.NeoMatlabIO(filename=f"{dir_results}/{fname}").write_block(block)
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)

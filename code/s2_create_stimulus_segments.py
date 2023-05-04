@@ -14,7 +14,7 @@ STIM_CODE = 'natural_movie_one_shuffled' # this will be used to name output fold
 
 # settings - stimulus epoch of interest
 STIM_PARAMS = dict({
-    'stimulus_name' : 'natural_movie_one_shuffled',
+    'stimulus_name' : 'natural_movie_one_more_repeats',
     'frame' : 0
     }) # other stim params
 T_WINDOW = [0, 30]  # epoch bounds (sec) [time_before_stim, tiimem_aftfer_stim]
@@ -30,7 +30,7 @@ import pandas as pd
 # Imports - custom
 import sys
 sys.path.append('allen_vc')
-from utils import hour_min_sec, save_pkl
+from utils import hour_min_sec
 print('Imports complete...')
 
 
@@ -57,11 +57,6 @@ def main():
         t_start_s = timer()
         print(f"\nAnalyzing session {session_id} ({i_file+1}/{len(files)})")
 
-        # BUG: this files produces an error
-        if ((session_id == '768515987') | (session_id == '840012044')):
-            print('    Skipping...')
-            continue
-
         # get stim info for session
         session = cache.get_session_data(int(session_id))
         stim_table = session.stimulus_presentations
@@ -70,7 +65,7 @@ def main():
         stim_times = stim_table.start_time.values
 
         # load session data
-        block = pd.read_pickle(f"{dir_input}/{fname}") # load Step 1 results
+        block = neo.io.NeoMatlabIO(filename=f"{dir_input}/{fname}").read_block() # load Step 1 results
         session_seg = block.segments[0] # unpack session data
         annotations = block.annotations # unpack annotations
 
@@ -118,7 +113,7 @@ def main():
             block.groups.append(group)
 
         # save results
-        save_pkl(block, f"{dir_results}/{fname}")
+        neo.io.NeoMatlabIO(f"{dir_results}/{fname}").write_block(block)
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)
