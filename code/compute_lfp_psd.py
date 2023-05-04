@@ -18,6 +18,7 @@ import sys
 sys.path.append("allen_vc")
 from utils import hour_min_sec
 from neo_utils import get_analogsignal
+print('Imports complete...')
 
 # settings - analysis details
 N_JOBS = 8 # number of jobs to run in parallel for psd_array_multitaper()
@@ -36,7 +37,7 @@ def main():
         os.makedirs(dir_results)
     
     # id files of interst and loop through them
-    dir_input = f'{PROJECT_PATH}/data/blocks/segmented_lfp/{STIM_CODE}'
+    dir_input = f'{PROJECT_PATH}/data/blocks/lfp/{STIM_CODE}'
     files = os.listdir(dir_input)
     for i_file, fname_in in enumerate(files):
         
@@ -54,7 +55,7 @@ def main():
                                          fmax=F_RANGE[1], n_jobs=N_JOBS)
 
         # save results
-        fname_out = fname_in.replace('.pkl', '.npz')
+        fname_out = fname_in.replace('.mat', '.npz')
         np.savez(f"{dir_results}/{fname_out}", psd=psd, freq=freq) 
 
         # display progress
