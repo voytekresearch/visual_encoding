@@ -10,6 +10,7 @@ STIM_CODE = 'natural_movie_one_more_repeats' # name of input/output folders (sti
 import os
 import numpy as np
 from time import time as timer
+import neo
 from mne.time_frequency import psd_array_multitaper
 
 # imports - custom
@@ -45,7 +46,7 @@ def main():
         print(f"    {fname_in}")
 
         # load block and extract lfp
-        block = np.load(f"{dir_input}/{fname_in}")
+        block = neo.io.NeoMatlabIO(f"{dir_input}/{fname_in}").read_block()
         lfp = get_analogsignal(block, 'lfp')
 
         # compute psd
