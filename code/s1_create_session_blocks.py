@@ -82,7 +82,7 @@ def main():
                 segment.spiketrains.append(spiketrain)
 
         # annotate block
-        block.annotate({'session_id': session_id, 'spike_brain_structures': structures})
+        block.annotate(session_id=session_id, spike_brain_structures=structures)
 
         # add running wheel data to block
         _, running_speed = compute_running_speed(session, FS_RUNNING)
