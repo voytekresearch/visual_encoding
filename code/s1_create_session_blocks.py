@@ -53,7 +53,6 @@ def main():
                 '839068429', '840012044', '847657808']
     
     for i_session, session_id in enumerate(sessions):
-
         # display progress
         t_start_s = timer()
         print(f"\nAnalyzing session {session_id} ({i_session+1}/{len(sessions)})")
@@ -91,12 +90,14 @@ def main():
 
         # add pupil data to block
         _, pupil_area = compute_pupil_area(session, FS_PUPIL)
-        pupil_area_as = neo.AnalogSignal(pupil_area, units=pq.cm**2, sampling_rate=FS_PUPIL*pq.Hz, name='pupil_area')
-        segment.analogsignals.append(pupil_area_as)
+        # check for data (sessions 768515987 and 840012044 have no eye-tracking data)
+        if (pupil_area is not None):
+            pupil_area_as = neo.AnalogSignal(pupil_area, units=pq.cm**2, sampling_rate=FS_PUPIL*pq.Hz, name='pupil_area')
+            segment.analogsignals.append(pupil_area_as)
 
         # save results
         fname_out = f"block_{session_id}.pkl"
-        save_pkl(block, f"{dir_results}/{fname_out}")
+        neo.io.PickleIO(f"{dir_results}/{fname_out}").write(block)
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)
