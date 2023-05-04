@@ -143,7 +143,8 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
             if len(a_signal[0].shape) == 1:
                 a_signal = np.concatenate(a_signal_list)
             elif len(a_signal[0].shape) == 2:
-                a_signal = np.concatenate(a_signal_list, axis=1)
+                a_signal = np.dstack(a_signal_list)
+                a_signal = np.moveaxis(a_signal, 2, 0)
             else:
                 raise ValueError('Analog signal has too many dimensions.')
 
