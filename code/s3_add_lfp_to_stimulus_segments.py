@@ -10,7 +10,7 @@ windows of interest.
 # settings - directories
 MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-STIM_CODE = 'natural_movie_one_shuffled' # this will be used to identify input/output folders
+STIM_CODE = 'natural_movie_one_more_repeats' # this will be used to identify input/output folders
 
 # settings 
 BRAIN_STRUCTURE = 'VISp' # regions of interest for LFP data
@@ -73,8 +73,8 @@ def main():
             print(f"    {len(probe_ids)} probe(s) in ROI")
 
         # annotate block
-        block.annotate({'lfp_brain_structure': BRAIN_STRUCTURE, 'lfp_probe_ids': probe_ids, 
-                        'has_lfp_data': True})
+        block.annotate(lfp_brain_structure=BRAIN_STRUCTURE, lfp_probe_ids=probe_ids, 
+                        has_lfp_data=True)
 
         # loop through all probes for region of interst
         for probe_id in probe_ids:
