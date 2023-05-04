@@ -12,8 +12,8 @@ MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 STIM_CODE = 'natural_movie_one_shuffled' # this will be used to identify input/output folders
 
-# settings - regions of interest for LFP data
-BRAIN_STRUCTURE = 'VISp'
+# settings 
+BRAIN_STRUCTURE = 'VISp' # regions of interest for LFP data
 
 # settings - dataset details
 FS = 1250 # LFP sampling freq
@@ -32,7 +32,7 @@ import pandas as pd
 import sys
 sys.path.append('allen_vc')
 from utils import hour_min_sec, save_pkl
-from allen_utils import find_probes_in_region
+from allen_utils import find_probes_in_region, align_lfp
 print('Imports complete...')
 
 
@@ -96,22 +96,29 @@ def main():
             else:
                 chan_ids = session.channels[session.channels.probe_id==probe_id].index.values
 
-            # create Neo AnalogSignal for LFP data for the whole session
+            # align lfo to stimulus events
+            stim_times = []
+            for segment in block.segments:
+                stim_times.append(segment.annotations['stimulus_onset'])
+            t_window = block.segments[0].annotations['time_window']
+            lfp_a, time = align_lfp(lfp, stim_times, t_window=t_window, dt=1/FS)
+                
+            # prepare annotations
             annotations = {'data_type' : 'lfp', 'probe_id': probe_id, 'brain_structure': BRAIN_STRUCTURE, 
                            'channel_ids': chan_ids}
             if len(probe_ids) == 1:
                 lfp_name = "lfp"
             else:
                 lfp_name = f"lfp_{probe_id}"
-            lfp = neo.AnalogSignal(lfp, units=UNITS, sampling_rate=FS*pq.Hz, name=lfp_name, **annotations)
 
             # create group for probe
             group = neo.Group(name=f"lfp_{probe_id}")
 
             # loop through segments and add LFP data
-            for segment in block.segments:
-                # slice LFP data according to segment start/end times
-                lfp_segment = lfp.time_slice(segment.t_start, segment.t_stop)
+            for i_seg, segment in enumerate(block.segments):
+                # create neo analogsignal for segment
+                lfp_segment = neo.AnalogSignal(lfp_a[i_seg], units=UNITS, sampling_rate=FS*pq.Hz, 
+                                               name=lfp_name, **annotations)
 
                 # add LFP data to segment and group
                 segment.analogsignals.append(lfp_segment)
