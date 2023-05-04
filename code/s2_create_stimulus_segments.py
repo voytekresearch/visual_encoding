@@ -69,10 +69,15 @@ def main():
             stim_table = stim_table[stim_table[param_name] == STIM_PARAMS[param_name]]
         stim_times = stim_table.start_time.values
 
-        # load session data and initialize new block to hold segments
+        # load session data
         block = pd.read_pickle(f"{dir_input}/{fname}") # load Step 1 results
         session_seg = block.segments[0] # unpack session data
-        block = neo.Block() # init new block
+        annotations = block.annotations # unpack annotations
+
+        # initialize new block to hold segments and add annotations
+        for key, val in STIM_PARAMS.items():
+            annotations[key] = val
+        block = neo.Block(**annotations)
 
         # create Neo Group for each unit
         for spiketrain in session_seg.spiketrains:
@@ -90,8 +95,7 @@ def main():
             t_seg = [t_stim+T_WINDOW[0], t_stim+T_WINDOW[1]]*pq.s
 
             # create segment and add annotations
-            annotations = {'index' : i_seg, 'stimulus_onset' : t_stim, 'time_window' : T_WINDOW,
-                            'stimulus_parameters' : STIM_PARAMS}
+            annotations = {'index' : i_seg, 'stimulus_onset' : t_stim, 'time_window' : T_WINDOW}
             segment = neo.Segment(**annotations)
 
             # add each spiketrain to segment after slicing in time

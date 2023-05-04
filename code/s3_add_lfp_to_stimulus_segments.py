@@ -73,6 +73,10 @@ def main():
             probe_ids, _ = find_probes_in_region(session, BRAIN_STRUCTURE)
             print(f"    {len(probe_ids)} probe(s) in ROI")
 
+        # annotate block
+        block.annotate({'lfp_brain_structure': BRAIN_STRUCTURE, 'lfp_probe_ids': probe_ids, 
+                        'has_lfp_data': True})
+
         # loop through all probes for region of interst
         for probe_id in probe_ids:
             # skip probes with no LFP data

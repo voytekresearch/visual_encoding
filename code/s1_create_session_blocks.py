@@ -63,6 +63,7 @@ def main():
 
         # init Neo Block and segment
         block = neo.Block()
+        block.annotate({'session_id': session_id, 'spike_brain_structures': BRAIN_STRUCTURES})
         segment = neo.Segment(name=f'session_{session_id}')
         block.segments.append(segment)
 
