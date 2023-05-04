@@ -297,8 +297,7 @@ def running_segment_plot(block, title):
     plt.title(title)
 
 
-# create plotting function
-def plot_segment(block, i_seg, n_trains_visp=71):
+def plot_segment(block, i_seg):
     """
     Plot the LFP, spike trains, running speed, and pupil area for a given segment.
 
@@ -308,40 +307,34 @@ def plot_segment(block, i_seg, n_trains_visp=71):
         Neo block containing segment to plot.
     i_seg : int
         Index of segment to plot.
-    n_trains_visp : int
-        Number of spike trains recorded from n_trains_vispp in the segment.
-        Default is 71. NOTE: this is a temporary parameter for testing purposes.
 
     Returns
     -------
     None
-
-    NOTE: This function contains temporary code for testing purposes. 
-    code/allen_vc/create_block.py must be updated; it currently contains 
-    a bug in the Neo Group creation.
     """
 
     # imports
     from matplotlib import gridspec
+    import neo
+    import sys
+    sys.path.append('..')
+    from allen_vc.neo_utils import get_analogsignal
 
     # settings
     col_0 = np.array([52,148,124]) /255
     col_1 = np.array([244,157,70]) /255
 
     # get data of interest
-    segment = block.segments[i_seg]
-    lfp = segment.analogsignals[np.argwhere(np.array(block.annotations['analogsignals'])=='lfp')[0][0]]
-    running_speed = segment.analogsignals[np.argwhere(np.array(block.annotations['analogsignals'])=='running_speed')[0][0]]
-    pupil_area = segment.analogsignals[np.argwhere(np.array(block.annotations['analogsignals'])=='pupil_area')[0][0]]
+    lfp = get_analogsignal(block, 'lfp', segment_idx=i_seg)
+    running_speed = get_analogsignal(block, 'running_speed', segment_idx=i_seg)
+    pupil_area = get_analogsignal(block, 'pupil_area', segment_idx=i_seg)
 
     # get spike times for each region
-    spiketrains = segment.spiketrains # TEMP
-    st_visp = [st.times for st in spiketrains[:n_trains_visp]]  # TEMP
-    st_lgd = [st.times for st in spiketrains[n_trains_visp:]] # TEMP
-    # spikes_lgd = block.groups[block.groups==f'seg{i_seg}_LGd']
-    # spikes_visp = block.groups[block.groups==f'seg{i_seg}_VISp']
-    # st_visp = [st.times for st in spikes_visp.spiketrains]
-    # st_lgd = [st.times for st in spikes_lgd.spiketrains]
+    segment = block.segments[i_seg]
+    st_visp = segment.filter(objects=neo.SpikeTrain,targdict={'brain_structure': 'VISp'})
+    st_lgd = segment.filter(objects=neo.SpikeTrain,targdict={'brain_structure': 'LGd'})
+    st_visp = [st.times for st in st_visp]
+    st_lgd = [st.times for st in st_lgd]
 
     # create figure and gridspec
     fig = plt.figure(figsize=[8,4])#, constrained_layout=True)
