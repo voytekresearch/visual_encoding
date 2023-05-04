@@ -100,7 +100,7 @@ def main():
             for segment in block.segments:
                 stim_times.append(segment.annotations['stimulus_onset'])
             t_window = block.segments[0].annotations['time_window']
-            lfp_a, time = align_lfp(lfp, stim_times, t_window=t_window, dt=1/FS)
+            lfp_a, _ = align_lfp(lfp, stim_times, t_window=t_window, dt=1/FS)
                 
             # prepare annotations
             annotations = {'data_type' : 'lfp', 'probe_id': probe_id, 'brain_structure': BRAIN_STRUCTURE, 
@@ -127,6 +127,7 @@ def main():
             block.groups.append(group)
 
         # save results
+        print(f"    saving results...")
         neo.io.NeoMatlabIO(filename=f"{dir_results}/{fname}").write_block(block)
 
         # display progress
