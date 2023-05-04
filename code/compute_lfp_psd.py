@@ -4,7 +4,7 @@ Compute PSD for LFP epochs. Analyzes input of allen_vc.epoch_lfp.py.
 """
 # Set paths
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-STIM_CODE = 'natural_movie' # name of input/output folders (stimulus of interest)
+STIM_CODE = 'natural_movie_one_more_repeats' # name of input/output folders (stimulus of interest)
 
 # imports
 import os
@@ -16,6 +16,7 @@ from mne.time_frequency import psd_array_multitaper
 import sys
 sys.path.append("allen_vc")
 from utils import hour_min_sec
+from neo_utils import get_analogsignal
 
 # settings - analysis details
 N_JOBS = 8 # number of jobs to run in parallel for psd_array_multitaper()
@@ -34,7 +35,7 @@ def main():
         os.makedirs(dir_results)
     
     # id files of interst and loop through them
-    dir_input = f'{PROJECT_PATH}/data/lfp_data/lfp_epochs/{STIM_CODE}/npy'
+    dir_input = f'{PROJECT_PATH}/data/blocks/segmented_lfp/{STIM_CODE}'
     files = os.listdir(dir_input)
     for i_file, fname_in in enumerate(files):
         
@@ -43,15 +44,16 @@ def main():
         print(f"\nAnalyzing file {i_file+1}/{len(files)}")
         print(f"    {fname_in}")
 
-        # load LFP epochs
-        data_in = np.load(f"{dir_input}/{fname_in}")
+        # load block and extract lfp
+        block = np.load(f"{dir_input}/{fname_in}")
+        lfp = get_analogsignal(block, 'lfp')
 
         # compute psd
-        psd, freq = psd_array_multitaper(data_in['lfp'], FS, 
-            fmin=F_RANGE[0], fmax=F_RANGE[1], n_jobs=N_JOBS)
+        psd, freq = psd_array_multitaper(lfp, FS, fmin=F_RANGE[0], 
+                                         fmax=F_RANGE[1], n_jobs=N_JOBS)
 
         # save results
-        fname_out = fname_in.replace('_epochs', '_psd')
+        fname_out = fname_in.replace('.pkl', '.npz')
         np.savez(f"{dir_results}/{fname_out}", psd=psd, freq=freq) 
 
         # display progress
