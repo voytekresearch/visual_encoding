@@ -158,3 +158,32 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
         
     return a_signal
 
+
+def get_spike_times(segment, region=None):
+    """
+    Extract spike times from a Neo Block object. Useful for plotting spike rasters.
+
+    Parameters
+    ----------
+    block : Neo Segment object
+        Neo segment containing spike trains.
+    region : str, optional
+        Region of interest. Default is None.
+
+    Returns
+    -------
+    spike_times : list
+        List of arrays of spike times for each unit in `region`.
+    """
+
+    # get spike times (for region)
+    if region is None:
+        st = segment.filter(objects=neo.SpikeTrain)
+    else:
+        st = segment.filter(objects=neo.SpikeTrain,targdict={'brain_structure': region})
+
+    # convert to list of arrays
+    spike_times = [st.times for st in st]
+
+    return spike_times
+
