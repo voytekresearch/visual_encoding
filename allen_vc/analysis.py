@@ -58,7 +58,7 @@ def calculate_spike_metrics(spiketrains):
     import pyspike as spk
     import elephant
     import quantities as pq
-    from utils import gen_pop_spiketrain
+    from neo_utils import gen_pop_spiketrain
 
     # reformat as PySpike object for synchrony analyses
     spk_trains = [spk.SpikeTrain(spiketrain, [spiketrain.t_start, spiketrain.t_stop]) \
