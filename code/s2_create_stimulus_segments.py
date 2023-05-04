@@ -39,7 +39,7 @@ def main():
     t_start = timer()
 
     # Define/create directories for inputs/outputs
-    dir_results = f"{PROJECT_PATH}/data/blocks_segmented/{STIM_CODE}" 
+    dir_results = f"{PROJECT_PATH}/data/blocks/segmented/{STIM_CODE}" 
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
 
@@ -48,7 +48,7 @@ def main():
     print('Project cache loaded...')
     
     # loop through all files
-    dir_input =  f"{PROJECT_PATH}/data/blocks_session"
+    dir_input =  f"{PROJECT_PATH}/data/blocks/sessions"
     files = os.listdir(dir_input)
     for i_file, fname in enumerate(files):
         session_id = fname.split('_')[1].split('.')[0]

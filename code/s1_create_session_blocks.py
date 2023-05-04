@@ -37,7 +37,7 @@ def main():
     t_start = timer()
 
     # Define/create directories for inputs/outputs
-    dir_results = f"{PROJECT_PATH}/data/blocks_session" 
+    dir_results = f"{PROJECT_PATH}/data/blocks/sessions" 
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
 
