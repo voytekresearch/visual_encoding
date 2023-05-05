@@ -95,7 +95,7 @@ def main():
             else:
                 chan_ids = session.channels[session.channels.probe_id==probe_id].index.values
 
-            # align lfo to stimulus events
+            # align lfp to stimulus events
             stim_times = []
             for segment in block.segments:
                 stim_times.append(segment.annotations['stimulus_onset'])
@@ -103,6 +103,7 @@ def main():
             lfp_a, _ = align_lfp(lfp, stim_times, t_window=t_window, dt=1/FS)
                 
             # prepare annotations
+            chan_ids = np.intersect1d(chan_ids, lfp.channel.values) # remove channels with no LFP data
             annotations = {'data_type' : 'lfp', 'probe_id': probe_id, 'brain_structure': BRAIN_STRUCTURE, 
                            'channel_ids': chan_ids}
             if len(probe_ids) == 1:
