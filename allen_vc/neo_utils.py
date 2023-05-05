@@ -96,7 +96,7 @@ def get_analogsignal_names(block, segment_idx=None, lfp_only=False):
     return signal_names
 
 
-def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
+def get_analogsignal(block, name, segment_idx=None, return_numpy=True, return_annotations=False):
     """
     Returns an analog signal from a Neo Block object. If multiple segments are
     present, the signal from each segment is returned as a list.
@@ -114,6 +114,8 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
         If True, the analog signal is returned as a numpy array. If False, the
         analog signal is returned as a Neo AnalogSignal object or a list of 
         AnalogSignal objects. Default is True.
+    return_annotations : bool, optional
+        If True, the annotations for the analog signal are returned. Default is False.
 
     Returns
     -------
@@ -131,6 +133,7 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
     # get analog signal from block for all segments
     if segment_idx is None:
         a_signal = []
+        annotations = block.segments[0].analogsignals[signal_idx].annotations
         for segment in block.segments:
             a_signal.append(segment.analogsignals[signal_idx])
 
@@ -151,13 +154,17 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
     # get analog signal from block for a single segment
     else:
         a_signal = block.segments[segment_idx].analogsignals[signal_idx]
+        annotations = a_signal.annotations
 
         # convert to numpy array
         if return_numpy:
             a_signal = np.array(a_signal)
 
-        
-    return a_signal
+    # return
+    if return_annotations:
+        return a_signal, annotations
+    else:
+        return a_signal
 
 
 def get_spike_times(segment, region=None):
