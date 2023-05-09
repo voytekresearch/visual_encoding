@@ -161,6 +161,9 @@ cython_debug/
 
 # Ignore mac directory files
 .DS_Store
+
 # custom --------------------------------------------------------------------
 data/
 figures/
+code/untracked
+notebooks/untracked
