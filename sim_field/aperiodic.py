@@ -1,4 +1,10 @@
-"""Simulating time series, with aperiodic activity."""
+"""
+Simulating time series, with aperiodic activity.
+
+NOTE: This module is copied from neurodsp.sim.aperiodic, with the following changes:
+    - Removed the @normalize decorator from sim_random_walk
+    
+"""
 
 import numpy as np
 from scipy.stats import zscore
