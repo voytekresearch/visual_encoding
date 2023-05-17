@@ -156,9 +156,9 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True, return_an
         a_signal = block.segments[segment_idx].analogsignals[signal_idx]
         annotations = a_signal.annotations
 
-        # convert to numpy array
-        if return_numpy:
-            a_signal = np.array(a_signal)
+    # convert to numpy array
+    if return_numpy:
+        a_signal = np.squeeze(np.array(a_signal))
 
     # return
     if return_annotations:
