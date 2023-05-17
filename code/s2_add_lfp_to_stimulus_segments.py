@@ -1,9 +1,7 @@
 """
-Step 2: create stimulus segments.
-This script can be used to segment data arouund stimulus events. This script loads
-the ouput of Step 1 (Neo Block objects containing spiking, running, and pupil data
-for a single session) and creates trial epochs based on stimulus event times and
-windows of interest.
+Step 2: add LFP to stimulus segements.
+This script loads the ouput of Step 2 (segmented Neo Block) and add the corresponding
+LFP data to each segment. 
 
 """
 
