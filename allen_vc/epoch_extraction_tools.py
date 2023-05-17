@@ -307,9 +307,9 @@ def split_epochs(epochs, epoch_length):
 
     Returns
     -------
-    split_epochs : list
-        List of sub-epochs, each is a list of two integers specifying 
-        the start and end time.
+    split_epochs : array
+        Array of sub-epochs.
+
     """
     split_epochs = []
     
@@ -324,5 +324,8 @@ def split_epochs(epochs, epoch_length):
     # apply inner function to full list of epochs
     for epoch in epochs:
         split_epochs.extend(inner(epoch, epoch_length))
+
+    # covnert back to numpy
+    split_epochs = np.array(split_epochs)
         
     return split_epochs
