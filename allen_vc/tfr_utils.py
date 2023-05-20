@@ -7,38 +7,38 @@ Utility functions for TFR analysis
 import numpy as np
 
 
-def compute_tfr(epochs, f_min=None, f_max=None, n_freqs=256, 
-                time_window_length=0.5, freq_bandwidth=4, n_jobs=-1, picks=None, 
-                average=False, decim=1, verbose=False):
+def compute_tfr(epoch_data, sfreq, f_min=None, f_max=None, n_freqs=256, 
+                time_window_length=0.5, freq_bandwidth=4, n_jobs=-1, 
+                output='power', decim=1, verbose=False):
     '''
-    This function takes an MNE epochsArray and computes the time-frequency
+    This function takes an array (n_epochs, n_channels, n_times) and computes the time-frequency
     representatoin of power using the multitaper method. 
     Due to memory demands, this function should be run on single-channel data, 
     or results can be averaged across trials.
     '''
     # imports
-    from mne.time_frequency import tfr_multitaper
+    from mne.time_frequency import tfr_array_multitaper
     
     # set paramters for TF decomposition
     if f_min is None:
-        f_min = (1/(epochs.tmax-epochs.tmin)) # 1/T
+        T = epoch_data.shape[2]/sfreq
+        f_min = (1/T)
     if f_max is None:
-        f_max = epochs.info['sfreq'] / 2 # Nyquist
+        f_max = sfreq / 2 # Nyquist
 
     freq = np.logspace(*np.log10([f_min, f_max]), n_freqs) # log-spaced freq vector
     n_cycles = freq * time_window_length # set n_cycles based on fixed time window length
     time_bandwidth =  time_window_length * freq_bandwidth # must be >= 2
 
     # TF decomposition using multitapers
-    tfr = tfr_multitaper(epochs, freqs=freq, n_cycles=n_cycles, 
-                            time_bandwidth=time_bandwidth, return_itc=False, n_jobs=n_jobs,
-                            picks=picks, average=average, decim=decim, verbose=verbose)
-    
-    # extract data
-    time = tfr.times
-    tfr = tfr.data.squeeze()
+    tfr = tfr_array_multitaper(epoch_data, freqs=freq, n_cycles=n_cycles, 
+                            time_bandwidth=time_bandwidth, output=output, n_jobs=n_jobs,
+                            decim=decim, verbose=verbose)
 
-    return time, freq, tfr
+    # deleted parameters: picks, average, return_itc
+
+    # return full array for now
+    return tfr
 
 
 def zscore_tfr(tfr):
