@@ -6,9 +6,9 @@ LFP data to each segment.
 """
 
 # settings - directories
-MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
+MANIFEST_PATH = "E:/datasets/allen_vc/manifest_files" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-STIM_CODE = 'natural_movie_one_more_repeats' # this will be used to identify input/output folders
+STIM_CODE = 'spontaneous' # this will be used to identify input/output folders
 
 # settings 
 BRAIN_STRUCTURE = 'VISp' # regions of interest for LFP data
@@ -93,12 +93,32 @@ def main():
             else:
                 chan_ids = session.channels[session.channels.probe_id==probe_id].index.values
 
-            # align lfp to stimulus events
-            stim_times = []
-            for segment in block.segments:
-                stim_times.append(segment.annotations['stimulus_onset'])
-            t_window = block.segments[0].annotations['time_window']
-            lfp_a, _ = align_lfp(lfp, stim_times, t_window=t_window, dt=1/FS)
+            # treat spontaneous segmentation differently
+            if STIM_CODE == 'spontaneous':
+                lfp_a = []
+                for i_seg, segment in enumerate(block.segments):
+                    start_time, end_time = float(segment.t_start), float(segment.t_stop)
+                    duration = end_time - start_time
+                    lfp_seg = lfp.sel(time = slice(start_time, end_time))
+
+                    # The following code ensures each lfp_seg has the same dimensions
+                    
+                    # if lfp_seg.values.shape[0] == FS*duration - 1:
+                    #     lfp_seg = lfp.sel(time = slice(start_time, end_time + 1/FS))
+                    # if lfp_seg.values.shape[0] == FS*duration + 1:
+                    #     lfp_seg = lfp.sel(time = slice(start_time + 1/FS, end_time))
+                    # if lfp_seg.values.shape[0] != FS*duration:
+                    #     print("LFP segment for epoch incorrect dimensions")
+                    #     continue
+
+                    lfp_a.append(lfp_seg)
+            else:
+                # align lfp to stimulus events
+                stim_times = []
+                for segment in block.segments:
+                    stim_times.append(segment.annotations['stimulus_onset'])
+                t_window = block.segments[0].annotations['time_window']
+                lfp_a, _ = align_lfp(lfp, stim_times, t_window=t_window, dt=1/FS)
                 
             # prepare annotations
             chan_ids = np.intersect1d(chan_ids, lfp.channel.values) # remove channels with no LFP data

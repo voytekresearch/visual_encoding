@@ -8,7 +8,7 @@ windows of interest.
 """
 
 # settings - directories
-MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
+MANIFEST_PATH = "E:/datasets/allen_vc/manifest_files" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 
 # settings - smoothing
@@ -74,8 +74,8 @@ def main():
         epochs_r, epochs_s = get_epoch_times(speed_smooth, threshold=THRESHOLD, min_gap=MIN_GAP, min_duration=MIN_DURATION, fs=FS)
         epochs_r = split_epochs(epochs_r, MIN_DURATION)
         epochs_s = split_epochs(epochs_s, MIN_DURATION)
-        epochs_r = epochs_r + time[0]
-        epochs_s = epochs_s + time[0]
+        epochs_r = epochs_r + float(time[0])
+        epochs_s = epochs_s + float(time[0])
 
         # create Neo Segments based on epoch times for running and stationary
         for behavior, epochs in zip(['running', 'stationary'], [epochs_r, epochs_s]):
