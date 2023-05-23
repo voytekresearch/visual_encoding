@@ -15,6 +15,36 @@ def compute_tfr(epoch_data, sfreq, f_min=None, f_max=None, n_freqs=256,
     representatoin of power using the multitaper method. 
     Due to memory demands, this function should be run on single-channel data, 
     or results can be averaged across trials.
+    
+    Parameters
+    ----------
+    epoch_data : 3D array
+        Array of shape (n_epochs, n_channels, n_times) containing the data.
+    sfreq : float
+        Sampling frequency of the data.
+    f_min : float
+        Minimum frequency of interest. If None, set to 1/T, where T is the length of the time window.
+    f_max : float
+        Maximum frequency of interest. If None, set to Nyquist frequency (sfreq/2).
+    n_freqs : int
+        Number of frequencies to use for the TF decomposition.
+    time_window_length : float
+        Length of the time window (in seconds) to use for the TF decomposition.
+    freq_bandwidth : float
+        Bandwidth of the frequency window (in Hz) to use for the TF decomposition.
+    n_jobs : int
+        Number of jobs to run in parallel. If -1, use all available cores.
+    output : str
+        Type of output to return. The default is 'power'
+    decim : int
+        Decimation factor to use for the TF decomposition.
+    verbose : bool
+        Whether to print progress updates.
+
+    Returns
+    -------
+    tfr : 4D array
+        Array of shape (n_epochs, n_channels, n_freqs, n_times) containing the TF representation.
     '''
     # imports
     from mne.time_frequency import tfr_array_multitaper
