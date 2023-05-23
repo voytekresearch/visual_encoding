@@ -1,6 +1,6 @@
 """
-Step 2: add LFP to stimulus segements.
-This script loads the ouput of Step 2 (segmented Neo Block) and add the corresponding
+Step 3: add LFP to stimulus segements.
+This script loads the output of Step 2 (segmented Neo Block) and adds the corresponding
 LFP data to each segment. 
 
 """

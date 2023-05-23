@@ -1,5 +1,5 @@
 """
-Step 1 (spontaneous pipeline): create spontaneous block and behavioral 
+Step 2 (spontaneous epochs): create spontaneous block and behavioral 
 segments. Create a Neo Block object for the longest spontaneous epoch 
 in each session. Then, create segments based on running behavior.
 
