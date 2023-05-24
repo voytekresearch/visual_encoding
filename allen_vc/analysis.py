@@ -35,31 +35,32 @@ def compute_tfr(epochs, f_min=None, f_max=None, n_freqs=256,
     return time, freq, tfr
 
 
-def comp_spike_cov(spike_train):
-    """Computes the coefficient of variation (CoV) of the interspike interval (ISI) distribution.
+def compute_cv(spiketrain):
+    """Compute the coefficient of variation (CV) of the interspike interval (ISI)
+     of a spike train.
 
     Parameters
     ----------
-    spike_train : neo.SpikeTrain
+    spiketrain : neo.SpikeTrain
         Neo SpikeTrain object
 
     Returns
     -------
     cov : float
-        Coefficient of variation (CoV) of the interspike interval (ISI) distribution.
+        Coefficient of variation (CV) of the interspike interval (ISI) distribution.
     """
-    # account for empty spike_train
-    if len(spike_train)==0:
-        return 0
+
+    # check if there are any spikes
+    if len(spiketrain)==0:
+        return np.nan
     
     # compute interspike intervals
-    isi = np.diff(spike_train.times)
+    isi = np.diff(spiketrain.times)
 
     # compute coefficient of variation
-    cov = np.std(isi) / np.mean(isi)
+    cv = np.float(np.std(isi) / np.mean(isi))
     
-    # returns as a 'dimensionless string' without float constructor
-    return float(cov)
+    return cv
 
 
 def calculate_spike_metrics(spiketrains):
@@ -102,7 +103,7 @@ def calculate_spike_metrics(spiketrains):
     unit_firing_rates = [len(spiketrain)/float(spiketrain.duration) \
         for spiketrain in spiketrains]
     mean_firing_rate = sum(unit_firing_rates)/len(spiketrains)
-    coeff_of_var = (comp_spike_cov(gen_pop_spiketrain(spiketrains, t_stop=spiketrains[0].t_stop)))
+    coeff_of_var = (compute_cv(gen_pop_spiketrain(spiketrains, t_stop=spiketrains[0].t_stop)))
     spike_dist = (spk.spike_distance(spk_trains))
     spike_sync = (spk.spike_sync(spk_trains))
     corr_coeff = (elephant.spike_train_correlation.correlation_coefficient(\
