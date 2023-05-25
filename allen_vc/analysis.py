@@ -99,51 +99,6 @@ def compute_pyspike_metrics(spiketrains, interval=None):
 
     return spike_dist, spike_sync
 
-def calculate_spike_metrics(spiketrains):
-    """
-    calculate spike metrics (mean firing rate, coefficient of variance, 
-    SPIKE-distance, SPIKE-synchrony, and correlation coefficient).
-
-    Parameters
-    ----------
-    -------
-    spiketrains : Neo SpikeTrains object
-        Neo SpikeTrains object
-
-    Returns
-    -------
-    mean_firing_rate: float
-        mean firing rate over all units during specified epoch.
-    unit_firing_rates: list
-        list of firing rates for each unit during specified epoch.
-    coeff_of_var: float
-        coefficient of variation over all units during specified epoch.
-    spike_dist: float
-        SPIKE-distance (pyspike) over all units during specified epoch.
-    spike_sync: float
-        SPIKE-synchrony (pyspike) over all units during specified epoch.
-    corr_coeff:
-        correlation coefficient (elephant) over all units during 
-        specified epoch. 
-    """
-    # Imports
-    import elephant
-    import quantities as pq
-    from neo_utils import combine_spiketrains
-
-    # compute rate metrics
-    unit_firing_rates = [len(spiketrain)/float(spiketrain.duration) \
-        for spiketrain in spiketrains]
-    mean_firing_rate = sum(unit_firing_rates)/len(spiketrains)
-
-    # compute synchrony metrics
-    coeff_of_var = compute_cv(combine_spiketrains(spiketrains, t_stop=spiketrains[0].t_stop))
-    spike_sync, spike_dist = compute_pyspike_metrics(spiketrains)
-    corr_coeff = elephant.spike_train_correlation.correlation_coefficient(\
-        elephant.conversion.BinnedSpikeTrain(spiketrains, bin_size=1 * pq.s))
-
-    return mean_firing_rate, unit_firing_rates, coeff_of_var, spike_dist, spike_sync, corr_coeff
-
 
 def avg_psd_over_freq_ranges(freq, psd, lower_lims, upper_lims, trial_filter=None, log_transform=False):
     """
