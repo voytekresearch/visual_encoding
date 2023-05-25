@@ -129,16 +129,18 @@ def calculate_spike_metrics(spiketrains):
     # Imports
     import elephant
     import quantities as pq
-    from neo_utils import gen_pop_spiketrain
+    from neo_utils import combine_spiketrains
 
-    # compute metrics
+    # compute rate metrics
     unit_firing_rates = [len(spiketrain)/float(spiketrain.duration) \
         for spiketrain in spiketrains]
     mean_firing_rate = sum(unit_firing_rates)/len(spiketrains)
-    coeff_of_var = (compute_cv(gen_pop_spiketrain(spiketrains, t_stop=spiketrains[0].t_stop)))
+
+    # compute synchrony metrics
+    coeff_of_var = compute_cv(combine_spiketrains(spiketrains, t_stop=spiketrains[0].t_stop))
     spike_sync, spike_dist = compute_pyspike_metrics(spiketrains)
-    corr_coeff = (elephant.spike_train_correlation.correlation_coefficient(\
-        elephant.conversion.BinnedSpikeTrain(spiketrains, bin_size=1 * pq.s)))
+    corr_coeff = elephant.spike_train_correlation.correlation_coefficient(\
+        elephant.conversion.BinnedSpikeTrain(spiketrains, bin_size=1 * pq.s))
 
     return mean_firing_rate, unit_firing_rates, coeff_of_var, spike_dist, spike_sync, corr_coeff
 
