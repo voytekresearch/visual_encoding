@@ -63,11 +63,46 @@ def compute_cv(spiketrain):
     return cv
 
 
+def compute_pyspike_metrics(spiketrains, interval=None):
+    """
+    compute spike synchrony and spike distance using PySpike.
+
+    Parameters
+    ----------
+    spiketrains : Neo SpikeTrains object
+        Neo SpikeTrains object
+    interval : list, optional
+        Interval over which to compute synchrony and distance. The default is None.
+        If None, the entire duration of the SpikeTrains object is used.
+
+    Returns
+    -------
+    spike_dist: float
+        SPIKE-distance (pyspike) over all units (during specified interval).
+    spike_sync: float
+        SPIKE-synchrony (pyspike) over all units (during specified interval).
+    """
+
+    # imports
+    import pyspike as spk
+    import quantities as pq
+
+    # reformat Neo objects to PySpike objects
+    spk_trains = [spk.SpikeTrain(spiketrain, [spiketrain.t_start, spiketrain.t_stop]) \
+        for spiketrain in spiketrains]
+    
+    # compute metrics
+    if interval is None:
+        interval = [spiketrains[0].t_start.item(), spiketrains[0].t_stop.item()]
+    spike_dist = spk.spike_distance(spk_trains, interval=interval)
+    spike_sync = spk.spike_sync(spk_trains, interval=interval)
+
+    return spike_dist, spike_sync
+
 def calculate_spike_metrics(spiketrains):
     """
     calculate spike metrics (mean firing rate, coefficient of variance, 
-    SPIKE-distance, SPIKE-synchrony, and correlation coefficient) within
-    a specified epoch given a matrix of spike times.
+    SPIKE-distance, SPIKE-synchrony, and correlation coefficient).
 
     Parameters
     ----------
@@ -79,6 +114,8 @@ def calculate_spike_metrics(spiketrains):
     -------
     mean_firing_rate: float
         mean firing rate over all units during specified epoch.
+    unit_firing_rates: list
+        list of firing rates for each unit during specified epoch.
     coeff_of_var: float
         coefficient of variation over all units during specified epoch.
     spike_dist: float
@@ -89,23 +126,17 @@ def calculate_spike_metrics(spiketrains):
         correlation coefficient (elephant) over all units during 
         specified epoch. 
     """
-    #Imports
-    import pyspike as spk
+    # Imports
     import elephant
     import quantities as pq
     from neo_utils import gen_pop_spiketrain
-
-    # reformat as PySpike object for synchrony analyses
-    spk_trains = [spk.SpikeTrain(spiketrain, [spiketrain.t_start, spiketrain.t_stop]) \
-        for spiketrain in spiketrains]
 
     # compute metrics
     unit_firing_rates = [len(spiketrain)/float(spiketrain.duration) \
         for spiketrain in spiketrains]
     mean_firing_rate = sum(unit_firing_rates)/len(spiketrains)
     coeff_of_var = (compute_cv(gen_pop_spiketrain(spiketrains, t_stop=spiketrains[0].t_stop)))
-    spike_dist = (spk.spike_distance(spk_trains))
-    spike_sync = (spk.spike_sync(spk_trains))
+    spike_sync, spike_dist = compute_pyspike_metrics(spiketrains)
     corr_coeff = (elephant.spike_train_correlation.correlation_coefficient(\
         elephant.conversion.BinnedSpikeTrain(spiketrains, bin_size=1 * pq.s)))
 
