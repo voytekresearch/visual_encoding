@@ -316,9 +316,7 @@ def plot_segment(block, i_seg):
     # imports
     from matplotlib import gridspec
     import neo
-    import sys
-    sys.path.append('..')
-    from allen_vc.neo_utils import get_analogsignal
+    from neo_utils import get_analogsignal
 
     # settings
     col_0 = np.array([52,148,124]) /255
