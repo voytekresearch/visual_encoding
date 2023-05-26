@@ -8,12 +8,12 @@ import numpy as np
 import neo
 
 
-def gen_pop_spiketrain(spike_trains, units='s', t_stop=None):
-    """Generates a population spiketrain from a list of individual spike trains.
+def combine_spiketrains(spiketrain_list, units='s', t_stop=None):
+    """Generates a single spiketrain from a list of spiketrains.
 
     Parameters
     ----------
-    spike_trains : list
+    spiketrain_list : list
         A list of Neo SpikeTrains 
     units : str, optional
         The units of the spike times (default is 's')
@@ -23,21 +23,21 @@ def gen_pop_spiketrain(spike_trains, units='s', t_stop=None):
 
     Returns
     -------
-    pop_spiketrain : neo.SpikeTrain
+    spiketrain : neo.SpikeTrain
         A Neo SpikeTrain object with the population spike train
     """
     
     # concatenate spike trains across population
-    pop_spikes = np.sort(np.array(np.concatenate(np.array(spike_trains, dtype=object))))
+    all_spikes = np.sort(np.array(np.concatenate(spiketrain_list)))
 
-    # get stop time
+    # get stop time in needed
     if t_stop is None:
-        t_stop = pop_spikes[-1]
+        t_stop = all_spikes[-1]
 
     # create Neo SpikeTrain for population
-    pop_spiketrain = neo.SpikeTrain(pop_spikes, units=units, t_stop=t_stop)
+    spiketrain = neo.SpikeTrain(all_spikes, units=units, t_stop=t_stop)
     
-    return pop_spiketrain
+    return spiketrain
 
 
 def get_group_names(block):
