@@ -7,7 +7,6 @@ over a set of loaded epochs.
 PROJECT_PATH = r"G:\Shared drives\visual_encoding"
 
 # settings - data of interest
-BRAIN_STRUCTURES = ['VISp', 'LGd'] # TEMP
 STIM_CODE = "natural_movie_one_more_repeats"
 
 # imports - general
@@ -28,8 +27,7 @@ from neo_utils import combine_spiketrains
 
 def main():
     # Define/create directories for inputs/outputs
-    # dir_input = f"{PROJECT_PATH}/data/blocks/segmented/{STIM_CODE}"
-    dir_input = f"{PROJECT_PATH}/data/blocks_segmented/{STIM_CODE}"
+    dir_input = f"{PROJECT_PATH}/data/blocks/segmented/{STIM_CODE}"
     files = os.listdir(dir_input)
     
     dir_output = f"{PROJECT_PATH}/data/spike_stats" 
@@ -53,9 +51,8 @@ def main():
         # Calculate spike metrics for each segment
         for i_seg, segment in enumerate(block.segments):
             # loop through brain structures in block
-            # brain_structures = block.annotations['spike_brain_structures']
-            # for structure in brain_structures:
-            for structure in BRAIN_STRUCTURES: # TEMP
+            brain_structures = block.annotations['spike_brain_structures']
+            for structure in brain_structures:
                 # filter for spikes in structure
                 spikes = segment.filter(objects=neo.SpikeTrain,targdict={'brain_structure': structure})
 
