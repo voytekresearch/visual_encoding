@@ -157,7 +157,7 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
         # convert to numpy array
         if return_numpy:
             a_signal = np.squeeze(np.array(a_signal))
-            time = np.array(block.segments[0].analogsignals[segment_idx].times)
+            time = np.array(block.segments[segment_idx].analogsignals[signal_idx].times)
             
     # return
     if return_numpy:        
