@@ -323,8 +323,8 @@ def plot_segment(block, i_seg):
     col_1 = np.array([244,157,70]) /255
 
     # get data of interest
-    running_speed = get_analogsignal(block, 'running_speed', segment_idx=i_seg)
-    pupil_area = get_analogsignal(block, 'pupil_area', segment_idx=i_seg)
+    running_speed, t_running_speed  = get_analogsignal(block, 'running_speed', segment_idx=i_seg, return_numpy=True)
+    pupil_area, t_pupil_area = get_analogsignal(block, 'pupil_area', segment_idx=i_seg, return_numpy=True)
 
     # get spike times for each region
     segment = block.segments[i_seg]
@@ -344,9 +344,8 @@ def plot_segment(block, i_seg):
 
     # plot subplot a: LFP
     try:
-        lfp = get_analogsignal(block, 'lfp', segment_idx=i_seg)
-        lfp_signal = lfp.magnitude.T
-        ax_a.pcolormesh(lfp.times, np.arange(0, len(lfp_signal)), lfp_signal, shading='auto')
+        lfp, t_lfp = get_analogsignal(block, 'lfp', segment_idx=i_seg, return_numpy=False)
+        ax_a.pcolormesh(t_lfp, np.arange(0, len(lfp)), lfp, shading='auto')
         ax_a.set_ylabel("LFP", rotation=0, labelpad=40)
     except:
         print("No LFP data found.")
@@ -360,11 +359,11 @@ def plot_segment(block, i_seg):
     ax_c.set_ylabel("LGd units", rotation=0, labelpad=40)
 
     # plot subplot d: running speed
-    ax_d.plot(running_speed.times, running_speed.magnitude, color=col_0)
+    ax_d.plot(t_running_speed, running_speed, color=col_0)
     ax_d.set_ylabel("velocity", rotation=0, labelpad=40)
 
     # plot subplot e : pupil area
-    ax_e.plot(pupil_area.times, pupil_area.magnitude, color=col_1)
+    ax_e.plot(t_pupil_area, pupil_area, color=col_1)
     ax_e.set_ylabel("pupil size", rotation=0, labelpad=40)
 
     # remove axes, axes ticks, and adjust spacing
