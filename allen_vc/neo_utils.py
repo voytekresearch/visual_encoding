@@ -194,3 +194,25 @@ def get_spike_times(segment, region=None):
 
     return spike_times
 
+def time_slice_spiketrains(spiketrains, t_window):
+    """ slice each spiketrain in a list 
+
+    Parameters
+    ----------
+    spiketrains : list
+        list of Neo spiketrains.
+    t_window : list
+        time window of interst (t_start, t_stop)
+
+    Returns
+    -------
+    st_list : list
+        sliced spiketrain list.
+    """
+
+    st_list = []
+    for spiketrain in spiketrains:
+        st = spiketrain.time_slice(*t_window)
+        st_list.append(st)
+
+    return st_list
