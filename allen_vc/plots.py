@@ -344,8 +344,8 @@ def plot_segment(block, i_seg):
 
     # plot subplot a: LFP
     try:
-        lfp, t_lfp = get_analogsignal(block, 'lfp', segment_idx=i_seg, return_numpy=False)
-        ax_a.pcolormesh(t_lfp, np.arange(0, len(lfp)), lfp, shading='auto')
+        lfp, t_lfp = get_analogsignal(block, 'lfp', segment_idx=i_seg, return_numpy=True)
+        ax_a.pcolormesh(t_lfp, np.arange(0, lfp.shape[1]), lfp.T, shading='auto')
         ax_a.set_ylabel("LFP", rotation=0, labelpad=40)
     except:
         print("No LFP data found.")
