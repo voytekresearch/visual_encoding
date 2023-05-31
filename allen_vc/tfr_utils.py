@@ -66,7 +66,7 @@ def compute_tfr(signal, sfreq, f_min=None, f_max=None, n_freqs=256,
                             decim=decim, verbose=verbose)
 
     # return full array for now
-    return tfr
+    return tfr, freq
 
 
 def zscore_tfr(tfr):
