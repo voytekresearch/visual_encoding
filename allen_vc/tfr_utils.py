@@ -55,8 +55,9 @@ def compute_tfr(signal, sfreq, f_min=None, f_max=None, n_freqs=256,
         f_min = (1/period)
     if f_max is None:
         f_max = sfreq / 2 # Nyquist
-
-    freq = np.logspace(*np.log10([f_min, f_max]), n_freqs, endpoint=False) # log-spaced freq vector
+        freq = np.logspace(*np.log10([f_min, f_max]), n_freqs, endpoint=False) # log-spaced freq vector
+    else:
+        freq = np.logspace(*np.log10([f_min, f_max]), n_freqs, endpoint=True) # log-spaced freq vector
     n_cycles = freq * time_window_length # set n_cycles based on fixed time window length
     time_bandwidth =  time_window_length * freq_bandwidth # must be >= 2
 
