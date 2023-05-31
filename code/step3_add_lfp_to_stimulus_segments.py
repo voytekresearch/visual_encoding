@@ -59,6 +59,11 @@ def main():
         # load segmented Neo Block for session (Step 2 results)
         block = neo.io.NeoMatlabIO(f"{dir_input}/{fname}").read_block()
 
+        # skip file if no segments found
+        if block.segments == []:
+            print(f"    No segments found... skipping")
+            continue
+
         # load session data (for LFP dataset)
         session = cache.get_session_data(int(session_id))
 
@@ -94,15 +99,13 @@ def main():
                 chan_ids = session.channels[session.channels.probe_id==probe_id].index.values
 
             
-            # align lfp to stimulus events
-            stim_times = []
+            # align lfp to existing segments
+            start_times = []
             for segment in block.segments:
-                stim_times.append(float(segment.t_start))
-
-            if len(block.segments) > 0: # in the case of no epochs
-                t_window = [0, float(block.segments[0].t_stop - block.segments[0].t_start)]
-                lfp_a, _ = align_lfp(lfp, stim_times, t_window=t_window, dt=1/FS)
-                
+                start_times.append(float(segment.t_start))
+            duration = float(block.segments[0].t_stop - block.segments[0].t_start)
+            lfp_a, _ = align_lfp(lfp, start_times, t_window=[0, duration], dt=1/FS)
+            
             # prepare annotations
             chan_ids = np.intersect1d(chan_ids, lfp.channel.values) # remove channels with no LFP data
             annotations = {'data_type' : 'lfp', 'probe_id': probe_id, 'brain_structure': BRAIN_STRUCTURE, 
