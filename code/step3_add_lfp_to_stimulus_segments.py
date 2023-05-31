@@ -1,16 +1,14 @@
 """
-Step 2: create stimulus segments.
-This script can be used to segment data arouund stimulus events. This script loads
-the ouput of Step 1 (Neo Block objects containing spiking, running, and pupil data
-for a single session) and creates trial epochs based on stimulus event times and
-windows of interest.
+Step 3: add LFP to stimulus segements.
+This script loads the output of Step 2 (segmented Neo Block) and adds the corresponding
+LFP data to each segment. 
 
 """
 
 # settings - directories
-MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
+MANIFEST_PATH = "E:/datasets/allen_vc/manifest_files" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-STIM_CODE = 'natural_movie_one_more_repeats' # this will be used to identify input/output folders
+STIM_CODE = 'spontaneous' # this will be used to identify input/output folders
 
 # settings 
 BRAIN_STRUCTURE = 'VISp' # regions of interest for LFP data
@@ -61,6 +59,11 @@ def main():
         # load segmented Neo Block for session (Step 2 results)
         block = neo.io.NeoMatlabIO(f"{dir_input}/{fname}").read_block()
 
+        # skip file if no segments found
+        if block.segments == []:
+            print(f"    No segments found... skipping")
+            continue
+
         # load session data (for LFP dataset)
         session = cache.get_session_data(int(session_id))
 
@@ -95,13 +98,14 @@ def main():
             else:
                 chan_ids = session.channels[session.channels.probe_id==probe_id].index.values
 
-            # align lfp to stimulus events
-            stim_times = []
+            
+            # align lfp to existing segments
+            start_times = []
             for segment in block.segments:
-                stim_times.append(segment.annotations['stimulus_onset'])
-            t_window = block.segments[0].annotations['time_window']
-            lfp_a, _ = align_lfp(lfp, stim_times, t_window=t_window, dt=1/FS)
-                
+                start_times.append(float(segment.t_start))
+            duration = float(block.segments[0].t_stop - block.segments[0].t_start)
+            lfp_a, _ = align_lfp(lfp, start_times, t_window=[0, duration], dt=1/FS)
+            
             # prepare annotations
             chan_ids = np.intersect1d(chan_ids, lfp.channel.values) # remove channels with no LFP data
             annotations = {'data_type' : 'lfp', 'probe_id': probe_id, 'brain_structure': BRAIN_STRUCTURE, 
@@ -118,7 +122,7 @@ def main():
             for i_seg, segment in enumerate(block.segments):
                 # create neo analogsignal for segment
                 lfp_segment = neo.AnalogSignal(lfp_a[i_seg], units=UNITS, sampling_rate=FS*pq.Hz, 
-                                               name=lfp_name, **annotations)
+                                               name=lfp_name, t_start=segment.t_start, **annotations)
 
                 # add LFP data to segment and group
                 segment.analogsignals.append(lfp_segment)

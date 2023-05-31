@@ -1,5 +1,5 @@
 """
-Step 2: create stimulus segments.
+Step 2 (stimulus epochs): create stimulus segments.
 This script can be used to segment data arouund stimulus events. This script loads
 the ouput of Step 1 (Neo Block objects containing spiking, running, and pupil data
 for a single session) and creates trial epochs based on stimulus event times and
@@ -14,7 +14,7 @@ STIM_CODE = 'natural_movie_one_shuffled' # this will be used to name output fold
 
 # settings - stimulus epoch of interest
 STIM_PARAMS = dict({
-    'stimulus_name' : 'natural_movie_one_more_repeats',
+    'stimulus_name' : 'natural_movie_shuffled',
     'frame' : 0
     }) # other stim params
 T_WINDOW = [0, 30]  # epoch bounds (sec) [time_before_stim, tiimem_aftfer_stim]
@@ -113,7 +113,8 @@ def main():
             block.groups.append(group)
 
         # save results
-        neo.io.NeoMatlabIO(f"{dir_results}/{fname}").write_block(block)
+        fname_out = f"{dir_results}/{fname}"
+        neo.io.NeoMatlabIO(fname_out).write_block(block)
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)

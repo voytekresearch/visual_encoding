@@ -12,6 +12,7 @@ F_MIN = 2 # min freq for TF decomposition
 F_MAX = 200 # max freq for TF decomposition
 N_FREQS = 128 # number of freqs for TF decomposition
 DECIM = 25 # decimation factor for TF decomposition
+OUTPUT = 'power' # controls values and dimensions of array output by mne.tfr_array_multitaper
 
 # settings - dataset details
 FS = 1250 # LFP sampling freq
@@ -21,7 +22,6 @@ import os
 import numpy as np
 from time import time as timer
 import neo
-from mne import create_info, EpochsArray
 
 # imports - custom
 import sys
@@ -51,19 +51,25 @@ def main():
 
         # load block and extract lfp
         block = neo.io.NeoMatlabIO(f"{dir_input}/{fname_in}").read_block()
-        lfp, annotations = get_analogsignal(block, 'lfp', return_annotations=True)
-        ch_names = annotations['channel_ids'].astype(str).tolist()
+        lfp, time = get_analogsignal(block, 'lfp', return_numpy=True)
 
         # create mne epochs array and compute power using multitapers
-        info = create_info(ch_names=ch_names, sfreq=FS, ch_types='eeg')
-        epochs = EpochsArray(lfp, info, tmin=0, verbose=False)
-        time, freq, tfr = compute_tfr(epochs, f_min=F_MIN, f_max=F_MAX, 
-                                      n_freqs=N_FREQS, decim=DECIM, 
-                                      n_jobs=N_JOBS, verbose=False)
+        if output in ['complex', 'phase', 'power']:
+            tfr = []
+            for i_chan in range(lfp.shape[1]):
+                tfr.append(compute_tfr(lfp[:,[i_chan],:], sfreq=FS, f_min=F_MIN, f_max=F_MAX, 
+                                          n_freqs=N_FREQS, decim=DECIM, 
+                                          n_jobs=N_JOBS, verbose=False))
+            tfr = np.swapaxes(tfr,0,1)
+
+        else:
+            tfr = compute_tfr(lfp, sfreq=FS, f_min=F_MIN, f_max=F_MAX, 
+                                          n_freqs=N_FREQS, decim=DECIM, 
+                                          n_jobs=N_JOBS, verbose=False)
         
         # save results
-        fname_out = fname_in.replace('.mat', '.npz')
-        np.savez(f"{dir_results}/{fname_out}", tfr=tfr, time=time, freq=freq) 
+        fname_out = fname_in.replace('.mat', '.npy')
+        np.savez(f"{dir_results}/{fname_out}", tfr) 
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)

@@ -8,12 +8,12 @@ import numpy as np
 import neo
 
 
-def gen_pop_spiketrain(spike_trains, units='s', t_stop=None):
-    """Generates a population spiketrain from a list of individual spike trains.
+def combine_spiketrains(spiketrain_list, units='s', t_stop=None):
+    """Generates a single spiketrain from a list of spiketrains.
 
     Parameters
     ----------
-    spike_trains : list
+    spiketrain_list : list
         A list of Neo SpikeTrains 
     units : str, optional
         The units of the spike times (default is 's')
@@ -23,21 +23,21 @@ def gen_pop_spiketrain(spike_trains, units='s', t_stop=None):
 
     Returns
     -------
-    pop_spiketrain : neo.SpikeTrain
+    spiketrain : neo.SpikeTrain
         A Neo SpikeTrain object with the population spike train
     """
     
     # concatenate spike trains across population
-    pop_spikes = np.sort(np.array(np.concatenate(np.array(spike_trains, dtype=object))))
+    all_spikes = np.sort(np.array(np.concatenate(spiketrain_list)))
 
-    # get stop time
+    # get stop time in needed
     if t_stop is None:
-        t_stop = pop_spikes[-1]
+        t_stop = all_spikes[-1]
 
     # create Neo SpikeTrain for population
-    pop_spiketrain = neo.SpikeTrain(pop_spikes, units=units, t_stop=t_stop)
+    spiketrain = neo.SpikeTrain(all_spikes, units=units, t_stop=t_stop)
     
-    return pop_spiketrain
+    return spiketrain
 
 
 def get_group_names(block):
@@ -96,7 +96,7 @@ def get_analogsignal_names(block, segment_idx=None, lfp_only=False):
     return signal_names
 
 
-def get_analogsignal(block, name, segment_idx=None, return_numpy=True, return_annotations=False):
+def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
     """
     Returns an analog signal from a Neo Block object. If multiple segments are
     present, the signal from each segment is returned as a list.
@@ -114,16 +114,15 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True, return_an
         If True, the analog signal is returned as a numpy array. If False, the
         analog signal is returned as a Neo AnalogSignal object or a list of 
         AnalogSignal objects. Default is True.
-    return_annotations : bool, optional
-        If True, the annotations for the analog signal are returned. Default is False.
 
     Returns
     -------
-    a_signal : array_like or neo.core.AnalogSignal or list
-        Analog signal from the Neo Block object. If return_numpy is True,
-        the analog signal is returned as a numpy array. If return_numpy is False,
-        the analog signal is returned as a Neo AnalogSignal object or a list of
-        AnalogSignal objects.
+    a_signal : array_like, list, or neo.core.AnalogSignal
+        Analog signal. If `return_numpy` is True, the analog signal is returned
+        as a numpy array. If `return_numpy` is False, the analog signal is
+        returned as a Neo AnalogSignal object or a list of AnalogSignal objects.
+    time : array_like
+        Time vector for analog signal.
 
     """
     # get signal index
@@ -133,19 +132,19 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True, return_an
     # get analog signal from block for all segments
     if segment_idx is None:
         a_signal = []
-        annotations = block.segments[0].analogsignals[signal_idx].annotations
         for segment in block.segments:
             a_signal.append(segment.analogsignals[signal_idx])
 
         # convert to numpy array
         if return_numpy:
+            time = block.segments[0].analogsignals[0].times
             a_signal_list = []
             for signal in a_signal:
-                a_signal_list.append(np.array(signal))
+                a_signal_list.append(np.squeeze(np.array(signal)))
             # join as matrix
-            if len(a_signal[0].shape) == 1:
+            if np.ndim(a_signal_list[0]) == 1:
                 a_signal = np.concatenate(a_signal_list)
-            elif len(a_signal[0].shape) == 2:
+            elif np.ndim(a_signal_list[0]) == 2:
                 a_signal = np.dstack(a_signal_list)
                 a_signal = np.moveaxis(a_signal, 2, 0)
             else:
@@ -154,15 +153,15 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True, return_an
     # get analog signal from block for a single segment
     else:
         a_signal = block.segments[segment_idx].analogsignals[signal_idx]
-        annotations = a_signal.annotations
 
         # convert to numpy array
         if return_numpy:
-            a_signal = np.array(a_signal)
-
+            a_signal = np.squeeze(np.array(a_signal))
+            time = np.array(block.segments[segment_idx].analogsignals[signal_idx].times)
+            
     # return
-    if return_annotations:
-        return a_signal, annotations
+    if return_numpy:        
+            return a_signal, time
     else:
         return a_signal
 
@@ -195,3 +194,25 @@ def get_spike_times(segment, region=None):
 
     return spike_times
 
+def time_slice_spiketrains(spiketrains, t_window):
+    """ slice each spiketrain in a list 
+
+    Parameters
+    ----------
+    spiketrains : list
+        list of Neo spiketrains.
+    t_window : list
+        time window of interst (t_start, t_stop)
+
+    Returns
+    -------
+    st_list : list
+        sliced spiketrain list.
+    """
+
+    st_list = []
+    for spiketrain in spiketrains:
+        st = spiketrain.time_slice(*t_window)
+        st_list.append(st)
+
+    return st_list

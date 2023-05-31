@@ -1,80 +1,103 @@
 # imports
 import numpy as np
 
-def comp_spike_cov(spike_train):
-    """Computes the coefficient of variation (CoV) of the interspike interval (ISI) distribution.
+def compute_tfr(epochs, f_min=None, f_max=None, n_freqs=256, 
+                time_window_length=0.5, freq_bandwidth=4, n_jobs=-1, picks=None, 
+                average=False, decim=1, verbose=False):
+    '''
+    This function takes an MNE epochsArray and computes the time-frequency
+    representatoin of power using the multitaper method. 
+    Due to memory demands, this function should be run on single-channel data, 
+    or results can be averaged across trials.
+    '''
+    # imports
+    from mne.time_frequency import tfr_multitaper
+    
+    # set paramters for TF decomposition
+    if f_min is None:
+        f_min = (1/(epochs.tmax-epochs.tmin)) # 1/T
+    if f_max is None:
+        f_max = epochs.info['sfreq'] / 2 # Nyquist
+
+    freq = np.logspace(*np.log10([f_min, f_max]), n_freqs) # log-spaced freq vector
+    n_cycles = freq * time_window_length # set n_cycles based on fixed time window length
+    time_bandwidth =  time_window_length * freq_bandwidth # must be >= 2
+
+    # TF decomposition using multitapers
+    tfr = tfr_multitaper(epochs, freqs=freq, n_cycles=n_cycles, 
+                            time_bandwidth=time_bandwidth, return_itc=False, n_jobs=n_jobs,
+                            picks=picks, average=average, decim=decim, verbose=verbose)
+    
+    # extract data
+    time = tfr.times
+    tfr = tfr.data.squeeze()
+
+    return time, freq, tfr
+
+
+def compute_cv(spiketrain):
+    """Compute the coefficient of variation (CV) of the interspike interval (ISI)
+     of a spike train.
 
     Parameters
     ----------
-    spike_train : neo.SpikeTrain
+    spiketrain : neo.SpikeTrain
         Neo SpikeTrain object
 
     Returns
     -------
     cov : float
-        Coefficient of variation (CoV) of the interspike interval (ISI) distribution.
+        Coefficient of variation (CV) of the interspike interval (ISI) distribution.
     """
-    # account for empty spike_train
-    if len(spike_train)==0:
-        return 0
+
+    # check if there are any spikes
+    if len(spiketrain)==0:
+        return np.nan
     
     # compute interspike intervals
-    isi = np.diff(spike_train.times)
+    isi = np.diff(spiketrain.times)
 
     # compute coefficient of variation
-    cov = np.std(isi) / np.mean(isi)
+    cv = np.float(np.std(isi) / np.mean(isi))
     
-    # returns as a 'dimensionless string' without float constructor
-    return float(cov)
+    return cv
 
 
-def calculate_spike_metrics(spiketrains):
+def compute_pyspike_metrics(spiketrains, interval=None):
     """
-    calculate spike metrics (mean firing rate, coefficient of variance, 
-    SPIKE-distance, SPIKE-synchrony, and correlation coefficient) within
-    a specified epoch given a matrix of spike times.
+    compute spike synchrony and spike distance using PySpike.
 
     Parameters
     ----------
-    -------
     spiketrains : Neo SpikeTrains object
         Neo SpikeTrains object
+    interval : list, optional
+        Interval over which to compute synchrony and distance. The default is None.
+        If None, the entire duration of the SpikeTrains object is used.
 
     Returns
     -------
-    mean_firing_rate: float
-        mean firing rate over all units during specified epoch.
-    coeff_of_var: float
-        coefficient of variation over all units during specified epoch.
     spike_dist: float
-        SPIKE-distance (pyspike) over all units during specified epoch.
+        SPIKE-distance (pyspike) over all units (during specified interval).
     spike_sync: float
-        SPIKE-synchrony (pyspike) over all units during specified epoch.
-    corr_coeff:
-        correlation coefficient (elephant) over all units during 
-        specified epoch. 
+        SPIKE-synchrony (pyspike) over all units (during specified interval).
     """
-    #Imports
-    import pyspike as spk
-    import elephant
-    import quantities as pq
-    from neo_utils import gen_pop_spiketrain
 
-    # reformat as PySpike object for synchrony analyses
+    # imports
+    import pyspike as spk
+    import quantities as pq
+
+    # reformat Neo objects to PySpike objects
     spk_trains = [spk.SpikeTrain(spiketrain, [spiketrain.t_start, spiketrain.t_stop]) \
         for spiketrain in spiketrains]
-
+    
     # compute metrics
-    unit_firing_rates = [len(spiketrain)/float(spiketrain.duration) \
-        for spiketrain in spiketrains]
-    mean_firing_rate = sum(unit_firing_rates)/len(spiketrains)
-    coeff_of_var = (comp_spike_cov(gen_pop_spiketrain(spiketrains, t_stop=spiketrains[0].t_stop)))
-    spike_dist = (spk.spike_distance(spk_trains))
-    spike_sync = (spk.spike_sync(spk_trains))
-    corr_coeff = (elephant.spike_train_correlation.correlation_coefficient(\
-        elephant.conversion.BinnedSpikeTrain(spiketrains, bin_size=1 * pq.s)))
+    if interval is None:
+        interval = [spiketrains[0].t_start.item(), spiketrains[0].t_stop.item()]
+    spike_dist = spk.spike_distance(spk_trains, interval=interval)
+    spike_sync = spk.spike_sync(spk_trains, interval=interval)
 
-    return mean_firing_rate, unit_firing_rates, coeff_of_var, spike_dist, spike_sync, corr_coeff
+    return spike_dist, spike_sync
 
 
 def avg_psd_over_freq_ranges(freq, psd, lower_lims, upper_lims, trial_filter=None, log_transform=False):

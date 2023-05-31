@@ -198,7 +198,7 @@ def find_probes_in_region(session, region):
     return ids, names
 
 
-def align_lfp(lfp, t_stim, t_window=[-1,1], dt=0.001):
+def align_lfp(lfp, event_times, t_window=[-1,1], dt=0.001):
     """
     Modified from AllenSDK example code:
     https://allensdk.readthedocs.io/en/latest/_static/examples/nb/ecephys_lfp_analysis.html
@@ -209,22 +209,20 @@ def align_lfp(lfp, t_stim, t_window=[-1,1], dt=0.001):
     ----------
     lfp : xarray.core.dataarray.DataArray
         LFP data to be aligned. Must have a time coordinate.
-    t_stim : array_like
-        Array of shape (n_trials,) of timestamps corresponding to the start of each
-        epoch in `lfp`.
+    event_times : array_like
+        Array of shape (n_trials,) of event times (in seconds) to align to.
     t_window : array_like, optional
         Array of shape (2,) of the time window (in seconds) to be extracted around
-        each stimulus presentation. Default is [-1,1].
+        each event. Default is [-1,1].
     dt : float, optional
         Time resolution (in seconds) of the aligned LFP data. Default is 0.001.
 
     Returns
     -------
     aligned_lfp : array_like
-        LFP data aligned to stimulus presentation times. (n_trials, n_channels, n_timepoints)
+        LFP data aligned to events. (n_trials, n_channels, n_timepoints)
     trial_window : array_like
-        Array of shape (n_timepoints,) of the time window (in seconds) around each
-        stimulus presentation.
+        Associated time-vector for aligned LFP data. (n_timepoints,)
     """
 
     # imports
@@ -232,8 +230,8 @@ def align_lfp(lfp, t_stim, t_window=[-1,1], dt=0.001):
 
     # determine indices of time window around stimulus presentation
     trial_window = np.arange(t_window[0], t_window[1], dt)
-    time_selection = np.concatenate([trial_window + t for t in t_stim])
-    inds = pd.MultiIndex.from_product((np.arange(len(t_stim)), trial_window), 
+    time_selection = np.concatenate([trial_window + t for t in event_times])
+    inds = pd.MultiIndex.from_product((np.arange(len(event_times)), trial_window), 
                                     names=('presentation_id', 'time_from_presentation_onset'))
 
     # epoch LFP data around stimulus presentation
