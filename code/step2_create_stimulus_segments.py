@@ -14,7 +14,7 @@ STIM_CODE = 'natural_movie_one_shuffled' # this will be used to name output fold
 
 # settings - stimulus epoch of interest
 STIM_PARAMS = dict({
-    'stimulus_name' : 'natural_movie_one_more_repeats',
+    'stimulus_name' : 'natural_movie_shuffled',
     'frame' : 0
     }) # other stim params
 T_WINDOW = [0, 30]  # epoch bounds (sec) [time_before_stim, tiimem_aftfer_stim]
@@ -116,9 +116,6 @@ def main():
         fname_out = f"{dir_results}/{fname}"
         neo.io.NeoMatlabIO(fname_out).write_block(block)
 
-        # split segments into pre- and post-stimulus segments
-        split_stimulus_segements(block, fname_out)
-
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)
         print(f"    file complete in {hour} hour, {min} min, and {sec :0.1f} s")
@@ -126,41 +123,6 @@ def main():
     # display progress
     hour, min, sec = hour_min_sec(timer() - t_start)
     print(f"\n\n Total Time: \t {hour} hours, {min} minutes, {sec :0.1f} seconds")
-
-
-def split_stimulus_segements(block_in, fname):
-    # init new block
-    annotations = block_in.annotations
-    annotations['epoch'] = epoch
-    block = neo.Block(**block_in.annotations) # init new block
-
-    # create Neo Semgments based on stimulus times
-    for segment in block_in.segments:
-        t_stim = segment.annotations[f'stimulus_onset']*pq.s
-        t_start = segment.t_start
-        t_stop = segment.t_stop
-
-        for epoch, t_seg in zip(['pre', 'post'], [(t_start, t_stim), 
-                                                    (t_stim, t_stop)]):
-            # create segment and add annotations
-            seg = neo.Segment(**segment.annotations) # new segment
-
-            # add each spiketrain to segment after slicing in time
-            for spiketrain in segment.spiketrains:
-                spiketrain_seg = spiketrain.time_slice(*t_seg)
-                seg.spiketrains.append(spiketrain_seg)
-
-            # add each analog signals segment after slicing in time
-            for a_signal in segment.analogsignals:
-                signal = a_signal.time_slice(*t_seg)
-                seg.analogsignals.append(signal)
-
-            # add segment to block
-            block.segments.append(seg)
-
-            # save results
-            fname_out = fname.replace('.mat', f'_{epoch}.mat')
-            neo.io.NeoMatlabIO(fname_out).write_block(block)
 
 
 if __name__ == '__main__':
