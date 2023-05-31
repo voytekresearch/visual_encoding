@@ -121,7 +121,7 @@ def main():
             # loop through segments and add LFP data
             for i_seg, segment in enumerate(block.segments):
                 # create neo analogsignal for segment
-                lfp_segment = neo.AnalogSignal(lfp_a[i_seg], units=UNITS, sampling_rate=FS*pq.Hz, 
+                lfp_segment = neo.AnalogSignal(lfp_a[i_seg].T, units=UNITS, sampling_rate=FS*pq.Hz, 
                                                name=lfp_name, t_start=segment.t_start, **annotations)
 
                 # add LFP data to segment and group
