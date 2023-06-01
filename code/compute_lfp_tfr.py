@@ -28,7 +28,7 @@ import sys
 sys.path.append("allen_vc")
 from utils import hour_min_sec
 from neo_utils import get_analogsignal
-from analysis import compute_tfr
+from tfr_utils import compute_tfr
 print('Imports complete...')
 
 def main():
