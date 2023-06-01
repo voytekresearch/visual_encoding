@@ -1,39 +1,6 @@
 # imports
 import numpy as np
 
-def compute_tfr(epochs, f_min=None, f_max=None, n_freqs=256, 
-                time_window_length=0.5, freq_bandwidth=4, n_jobs=-1, picks=None, 
-                average=False, decim=1, verbose=False):
-    '''
-    This function takes an MNE epochsArray and computes the time-frequency
-    representatoin of power using the multitaper method. 
-    Due to memory demands, this function should be run on single-channel data, 
-    or results can be averaged across trials.
-    '''
-    # imports
-    from mne.time_frequency import tfr_multitaper
-    
-    # set paramters for TF decomposition
-    if f_min is None:
-        f_min = (1/(epochs.tmax-epochs.tmin)) # 1/T
-    if f_max is None:
-        f_max = epochs.info['sfreq'] / 2 # Nyquist
-
-    freq = np.logspace(*np.log10([f_min, f_max]), n_freqs) # log-spaced freq vector
-    n_cycles = freq * time_window_length # set n_cycles based on fixed time window length
-    time_bandwidth =  time_window_length * freq_bandwidth # must be >= 2
-
-    # TF decomposition using multitapers
-    tfr = tfr_multitaper(epochs, freqs=freq, n_cycles=n_cycles, 
-                            time_bandwidth=time_bandwidth, return_itc=False, n_jobs=n_jobs,
-                            picks=picks, average=average, decim=decim, verbose=verbose)
-    
-    # extract data
-    time = tfr.times
-    tfr = tfr.data.squeeze()
-
-    return time, freq, tfr
-
 
 def compute_cv(spiketrain):
     """Compute the coefficient of variation (CV) of the interspike interval (ISI)
