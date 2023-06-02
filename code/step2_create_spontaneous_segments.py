@@ -116,8 +116,8 @@ def create_behavioral_segments():
 
     # Define/create directories for inputs/outputs
     dir_results = f"{PROJECT_PATH}/data/blocks/segmented/spontaneous"
-    if not os.path.exists(dir_results): 
-        os.makedirs(dir_results)
+    if not os.path.exists(f"{dir_results}_running"): os.makedirs(f"{dir_results}_running")
+    if not os.path.exists(f"{dir_results}_stationary"): os.makedirs(f"{dir_results}_stationary") 
     
     # loop through all files
     dir_input =  f"{PROJECT_PATH}/data/blocks/spontaneous"
@@ -193,8 +193,8 @@ def create_behavioral_segments():
                 block.groups.append(group)
 
             # save results
-            fname_out = f"block_{session_id}_{behavior}.mat"
-            neo.io.NeoMatlabIO(f"{dir_results}/{fname_out}").write_block(block)
+            fname_out = f"{dir_results}_{behavior}/block_{session_id}_{behavior}.mat"
+            neo.io.NeoMatlabIO(fname_out).write_block(block)
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)
