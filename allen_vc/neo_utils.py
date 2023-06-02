@@ -143,7 +143,7 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
                 a_signal_list.append(np.squeeze(np.array(signal)))
             # join as matrix
             if np.ndim(a_signal_list[0]) == 1:
-                a_signal = np.concatenate(a_signal_list)
+                a_signal = np.vstack(a_signal_list)
             elif np.ndim(a_signal_list[0]) == 2:
                 a_signal = np.dstack(a_signal_list)
                 a_signal = np.moveaxis(a_signal, 2, 0)
