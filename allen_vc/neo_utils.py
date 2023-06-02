@@ -131,9 +131,7 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
 
     # get analog signal from block for all segments
     if segment_idx is None:
-        a_signal = []
-        for segment in block.segments:
-            a_signal.append(segment.analogsignals[signal_idx])
+        a_signal = block.filter(objects=neo.AnalogSignal, name=name)
 
         # convert to numpy array
         if return_numpy:
@@ -141,6 +139,7 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
             a_signal_list = []
             for signal in a_signal:
                 a_signal_list.append(np.squeeze(np.array(signal)))
+                
             # join as matrix
             if np.ndim(a_signal_list[0]) == 1:
                 a_signal = np.vstack(a_signal_list)
