@@ -7,7 +7,7 @@ over a set of loaded epochs.
 PROJECT_PATH = r"G:\Shared drives\visual_encoding"
 
 # settings - data of interest
-STIM_CODE = "natural_movie_one_more_repeats"
+STIM_CODE = "spontaneous"
 
 # imports - general
 import os
@@ -46,7 +46,7 @@ def main():
         print(f"\nAnalyzing Session: {session} ({i_file+1}/{len(files)})")
 
         # load block
-        block = pd.read_pickle(f"{dir_input}/{fname}")
+        block = neo.io.NeoMatlabIO(f"{dir_input}/{fname}").read_block()
 
         # Calculate spike metrics for each segment
         for i_seg, segment in enumerate(block.segments):
