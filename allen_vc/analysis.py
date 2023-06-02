@@ -2,6 +2,52 @@
 import numpy as np
 
 
+def compute_psd(signal, fs, fmin=0, fmax=np.inf, bandwidth=None,
+                n_jobs=-1, verbose=False):
+    '''
+    This function takes an array (n_epochs, n_channels, n_times) and computes the power spectral 
+    spectra using the multitaper method. 
+    
+    Parameters
+    ----------
+    signal : 3D array
+        Array of shape (n_epochs, n_channels, n_times) containing the data.
+    fs : float
+        Sampling frequency of the data.
+    fmin : float
+        Minimum frequency of interest. The default is 0, which will result in 1/T.
+    fmax : float
+        Maximum frequency of interest. The default is np.inf, which will result in the Nyquist frequency.
+    bandwidth : float
+        Frequency bandwidth of the multi-taper window function in Hz. If None, set to 
+        8*(fs / n_times) (see mne.time_frequency.psd_array_multitaper).
+    n_jobs : int
+        Number of jobs to run in parallel. If -1, use all available cores.
+    verbose : bool
+        Whether to print progress updates.
+
+    Returns
+    -------
+    psd : 3D array
+        Array of shape (n_epochs, n_channels, n_freqs) containing the power spectral density.
+    freq : 1D array
+        Array of shape (n_freqs,) containing the frequencies.
+    '''
+
+    # imports
+    from mne.time_frequency import psd_array_multitaper
+    
+    # set paramters for TF decomposition
+    if bandwidth is None:
+        bandwidth = 8*(fs / signal.shape[2])
+
+    # TF decomposition using multitapers
+    spectra, freq = psd_array_multitaper(signal, fs, fmin=fmin, fmax=fmax, bandwidth=bandwidth,
+                                         n_jobs=n_jobs, verbose=verbose)
+
+    return spectra, freq
+
+
 def compute_cv(spiketrain):
     """Compute the coefficient of variation (CV) of the interspike interval (ISI)
      of a spike train.
