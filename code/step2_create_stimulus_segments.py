@@ -19,22 +19,30 @@ STIM_PARAMS = dict({
     }) # other stim params
 T_WINDOW = [0, 30]  # epoch bounds (sec) [time_before_stim, tiimem_aftfer_stim]
 
+# settings - running-speed smoothing and thresholding
+SCORE_RUNNING = True # whether to score running behavior
+SMOOTH = True # whether to smooth running data
+KERNEL_SIZE = 5 # (s) kernel size for median filter 
+THRESHOLD = 1 # (cm/s) minimum for running classification 
+
 # Imports - general
+import numpy as np
 import os
 from time import time as timer
 from allensdk.brain_observatory.ecephys.ecephys_project_cache import EcephysProjectCache
 import neo
 import quantities as pq
-import pandas as pd
+from scipy.ndimage import median_filter
 
 # Imports - custom
 import sys
 sys.path.append('allen_vc')
 from utils import hour_min_sec
+from neo_utils import get_analogsignal
 print('Imports complete...')
 
-
 def main():
+
     # time it
     t_start = timer()
 
@@ -112,6 +120,10 @@ def main():
         for group in signal_groups.values():
             block.groups.append(group)
 
+        # score behavior
+        if SCORE_RUNNING:
+            block = score_running(block)
+
         # save results
         fname_out = f"{dir_results}/{fname}"
         neo.io.NeoMatlabIO(fname_out).write_block(block)
@@ -124,6 +136,31 @@ def main():
     hour, min, sec = hour_min_sec(timer() - t_start)
     print(f"\n\n Total Time: \t {hour} hours, {min} minutes, {sec :0.1f} seconds")
 
+
+def score_running(block):
+    # get running data
+    speed_raw, _ = get_analogsignal(block, 'running_speed')
+    temp = get_analogsignal(block, 'running_speed', segment_idx=0, return_numpy=False)
+    fs = float(temp.sampling_rate)
+
+    # smooth running data, if desired
+    if SMOOTH:
+        speed = np.zeros_like(speed_raw)
+        filter_size = int(KERNEL_SIZE * fs)
+        for i in range(speed_raw.shape[0]): # filter each row
+            speed[i, :] = median_filter(speed_raw[i, :], size=filter_size)
+    else:
+        speed = speed_raw
+
+    # score running
+    running = (speed>THRESHOLD).any(axis=1)
+
+    # add results to block and segment annotations
+    block.annotations['running'] = running
+    for segment in block.segments:
+        segment.annotations['running'] = running[segment.index]
+
+    return block
 
 if __name__ == '__main__':
     main()
