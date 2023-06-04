@@ -122,6 +122,40 @@ def spec_param_3d(psd, freq):
 
     return df
 
+def spec_param_4d(tfr, freq):
+    # display progress
+    print(f"    File contains {tfr.shape[1]} channels, {tfr.shape[0]} epochs, and {tfr.shape[2]} frequencies")
+    # loop through trials
+    for i_trial in range(len(tfr)):
+        # drop trials containing NaNs
+        nan_chans = np.isnan(tfr[i_trial]).any(axis=1)
+        tfr_i = tfr[i_trial, ~nan_chans]
+        if sum(nan_chans) > 0:
+            print(f"    Trial {i_trial} has {sum(nan_chans)} channels containing NaNs")
+
+        # parameterize
+        params = FOOOFGroup(**SPEC_PARAM_SETTINGS)
+        fit_fooof_3d(params, data_in['freq'], data_in['tfr'], n_jobs=N_JOBS) # what does this return
+
+        # convert results to df
+        df_i = params_to_df(params, SPEC_PARAM_SETTINGS['max_n_peaks']) # this should probably be updated
+        df_i['epoch_idx'] = i_trial
+        df_i['chan_idx'] = np.arange(tfr.shape[1])[~nan_chans]
+
+        # restore NaN trials
+        df_e = pd.DataFrame(np.nan, index=np.arange(tfr.shape[1]), columns=df_i.columns)
+        df_e.loc[~nan_chans] = df_i
+
+        # aggregate across channels
+        if i_trial == 0:
+            df = df_e.copy()
+        else:
+            df = pd.concat([df, df_e], axis=0)
+
+    return df
+
+
+
 
 if __name__ == '__main__':
     main()
