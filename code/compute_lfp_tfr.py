@@ -36,7 +36,7 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_psd/{STIM_CODE}'
+    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_tfr/{STIM_CODE}'
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
     
@@ -53,23 +53,18 @@ def main():
         block = neo.io.NeoMatlabIO(f"{dir_input}/{fname_in}").read_block()
         lfp, time = get_analogsignal(block, 'lfp', return_numpy=True)
 
-        # create mne epochs array and compute power using multitapers
-        if output in ['complex', 'phase', 'power']:
-            tfr = []
-            for i_chan in range(lfp.shape[1]):
-                tfr.append(compute_tfr(lfp[:,[i_chan],:], sfreq=FS, f_min=F_MIN, f_max=F_MAX, 
-                                          n_freqs=N_FREQS, decim=DECIM, 
-                                          n_jobs=N_JOBS, verbose=False))
-            tfr = np.swapaxes(tfr,0,1)
+        # compute power using multitapers trial-wise (for memory)
+        tfrs = []
+        for i_trial in range(lfp.shape[0]):
+            tfr, freqs = compute_tfr(lfp[[i_trial]], sfreq=FS, f_min=F_MIN, f_max=F_MAX, 
+                                      n_freqs=N_FREQS, decim=DECIM, output=OUTPUT, 
+                                      n_jobs=N_JOBS, verbose=False)
+            tfrs.append(tfr[0])
 
-        else:
-            tfr = compute_tfr(lfp, sfreq=FS, f_min=F_MIN, f_max=F_MAX, 
-                                          n_freqs=N_FREQS, decim=DECIM, 
-                                          n_jobs=N_JOBS, verbose=False)
         
         # save results
-        fname_out = fname_in.replace('.mat', '.npy')
-        np.savez(f"{dir_results}/{fname_out}", tfr) 
+        fname_out = fname_in.replace('.mat', '.npz')
+        np.savez(f"{dir_results}/{fname_out}", tfr=tfrs, freq=freqs) 
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)
