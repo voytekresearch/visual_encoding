@@ -25,6 +25,7 @@ sys.path.append("allen_vc")
 from utils import params_to_df, hour_min_sec
 
 # settings - analysis details
+INPUT_TYPE = 'psd' # psd for 3d and tfr for 4d
 N_JOBS = -1 # number of jobs for parallel processing, psd_array_multitaper()
 SPEC_PARAM_SETTINGS = {
     'peak_width_limits' :   [2, 20], # default: (0.5, 12.0)) - reccomends at least frequency resolution * 2
@@ -50,7 +51,7 @@ def main():
     params_list = []
 
     # id files of interst and loop through them
-    dir_input = f"{PROJECT_PATH}/data/lfp_data/lfp_psd/{STIM_CODE}"
+    dir_input = f"{PROJECT_PATH}/data/lfp_data/lfp_{INPUT_TYPE}/{STIM_CODE}"
     files = os.listdir(dir_input)
     for i_file, fname_in in enumerate(files):
 
@@ -124,33 +125,42 @@ def spec_param_3d(psd, freq):
 
 def spec_param_4d(tfr, freq):
     # display progress
-    print(f"    File contains {tfr.shape[1]} channels, {tfr.shape[0]} epochs, and {tfr.shape[2]} frequencies")
+    print(f"    File contains {tfr.shape[2]} time windows, {tfr.shape[1]} channels, and {tfr.shape[0]} epochs")
     # loop through trials
     for i_trial in range(len(tfr)):
+
+    	trial_tfr = np.moveaxis(tfr[i_trial], 2, 0)
         # drop trials containing NaNs
-        nan_chans = np.isnan(tfr[i_trial]).any(axis=1)
-        tfr_i = tfr[i_trial, ~nan_chans]
+        nan_chans = np.isnan(trial_tfr).any(axis=2)
+        tfr_i = trial_tfr[:,:,~nan_chans]
         if sum(nan_chans) > 0:
             print(f"    Trial {i_trial} has {sum(nan_chans)} channels containing NaNs")
 
         # parameterize
         params = FOOOFGroup(**SPEC_PARAM_SETTINGS)
-        fit_fooof_3d(params, data_in['freq'], data_in['tfr'], n_jobs=N_JOBS) # what does this return
+        fooof_groups = fit_fooof_3d(params, freq, tfr_i, n_jobs=N_JOBS)
 
-        # convert results to df
-        df_i = params_to_df(params, SPEC_PARAM_SETTINGS['max_n_peaks']) # this should probably be updated
-        df_i['epoch_idx'] = i_trial
-        df_i['chan_idx'] = np.arange(tfr.shape[1])[~nan_chans]
+        for i_group, group in enumerate(fooof_groups):
+	        # convert results to df
+	        df_i = params_to_df(group, SPEC_PARAM_SETTINGS['max_n_peaks']) # this should probably be updated
+	        df_i['epoch_idx'] = i_trial
+	        df_i['chan_idx'] = np.arange(tfr.shape[1])[~nan_chans]
 
-        # restore NaN trials
-        df_e = pd.DataFrame(np.nan, index=np.arange(tfr.shape[1]), columns=df_i.columns)
-        df_e.loc[~nan_chans] = df_i
+	        # restore NaN trials
+	        df_e = pd.DataFrame(np.nan, index=np.arange(tfr.shape[1]), columns=df_i.columns)
+	        df_e.loc[~nan_chans] = df_i
+
+	        # aggregate across fooof groups
+	        if i_group==0:
+	        	df_g = df_e.copy()
+	        else:
+	        	df = pd.concat([df, df_e], axis=0)
 
         # aggregate across channels
         if i_trial == 0:
-            df = df_e.copy()
+            df = df_g.copy()
         else:
-            df = pd.concat([df, df_e], axis=0)
+            df = pd.concat([df, df_g], axis=0)
 
     return df
 
