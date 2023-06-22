@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 from time import time as timer
 from time import ctime as time_now
-from fooof import FOOOFGroup
+from fooof import FOOOFGroup, fit_fooof_3d
 
 # imports - custom
 import sys
@@ -25,7 +25,7 @@ sys.path.append("allen_vc")
 from utils import params_to_df, hour_min_sec
 
 # settings - analysis details
-INPUT_TYPE = 'psd' # psd for 3d and tfr for 4d
+INPUT_TYPE = 'psd' # denoting whether input measures psd or tfr
 N_JOBS = -1 # number of jobs for parallel processing, psd_array_multitaper()
 SPEC_PARAM_SETTINGS = {
     'peak_width_limits' :   [2, 20], # default: (0.5, 12.0)) - reccomends at least frequency resolution * 2
@@ -43,14 +43,14 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_params/{STIM_CODE}'
+    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_params/{STIM_CODE}/{INPUT_TYPE}'
     if not os.path.exists(f"{dir_results}/by_session"):
         os.makedirs(f"{dir_results}/by_session")
     
     # initialize output
     params_list = []
 
-    # id files of interst and loop through them
+    # id files of interest and loop through them
     dir_input = f"{PROJECT_PATH}/data/lfp_data/lfp_{INPUT_TYPE}/{STIM_CODE}"
     files = os.listdir(dir_input)
     for i_file, fname_in in enumerate(files):
@@ -63,8 +63,17 @@ def main():
         # load LFP power spectra
         data_in = np.load(f"{dir_input}/{fname_in}")
 
-        # parameterize PSDs
-        df = spec_param_3d(data_in['spectra'], data_in['freq'])
+        if INPUT_TYPE == 'psd':
+            psd, freq = data_in['spectra'], data_in['freq']
+            df = spec_param_3d(psd, freq)
+
+        elif INPUT_TYPE == 'tfr':
+            tfr, freq = data_in['tfr'], data_in['freq']
+            df = pd.concat([spec_param_3d(tfr[:,:,:,i], freq).assign(time_window=i) 
+                for i in range(tfr.shape[-1])])
+
+        else:
+            raise RuntimeError("INPUT_TYPE must be psd or tfr")
 
         if BEHAVIOR_LABEL:
             df['behavior'] = fname_in.split('_')[-2]
@@ -91,81 +100,27 @@ def main():
 
 
 def spec_param_3d(psd, freq):
+
     # display progress
     print(f"    File contains {psd.shape[1]} channels and {psd.shape[0]} epochs")
 
-    # loop through trials
-    for i_trial in range(len(psd)):
-        # drop trials containing NaNs
-        nan_chans = np.isnan(psd[i_trial]).any(axis=1)
-        psd_i = psd[i_trial, ~nan_chans]
-        if sum(nan_chans) > 0:
-            print(f"    Trial {i_trial} has {sum(nan_chans)} channels containing NaNs")
+    # check missingness
+    nan_trials = np.isnan(psd).sum(axis=1).sum(axis=1) != 0
+    psd_clean = psd[~nan_trials]
+    print(f"    Found {nan_trials.sum()} trials with nan values")
 
-        # parameterize
-        params = FOOOFGroup(**SPEC_PARAM_SETTINGS)
-        params.fit(freq, psd_i, n_jobs=N_JOBS)
+    # parameterize
+    fg = FOOOFGroup(**SPEC_PARAM_SETTINGS)
+    fgs = fit_fooof_3d(fg, freq, psd_clean, n_jobs=N_JOBS)
+    df = pd.concat([params.to_df(SPEC_PARAM_SETTINGS['max_n_peaks']) for params in fgs], axis=0)
 
-        # convert results to df
-        df_i = params_to_df(params, SPEC_PARAM_SETTINGS['max_n_peaks'])
-        df_i['epoch_idx'] = i_trial
-        df_i['chan_idx'] = np.arange(psd.shape[1])[~nan_chans]
-
-        # restore NaN trials
-        df_e = pd.DataFrame(np.nan, index=np.arange(psd.shape[1]), columns=df_i.columns)
-        df_e.loc[~nan_chans] = df_i
-
-        # aggregate across channels
-        if i_trial == 0:
-            df = df_e.copy()
-        else:
-            df = pd.concat([df, df_e], axis=0)
+    # add channel and epoch labels
+    n_chans, n_epochs = psd_clean.shape[1], psd_clean.shape[0]
+    df['chan_idx'] = n_epochs*list(range(n_chans))
+    df['epoch_idx'] = np.concatenate([[i]*n_chans for i in range(n_epochs)])
 
     return df
-
-def spec_param_4d(tfr, freq):
-    # display progress
-    print(f"    File contains {tfr.shape[2]} time windows, {tfr.shape[1]} channels, and {tfr.shape[0]} epochs")
-    # loop through trials
-    for i_trial in range(len(tfr)):
-
-    	trial_tfr = np.moveaxis(tfr[i_trial], 2, 0)
-        # drop trials containing NaNs
-        nan_chans = np.isnan(trial_tfr).any(axis=2)
-        tfr_i = trial_tfr[:,:,~nan_chans]
-        if sum(nan_chans) > 0:
-            print(f"    Trial {i_trial} has {sum(nan_chans)} channels containing NaNs")
-
-        # parameterize
-        params = FOOOFGroup(**SPEC_PARAM_SETTINGS)
-        fooof_groups = fit_fooof_3d(params, freq, tfr_i, n_jobs=N_JOBS)
-
-        for i_group, group in enumerate(fooof_groups):
-	        # convert results to df
-	        df_i = params_to_df(group, SPEC_PARAM_SETTINGS['max_n_peaks']) # this should probably be updated
-	        df_i['epoch_idx'] = i_trial
-	        df_i['chan_idx'] = np.arange(tfr.shape[1])[~nan_chans]
-
-	        # restore NaN trials
-	        df_e = pd.DataFrame(np.nan, index=np.arange(tfr.shape[1]), columns=df_i.columns)
-	        df_e.loc[~nan_chans] = df_i
-
-	        # aggregate across fooof groups
-	        if i_group==0:
-	        	df_g = df_e.copy()
-	        else:
-	        	df = pd.concat([df, df_e], axis=0)
-
-        # aggregate across channels
-        if i_trial == 0:
-            df = df_g.copy()
-        else:
-            df = pd.concat([df, df_g], axis=0)
-
-    return df
-
-
-
+    
 
 if __name__ == '__main__':
     main()
