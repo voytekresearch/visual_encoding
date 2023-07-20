@@ -374,3 +374,76 @@ def plot_segment(block, i_seg):
                 ax.spines[loc].set_visible(False)
     fig.subplots_adjust(hspace=0)
 
+
+
+def plot_linregress(df, x_data, y_data, title=None, fname_out=None, show=False):
+    """
+    Calculate and plot the linear regression of two columns in a dataframe.
+
+    Parameters
+    ----------
+    x_data : str
+        column with x-values of dataset
+    y_data : str
+        column with y-values of dataset
+    title : str, optional
+        Title of the plot
+    fname_out : str, optional
+        Filename of the output figure
+    show : bool, optional
+        Whether to show the figure or not
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The linear slopes, r-values, p-values, and intercepts of both 
+    datasets will be printed on the plot.
+    """
+
+    # imports
+    from scipy.stats import linregress
+    
+    # create figure
+    fig, ax = plt.subplots(figsize=(8,6), constrained_layout=True)
+    fig.patch.set_facecolor('white') # set background color to white for text legibility
+    
+    # plot data
+    ax.scatter(df[x_data], df[y_data])
+
+    # run regression and plot results
+    results = linregress(df[x_data], df[y_data])
+    t_lin = np.linspace(np.nanmin(df[x_data]), np.nanmax(df[x_data]), 100)
+    lin = results.slope * t_lin + results.intercept
+    ax.plot(t_lin, lin, color='red')
+
+    # add regression results text
+    if results.pvalue < 0.001:
+        pval = f"{results.pvalue:.2e}"
+    else:
+        pval = f"{results.pvalue:.3f}"
+    plt.text(1.05, 0.9, 
+             f"Regression \n" +
+             f"    Slope: {results.slope:.3f}\n" +
+             f"    Intercept: {results.intercept:.3f}\n" +
+             f"    R: {results.rvalue:.3f}\n" +
+             f"    p: {pval}", transform = ax.transAxes)
+
+    # label figure
+    # ax.legend()
+    if title is not None:
+        plt.title(title)
+    plt.xlabel(x_data)
+    plt.ylabel(y_data)
+        
+    # save/show figure
+    if not fname_out is None:
+        fig.savefig(fname_out)
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+
