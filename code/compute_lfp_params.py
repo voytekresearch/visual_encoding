@@ -5,7 +5,7 @@ Parametereize PSDs for LFP epochs. Analyzes output of allen_vc.comp_lfp_psd.py.
 # Set paths
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 STIM_CODE = 'natural_movie_one_more_repeats' # name of input/output folders (stimulus of interest)
-BEHAVIOR_LABEL = True # whether or not to include column denoted 'above' or 'below' behavior
+BEHAVIOR_LABEL = False # whether or not to include column denoted 'above' or 'below' behavior
 
 # FOOOF is causing some annoying warnings about ragged arrays
 import warnings
@@ -22,10 +22,10 @@ from fooof import FOOOFGroup, fit_fooof_3d
 # imports - custom
 import sys
 sys.path.append("allen_vc")
-from utils import params_to_df, hour_min_sec
+from utils import hour_min_sec
 
 # settings - analysis details
-INPUT_TYPE = 'psd' # denoting whether input measures psd or tfr
+INPUT_TYPE = 'tfr' # denoting whether input measures psd or tfr
 N_JOBS = -1 # number of jobs for parallel processing, psd_array_multitaper()
 SPEC_PARAM_SETTINGS = {
     'peak_width_limits' :   [2, 20], # default: (0.5, 12.0)) - reccomends at least frequency resolution * 2
@@ -69,22 +69,33 @@ def main():
 
         elif INPUT_TYPE == 'tfr':
             tfr, freq = data_in['tfr'], data_in['freq']
-            df = pd.concat([spec_param_3d(tfr[:,:,:,i], freq).assign(time_window=i) 
+
+            # NOTE: spec_param_3d is computing across all time windows
+            #       pd concat is putting all trials/epochs together
+
+
+            # move axis so that labeling/fitting is congruent with psd
+            tfr = np.moveaxis(tfr, 3, 1)
+            df = pd.concat([spec_param_3d(tfr[i,:,:,:], freq).assign(window_idx=i) 
                 for i in range(tfr.shape[-1])])
+
+            window_indices = df['window_idx'].copy()
+            df['window_idx'] = df['epoch_idx']
+            df['epoch_idx'] = window_indices
 
         else:
             raise RuntimeError("INPUT_TYPE must be psd or tfr")
 
         if BEHAVIOR_LABEL:
-            df['behavior'] = fname_in.split('_')[-2]
+            df['behavior'] = fname_in.split('_')[-1]
 
         # aggregate across files
-        df['session'] = fname_in.split('_')[0]
+        df['session'] = fname_in.split('_')[1]
         params_list.append(df)
         
         # save results 
-        fname_out = fname_in.replace('_psd.npz', f'_params.csv')
-        df.to_csv(f"{dir_results}/by_session/{fname_out}")
+        fname_out = fname_in.replace('.npz', f'.csv')
+        df.to_csv(f"{dir_results}/by_session/{fname_out}", index=False)
 
         # display progress
         hour, min, sec = hour_min_sec(timer() - t_start_s)
@@ -92,7 +103,7 @@ def main():
 
     # aggregate across files
     params = pd.concat(params_list, axis=0)
-    params.to_csv(f"{dir_results}/lfp_params.csv")
+    params.to_csv(f"{dir_results}/lfp_params.csv", index=False)
     
     # display progress
     hour, min, sec = hour_min_sec(timer() - t_start)
@@ -106,16 +117,18 @@ def spec_param_3d(psd, freq):
 
     # check missingness
     nan_trials = np.isnan(psd).sum(axis=1).sum(axis=1) != 0
-    psd_clean = psd[~nan_trials]
-    print(f"    Found {nan_trials.sum()} trials with nan values")
+    # psd_clean = psd[~nan_trials]
+    print(f"    Found {nan_trials.sum()} trials with nan values\n\n")
 
     # parameterize
     fg = FOOOFGroup(**SPEC_PARAM_SETTINGS)
-    fgs = fit_fooof_3d(fg, freq, psd_clean, n_jobs=N_JOBS)
+    fg.set_check_data_mode(False)
+    fg._check_freqs = False
+    fgs = fit_fooof_3d(fg, freq, psd, n_jobs=N_JOBS)
     df = pd.concat([params.to_df(SPEC_PARAM_SETTINGS['max_n_peaks']) for params in fgs], axis=0)
 
     # add channel and epoch labels
-    n_chans, n_epochs = psd_clean.shape[1], psd_clean.shape[0]
+    n_epochs, n_chans = psd.shape[:2]
     df['chan_idx'] = n_epochs*list(range(n_chans))
     df['epoch_idx'] = np.concatenate([[i]*n_chans for i in range(n_epochs)])
 
