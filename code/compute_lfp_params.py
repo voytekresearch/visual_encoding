@@ -64,7 +64,7 @@ def main():
         print(f"    Filename: {fname_in}")
 
         # check if file already exists
-        fname_out = fname_in.replace('.npz', f'.csv')
+        fname_out = fname_in.replace('.npz', f'.csv').replace('spectra', 'params')
         if not OVERWRITE and os.path.exists(f"{dir_results}/by_session/{fname_out}"):
             print("    File already exists, skipping")
             continue

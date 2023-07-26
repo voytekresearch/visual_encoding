@@ -56,7 +56,7 @@ def main():
                                     n_jobs=N_JOBS, verbose=False)
         
         # save results
-        fname_out = fname_in.replace('.mat', '.npz')
+        fname_out = fname_in.replace('.mat', '.npz').replace('block', 'spectra')
         np.savez(f"{dir_results}/{fname_out}", spectra=spectra, freq=freq) 
 
         # display progress
