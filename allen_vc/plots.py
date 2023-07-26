@@ -7,6 +7,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
+# custom imports
+import sys
+sys.path.append('../')
+from allen_vc.neo_utils import get_analogsignal
+
 # Matplotlib rcParams ---------------------------------------------------------
 # misc
 rcParams['figure.constrained_layout.use'] = True
@@ -253,7 +258,7 @@ def plot_sa_heat_map(r_mat, xlabels, ylabels, graph_title=None,
         plt.close()
 
 
-def running_segment_plot(block, title):
+def running_segment_plot(block, title=None):
     """
     Plot the running speed of a given block of data.
 
@@ -270,23 +275,38 @@ def running_segment_plot(block, title):
         Prints the number of running and stationary segments, proportions 
         of time running in run segments, and the average proportion.
     """
+
+    # check for running annotations
+    if not 'running' in block.annotations:
+        print("No running annotations found.")
+        return
+
+    # init
     run_proportions = []
     running = block.annotations['running']
+
+    # create figure
+    fig, axes = plt.subplots(2,1, sharex=True, sharey=True, figsize=(14,6))
+    axes[0].set_title("stationary epochs")
+    axes[1].set_title("running epochs")
     
-    fig, ax = plt.subplots(2,1, sharex=True, sharey=True, figsize=(14,6))
-    
+    # loop through segments
     for i_seg in range(len(block.segments)):
         # get running speed for segment
-        data = block.segments[i_seg].analogsignals[1]
-        speed = data.magnitude
+        speed, time  = get_analogsignal(block, 'running_speed', segment_idx=i_seg, 
+                                        return_numpy=True, reset_time=True)
         
+        # compute proportion of time running
         state = block.segments[i_seg].annotations['running']
-        
         if state:
             run_proportions.append(sum(np.hstack(speed) > 1)/len(np.hstack(speed)))
 
         # plot speed
-        ax[int(state)].plot(speed)
+        axes[int(state)].plot(time, speed)
+
+    # label plot
+    for ax in axes:
+        ax.set(xlabel='time (s)', ylabel='speed (cm/s)')
         
     # print number of running and stationary segments
     print(f"Running segments: {int(np.sum(running))}")
@@ -294,7 +314,8 @@ def running_segment_plot(block, title):
     print(f"Proportions of time running in run segments: \n\n{run_proportions}\n")
     print(f"Average proportion: {np.mean(run_proportions)}\n\n")
     
-    plt.title(title)
+    if title is not None:
+        plt.suptitle(title)
 
 
 def plot_segment(block, i_seg):
@@ -316,7 +337,6 @@ def plot_segment(block, i_seg):
     # imports
     from matplotlib import gridspec
     import neo
-    from neo_utils import get_analogsignal
 
     # settings
     col_0 = np.array([52,148,124]) /255
@@ -341,8 +361,8 @@ def plot_segment(block, i_seg):
     ax_c = fig.add_subplot(spec[2,0], sharex=ax_a)
     ax_d = fig.add_subplot(spec[3,0], sharex=ax_a)
     ax_e = fig.add_subplot(spec[4,0], sharex=ax_a)
-
     # plot subplot a: LFP
+
     try:
         lfp, t_lfp = get_analogsignal(block, 'lfp', segment_idx=i_seg, return_numpy=True)
         ax_a.pcolormesh(t_lfp, np.arange(0, lfp.shape[1]), lfp.T, shading='auto')
