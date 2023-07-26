@@ -23,8 +23,11 @@ import sys
 sys.path.append("allen_vc")
 from utils import hour_min_sec
 
+# settings
+OVERWRITE = False # whether to overwrite existing results
+
 # settings - analysis details
-INPUT_TYPE = 'tfr' # denoting whether input measures psd or tfr
+INPUT_TYPE = 'psd' # denoting whether input measures psd or tfr
 N_JOBS = -1 # number of jobs for parallel processing, psd_array_multitaper()
 SPEC_PARAM_SETTINGS = {
     'peak_width_limits' :   [2, 20], # default: (0.5, 12.0)) - reccomends at least frequency resolution * 2
@@ -43,6 +46,7 @@ def main():
 
     # Define/create directories for outout
     dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_params/{STIM_CODE}/{INPUT_TYPE}'
+    print(f"Saving results to: {dir_results}")
     if not os.path.exists(f"{dir_results}/by_session"):
         os.makedirs(f"{dir_results}/by_session")
     
@@ -58,6 +62,12 @@ def main():
         t_start_s = timer()
         print(f"\nAnalyzing file {i_file+1}/{len(files)}: \t{time_now()}")
         print(f"    Filename: {fname_in}")
+
+        # check if file already exists
+        fname_out = fname_in.replace('.npz', f'.csv')
+        if not OVERWRITE and os.path.exists(f"{dir_results}/by_session/{fname_out}"):
+            print("    File already exists, skipping")
+            continue
 
         # load LFP power spectra
         data_in = np.load(f"{dir_input}/{fname_in}")
@@ -90,7 +100,6 @@ def main():
         params_list.append(df)
         
         # save results 
-        fname_out = fname_in.replace('.npz', f'.csv')
         df.to_csv(f"{dir_results}/by_session/{fname_out}", index=False)
 
         # display progress
