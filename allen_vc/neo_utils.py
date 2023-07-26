@@ -96,7 +96,8 @@ def get_analogsignal_names(block, segment_idx=None, lfp_only=False):
     return signal_names
 
 
-def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
+def get_analogsignal(block, name, segment_idx=None, return_numpy=True,
+                     reset_time=False):
     """
     Returns an analog signal from a Neo Block object. If multiple segments are
     present, the signal from each segment is returned as a list.
@@ -114,6 +115,10 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
         If True, the analog signal is returned as a numpy array. If False, the
         analog signal is returned as a Neo AnalogSignal object or a list of 
         AnalogSignal objects. Default is True.
+    reset_time : bool, optional
+        If True, the time vector for the analog signal is reset to start at 0.
+        If False, the time vector is returned as is (experiment time).
+        Default is False. 
 
     Returns
     -------
@@ -157,6 +162,10 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True):
         if return_numpy:
             a_signal = np.squeeze(np.array(a_signal))
             time = np.array(block.segments[segment_idx].analogsignals[signal_idx].times)
+
+            # reset time
+            if reset_time:
+                time = time - time[0]
             
     # return
     if return_numpy:        
