@@ -25,9 +25,7 @@ class SessionResults:
             self.psd_params = None
             print(f"PSD spectral parameters not found for session {session_id}")
         if load_psd:
-            temp = np.load(f"{path}/data/lfp_data/lfp_psd/{stim_code}/spectra_{session_id}.npz")
-            self.psd = temp['spectra']
-            self.psd_freq = temp['freq']
+            self.load_psd()
         
         # load tfr results
         try:
@@ -36,9 +34,7 @@ class SessionResults:
             self.tfr_params = None
             print(f"TFR spectral parameters not found for session {session_id}")
         if load_tfr:
-            temp = np.load(f"{path}/data/lfp_data/lfp_tfr/{stim_code}/spectra_{session_id}.npz")
-            self.tfr = temp['tfr']
-            self.tfr_freq = temp['freq']
+            self.load_tfr()
         
         # load spike results
         try:
@@ -49,14 +45,20 @@ class SessionResults:
             print(f"Spike stats not found for session {session_id} and stimulus {stim_code}")
 
     def load_tfr(self):
-        data_in = np.load(f"{self.path}/data/lfp_data/lfp_tfr/{self.stim_code}/spectra_{self.session_id}.npz")
-        self.tfr = data_in['tfr']
-        self.tfr_freq = data_in['freq']
+        try:
+            data_in = np.load(f"{self.path}/data/lfp_data/lfp_tfr/{self.stim_code}/spectra_{self.session_id}.npz")
+            self.tfr = data_in['tfr']
+            self.tfr_freq = data_in['freq']
+        except:
+            print(f"TFR data not found for session {self.session_id}")
 
     def load_psd(self):
-        data_in = np.load(f"{self.path}/data/lfp_data/lfp_psd/{self.stim_code}/spectra_{self.session_id}.npz")
-        self.psd = data_in['spectra']
-        self.psd_freq = data_in['freq']
+        try:
+            data_in = np.load(f"{self.path}/data/lfp_data/lfp_psd/{self.stim_code}/spectra_{self.session_id}.npz")
+            self.psd = data_in['spectra']
+            self.psd_freq = data_in['freq']
+        except:
+            print(f"PSD data not found for session {self.session_id}")
 
     def import_block(self, include_lfp=False):
         if include_lfp:
