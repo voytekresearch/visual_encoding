@@ -193,7 +193,7 @@ def create_behavioral_segments():
                 block.groups.append(group)
 
             # save results
-            fname_out = f"{dir_results}_{behavior}/block_{session_id}_{behavior}.mat"
+            fname_out = f"{dir_results}_{behavior}/block_{session_id}.mat"
             neo.io.NeoMatlabIO(fname_out).write_block(block)
 
         # display progress
