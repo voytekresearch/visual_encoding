@@ -45,7 +45,7 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_params/{STIM_CODE}/{INPUT_TYPE}'
+    dir_results = f'{PROJECT_PATH}/data/lfp_data/params/{INPUT_TYPE}/{STIM_CODE}'
     print(f"Saving results to: {dir_results}")
     if not os.path.exists(f"{dir_results}/by_session"):
         os.makedirs(f"{dir_results}/by_session")
@@ -54,7 +54,7 @@ def main():
     params_list = []
 
     # id files of interest and loop through them
-    dir_input = f"{PROJECT_PATH}/data/lfp_data/lfp_{INPUT_TYPE}/{STIM_CODE}"
+    dir_input = f"{PROJECT_PATH}/data/lfp_data/spectra/{INPUT_TYPE}/{STIM_CODE}"
     files = os.listdir(dir_input)
     for i_file, fname_in in enumerate(files):
 

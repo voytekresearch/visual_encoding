@@ -34,7 +34,7 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    dir_results = f'{PROJECT_PATH}/data/lfp_data/lfp_psd/{STIM_CODE}'
+    dir_results = f'{PROJECT_PATH}/data/lfp_data/spectra/psd/{STIM_CODE}'
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
     
