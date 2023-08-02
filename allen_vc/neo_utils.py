@@ -132,7 +132,10 @@ def get_analogsignal(block, name, segment_idx=None, return_numpy=True,
     """
     # get signal index
     signal_names = get_analogsignal_names(block, segment_idx)
-    signal_idx = np.argwhere(signal_names == name)[0][0]
+    try:
+        signal_idx = np.argwhere(signal_names == name)[0][0]
+    except:
+        raise ValueError('Analog signal name not found.')
 
     # get analog signal from block for all segments
     if segment_idx is None:
