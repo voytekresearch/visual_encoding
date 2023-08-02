@@ -63,8 +63,13 @@ def create_spontaneous_block():
         os.makedirs(dir_results)
 
     # load Allen project cache
-    cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
-    print('Project cache loaded...')
+    if os.path.exists(f"{MANIFEST_PATH}/manifest.json"):
+        cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
+        print('Project cache loaded...')
+    # stop execution if manifest file not found
+    else:
+        print('Manifest file not found. Please check MANIFEST_PATH.')
+        return   
     
     # loop through all files
     dir_input =  f"{PROJECT_PATH}/data/blocks/sessions"

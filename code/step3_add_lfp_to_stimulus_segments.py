@@ -6,9 +6,9 @@ LFP data to each segment.
 """
 
 # settings - directories
-MANIFEST_PATH = "E:/datasets/allen_vc/manifest_files" # Allen manifest.json
+MANIFEST_PATH = "D:/datasets/allen_vc/" # Allen manifest.json
 PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-STIM_CODE = 'spontaneous' # this will be used to identify input/output folders
+STIM_CODE = 'natural_movie_one_more_repeats' # this will be used to identify input/output folders
 
 # settings 
 BRAIN_STRUCTURE = 'VISp' # regions of interest for LFP data
@@ -43,8 +43,13 @@ def main():
         os.makedirs(dir_results)
 
     # load Allen project cache
-    cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
-    print('Project cache loaded...')
+    if os.path.exists(f"{MANIFEST_PATH}/manifest.json"):
+        cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
+        print('Project cache loaded...')
+    # stop execution if manifest file not found
+    else:
+        print('Manifest file not found. Please check MANIFEST_PATH.')
+        return        
     
     # loop through all files
     dir_input =  f"{PROJECT_PATH}/data/blocks/segmented/{STIM_CODE}"
