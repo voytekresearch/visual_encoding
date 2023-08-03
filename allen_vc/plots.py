@@ -258,7 +258,7 @@ def plot_sa_heat_map(r_mat, xlabels, ylabels, graph_title=None,
         plt.close()
 
 
-def running_segment_plot(block, title=None):
+def running_segment_plot(block, title=None, fname_out=None, show=True, verbose=False):
     """
     Plot the running speed of a given block of data.
 
@@ -268,6 +268,12 @@ def running_segment_plot(block, title=None):
         Block of data to plot running speed.
     title : str
         Title of the plot.
+    fname_out : str
+        Filename of the output figure.
+    show : bool
+        Whether to show the figure or not.
+    verbose : bool
+        Whether to print information about the block.
 
     Returns
     -------
@@ -309,13 +315,22 @@ def running_segment_plot(block, title=None):
         ax.set(xlabel='time (s)', ylabel='speed (cm/s)')
         
     # print number of running and stationary segments
-    print(f"Running segments: {int(np.sum(running))}")
-    print(f"Stationary segments: {int(len(running)-np.sum(running))}")
-    print(f"Proportions of time running in run segments: \n\n{run_proportions}\n")
-    print(f"Average proportion: {np.mean(run_proportions)}\n\n")
+    if verbose:
+        print(f"Running segments: {int(np.sum(running))}")
+        print(f"Stationary segments: {int(len(running)-np.sum(running))}")
+        print(f"Proportions of time running in run segments: \n\n{run_proportions}\n")
+        print(f"Average proportion: {np.mean(run_proportions)}\n\n")
     
     if title is not None:
         plt.suptitle(title)
+
+    # save/show figure
+    if not fname_out is None:
+        fig.savefig(fname_out)
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
 
 def plot_segment(block, i_seg):
