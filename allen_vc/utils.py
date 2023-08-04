@@ -10,6 +10,12 @@ def hour_min_sec(duration):
     
     return hours, mins, secs
 
+def print_time_elapsed(start):
+    import time
+    duration = time.time() - start
+    hours, mins, secs = hour_min_sec(duration)
+    print(f"{hours} hours, {mins} minutes, and {secs :0.1f} seconds")
+
 
 def save_pkl(dictionary, fname_out, method='pickle'):
     """
