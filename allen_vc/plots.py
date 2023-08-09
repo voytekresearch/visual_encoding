@@ -431,11 +431,6 @@ def plot_linregress(df, x_data, y_data, title=None, fname_out=None, show=False):
     Returns
     -------
     None
-
-    Notes
-    -----
-    The linear slopes, r-values, p-values, and intercepts of both 
-    datasets will be printed on the plot.
     """
 
     # imports
@@ -481,4 +476,50 @@ def plot_linregress(df, x_data, y_data, title=None, fname_out=None, show=False):
     else:
         plt.close()
 
+
+def plot_analog_signal(signal, ax=None, title=None, y_label=None, fname=None):
+    """
+    Plot a Neo AnalogSignal object.
+
+    Parameters
+    ----------
+    signal : AnalogSignal
+        analog signal to plot
+    ax : matplotlib.axes.Axes, optional
+        axes to plot on
+    title : str, optional
+        title of the plot
+    y_label : str, optional
+        y-axis label
+    fname : str, optional
+        filename of the output figure. If None, figure will not be saved.
+
+    Returns
+    -------
+    None
+    """
+
+    # init figure
+    if ax is None:
+        fig, ax = plt.subplots(1,1, figsize=[8,4])
+
+    # plot signal
+    ax.plot(signal.times, signal)
+
+    # set title
+    if title is not None:
+        ax.set_title(title)
+
+    # set axis labels
+    if y_label is None:
+        if signal.name is not None:
+            y_label = signal.name
+        else:
+            y_label = 'signal'
+    ax.set(xlabel=f"time ({signal.times.units.dimensionality.string})", \
+        ylabel=f"{y_label} ({signal.units.dimensionality.string})")
+
+    # save
+    if fname is not None:
+        plt.savefig(fname)
 
