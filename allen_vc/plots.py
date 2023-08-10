@@ -110,7 +110,7 @@ def sync_plot(df, metrics, condition, markersize=5):
         vp = sns.violinplot(**plotting_params, ax=ax, palette='Blues')
         sp = sns.swarmplot(**plotting_params, ax=ax, color=[0,0,0], size=markersize)
 
-        # plot violin
+        # add legend
         handles, _ = vp.get_legend_handles_labels()
         labels = df[condition].unique().tolist()
         vp.legend(handles=handles, labels=labels)
