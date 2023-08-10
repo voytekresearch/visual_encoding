@@ -83,15 +83,20 @@ def sync_plot(df, metrics, condition, markersize=5):
         List of spike statistics to be plotted.
     condition : str
         Condition to be plotted.
+    markersize : int, optional
+        Size of the markers in the swarm plot. Default is 5.
 
     Returns
     -------
     None
     """
+
+    # imports
     import seaborn as sns
+
     # plot violin plots for each spike statistic
     for metric in metrics:
-    # set plotting parameters
+        # set plotting parameters
         plotting_params = {
             'data':    df,
             'x':       'brain_structure',
@@ -102,14 +107,18 @@ def sync_plot(df, metrics, condition, markersize=5):
 
         # create figure
         fig, ax = plt.subplots(figsize=(15,10))
-        #plt.title(f'{metric}')
         vp = sns.violinplot(**plotting_params, ax=ax, palette='Blues')
         sp = sns.swarmplot(**plotting_params, ax=ax, color=[0,0,0], size=markersize)
+
+        # plot violin
+        handles, _ = vp.get_legend_handles_labels()
+        labels = df[condition].unique().tolist()
+        print(labels)
+        vp.legend(handles=handles, labels=labels)
+
+        # label figure
         plt.ylabel(' '.join(metric.split('_')))
         plt.xlabel('brain structure')
-        plt.legend(fontsize=15)
-        #sp.get_legend().remove()
-        # having trouble removing swarmplot legend ONLY
 
 
 def scatter_2_conditions(x1, y1, x2, y2, conditions=['cond 1', 'cond 2'],
