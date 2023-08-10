@@ -113,7 +113,6 @@ def sync_plot(df, metrics, condition, markersize=5):
         # plot violin
         handles, _ = vp.get_legend_handles_labels()
         labels = df[condition].unique().tolist()
-        print(labels)
         vp.legend(handles=handles, labels=labels)
 
         # label figure
