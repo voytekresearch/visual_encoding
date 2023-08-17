@@ -419,7 +419,7 @@ def plot_segment(block, i_seg):
 
 
 
-def plot_linregress(df, x_data, y_data, title=None, fname_out=None, show=False):
+def plot_linregress(df, x_data, y_data, group=None, title=None, fname_out=None, show=False):
     """
     Calculate and plot the linear regression of two columns in a dataframe.
 
@@ -449,7 +449,13 @@ def plot_linregress(df, x_data, y_data, title=None, fname_out=None, show=False):
     fig.patch.set_facecolor('white') # set background color to white for text legibility
     
     # plot data
-    ax.scatter(df[x_data], df[y_data])
+    if group is not None:
+        groups = df[group].unique()
+        for g in groups:
+            gdf = df[df[group] == g]
+            ax.scatter(gdf[x_data], gdf[y_data], label=g, alpha=0.6)
+    else:
+        ax.scatter(df[x_data], df[y_data])
 
     # run regression and plot results
     results = linregress(df[x_data], df[y_data])
@@ -470,7 +476,7 @@ def plot_linregress(df, x_data, y_data, title=None, fname_out=None, show=False):
              f"    p: {pval}", transform = ax.transAxes)
 
     # label figure
-    # ax.legend()
+    ax.legend()
     if title is not None:
         plt.title(title)
     plt.xlabel(x_data)
@@ -531,3 +537,22 @@ def plot_analog_signal(signal, ax=None, title=None, y_label=None, fname=None):
     if fname is not None:
         plt.savefig(fname)
 
+
+def plot_time_resolved_params(df, window_size, title=None):
+
+    sessions = df['session'].unique()
+
+    for session in sessions:
+        sdf = df[df['session'] == session]
+        t = np.linspace(0, len(sdf)*window_size, len(sdf))
+
+        fig, ax = plt.subplots()
+        plt.set_cmap('Blues')
+        for i, series in enumerate(['avg_pupil_area', 'inst_spike_rate', 'exponent', 'offset']):
+            ax.plot(t, np.array((sdf[series] - sdf[series].mean())/sdf[series].std()) + (3-i)*4, alpha=(1-0.2*i), label=series)
+
+        ax.set(xlabel=f"time (s)", ylabel="normalized parameters (AU)")
+        ax.set_title(str(session))
+        ax.legend()
+
+        plt.show()
