@@ -1,0 +1,26 @@
+# Style for SFN 2022 poster
+
+# Font
+font.family:	sans-serif
+font.sans-serif:		arial
+
+# Font size
+figure.titlesize:	32
+axes.titlesize:	28
+axes.labelsize:	24
+xtick.labelsize:	18
+ytick.labelsize:	18
+legend.fontsize:	18
+font.size:          18
+
+# Figure appearance
+figure.constrained_layout.use:  True
+figure.facecolor: w
+axes.facecolor: w
+
+# Figure output
+savefig.dpi:		600	
+savefig.format: tif
+# savefig.bbox:	tight
+savefig.pad_inches:	0.2
+
