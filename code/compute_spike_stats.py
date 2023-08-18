@@ -7,7 +7,7 @@ over a set of loaded epochs.
 PROJECT_PATH = r"G:\Shared drives\visual_encoding"
 
 # settings - data of interest
-STIM_CODE = "natural_movie_one_more_repeats"
+STIM_CODE = "natural_movie_one_shuffled"
 
 # imports - general
 import os
@@ -52,6 +52,8 @@ def main():
         for i_seg, segment in enumerate(block.segments):
             # loop through brain structures in block
             brain_structures = block.annotations['spike_brain_structures']
+            if isinstance(brain_structures, str):
+                brain_structures = [brain_structures]
             for structure in brain_structures:
                 # filter for spikes in structure
                 spikes = segment.filter(objects=neo.SpikeTrain,targdict={'brain_structure': structure})
