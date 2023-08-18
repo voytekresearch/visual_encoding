@@ -154,7 +154,7 @@ def create_behavioral_segments():
         epochs_s = epochs_s + float(time[0])
 
         # create Neo Segments based on epoch times for running and stationary
-        for behavior, epochs in zip(['running', 'stationary'], [epochs_r, epochs_s]):
+        for behavior, running, epochs in zip(['running', 'stationary'], [True, False], [epochs_r, epochs_s]):
 
             # initialize new block to hold segments and add annotations
             annotations['behavior'] = behavior
@@ -177,7 +177,7 @@ def create_behavioral_segments():
 
                 # create segment
                 segment = neo.Segment()
-                segment.annotate(behavior=behavior)
+                segment.annotate(running=running)
 
                 # add each spiketrain to segment after slicing in time
                 for i_unit, spiketrain in enumerate(session_seg.spiketrains):
