@@ -177,6 +177,7 @@ def create_behavioral_segments():
 
                 # create segment
                 segment = neo.Segment()
+                segment.annotate(behavior=behavior)
 
                 # add each spiketrain to segment after slicing in time
                 for i_unit, spiketrain in enumerate(session_seg.spiketrains):
