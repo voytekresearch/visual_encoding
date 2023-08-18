@@ -7,7 +7,7 @@ over a set of loaded epochs.
 PROJECT_PATH = r"G:\Shared drives\visual_encoding"
 
 # settings - data of interest
-STIM_CODE = "spontaneous"
+STIM_CODE = "natural_movie_one_more_repeats"
 
 # imports - general
 import os
@@ -35,7 +35,7 @@ def main():
         os.makedirs(dir_output)
 
     # initialize data frame
-    columns = ['session', 'brain_structure', 'epoch_idx', 'epoch_times', 
+    columns = ['session', 'brain_structure', 'epoch_idx', 'epoch_times', 'running',
                'mean_firing_rate', 'unit_firing_rates', 'coefficient_of_variation', 
                'spike_distance','spike_synchrony','correlation_coefficient']
     df = pd.DataFrame(columns=columns)
@@ -58,14 +58,15 @@ def main():
 
                 # ensure there re spikes in structure
                 if len(spikes) == 0:
-                    metrics = [np.nan] * (len(columns)-4)
+                    metrics = [np.nan] * (len(columns)-5)
 
                 else:
                     # calculate metrics
                     metrics = list(calculate_spike_metrics(spikes))
                 
                 # add to data frame
-                info = [session, structure, i_seg, [segment.t_start, segment.t_stop]]
+                info = [session, structure, i_seg, [segment.t_start, segment.t_stop], 
+                        segment.annotations['running']]
                 info.extend(metrics)
                 df = df.append(pd.DataFrame([info], columns=columns), ignore_index=True)
 
