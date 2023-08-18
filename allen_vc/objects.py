@@ -27,10 +27,10 @@ class SessionResults:
         
         try:
             self.psd_params = pd.read_csv(f"{path}/data/lfp_data/lfp_params/{stim_code}/psd/by_session/params_{session_id}.csv")
-            print(f"    PSD spectral parameters loaded...")
+            print(f"\tPSD spectral parameters loaded...")
         except:
             self.psd_params = None
-            print(f"    PSD spectral parameters not found...")
+            print(f"\tPSD spectral parameters not found...")
 
         # load tfr results
         if load_tfr:
@@ -38,19 +38,19 @@ class SessionResults:
 
         try:
             self.tfr_params = pd.read_csv(f"{path}/data/lfp_data/lfp_params/{stim_code}/tfr/by_session/params_{session_id}.csv")
-            print(f"    TFR spectral parameters loaded...")
+            print(f"\tTFR spectral parameters loaded...")
         except:
             self.tfr_params = None
-            print(f"    TFR spectral parameters not found...")
+            print(f"\tTFR spectral parameters not found...")
         
         # load spike results
         try:
             all_spike_stats = pd.read_csv(f"{path}/data/spike_stats/{stim_code}.csv")
             self.spike_stats = all_spike_stats.loc[all_spike_stats['session'] == session_id]
-            print(f"    Spike stats loaded...")
+            print(f"\tSpike stats loaded...")
         except:
             self.spike_stats = None
-            print(f"    Spike stats not found...")
+            print(f"\tSpike stats not found...")
 
         # print summary
         print("    Complete!\n")
@@ -60,18 +60,18 @@ class SessionResults:
             data_in = np.load(f"{self.path}/data/lfp_data/lfp_tfr/{self.stim_code}/spectra_{self.session_id}.npz")
             self.tfr = data_in['tfr']
             self.tfr_freq = data_in['freq']
-            print(f"    TFR data loaded...")
+            print(f"\tTFR data loaded...")
         except:
-            print(f"TFR data not found...")
+            print(f"\tTFR data not found...")
 
     def load_psd(self):
         try:
             data_in = np.load(f"{self.path}/data/lfp_data/lfp_psd/{self.stim_code}/spectra_{self.session_id}.npz")
             self.psd = data_in['spectra']
             self.psd_freq = data_in['freq']
-            print(f"    PSD data loaded...")
+            print(f"\tPSD data loaded...")
         except:
-            print(f"PSD data not found...")
+            print(f"\tPSD data not found...")
 
     def import_block(self, include_lfp=False):
         if include_lfp:
