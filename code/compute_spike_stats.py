@@ -34,7 +34,7 @@ def main():
 
     # initialize data frame
     columns = ['session', 'brain_structure', 'epoch_idx', 'epoch_times', 'running',
-               'mean_firing_rate', 'unit_firing_rates', 'coefficient_of_variation', 
+               'mean_firing_rate', 'coefficient_of_variation', 
                'spike_distance','spike_synchrony']
     df = pd.DataFrame(columns=columns)
 
@@ -94,8 +94,6 @@ def calculate_spike_metrics(spiketrains):
     -------
     mean_firing_rate: float
         mean firing rate over all units during specified epoch.
-    unit_firing_rates: list
-        list of firing rates for each unit during specified epoch.
     coeff_of_var: float
         coefficient of variation over all units during specified epoch.
     spike_dist: float
@@ -104,15 +102,17 @@ def calculate_spike_metrics(spiketrains):
         SPIKE-synchrony (pyspike) over all units during specified epoch.
     """
 
-    # compute rate metrics
-    unit_firing_rates = [len(spiketrain)/float(spiketrain.duration) for spiketrain in spiketrains]
-    mean_firing_rate = sum(unit_firing_rates)/len(spiketrains)
+    # combine spiketrains
+    region_spiketrain = combine_spiketrains(spiketrains, t_stop=spiketrains[0].t_stop)
+    
+    # compute mean firing rate
+    mean_firing_rate = len(region_spiketrain) / region_spiketrain.duration / len(spiketrains)
 
     # compute synchrony metrics
-    coeff_of_var = compute_cv(combine_spiketrains(spiketrains, t_stop=spiketrains[0].t_stop))
+    coeff_of_var = compute_cv(region_spiketrain)
     spike_sync, spike_dist = compute_pyspike_metrics(spiketrains)
 
-    return mean_firing_rate, unit_firing_rates, coeff_of_var, spike_dist, spike_sync
+    return mean_firing_rate, coeff_of_var, spike_dist, spike_sync
 
 
 if __name__ == '__main__':
