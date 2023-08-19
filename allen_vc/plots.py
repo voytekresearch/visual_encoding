@@ -371,8 +371,8 @@ def plot_segment(block, i_seg):
 
     # get spike times for each region
     segment = block.segments[i_seg]
-    st_visp = segment.filter(objects=neo.SpikeTrain,targdict={'brain_structure': 'VISp'})
-    st_lgd = segment.filter(objects=neo.SpikeTrain,targdict={'brain_structure': 'LGd'})
+    st_visp = segment.filter(objects=neo.SpikeTrain, targdict={'brain_structure': 'VISp'})
+    st_lgd = segment.filter(objects=neo.SpikeTrain, targdict={'brain_structure': 'LGd'})
     st_visp = [st.times for st in st_visp]
     st_lgd = [st.times for st in st_lgd]
 
