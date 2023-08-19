@@ -7,7 +7,7 @@ over a set of loaded epochs.
 PROJECT_PATH = r"G:\Shared drives\visual_encoding"
 
 # settings - data of interest
-STIM_CODE = "natural_movie_one_shuffled"
+STIM_CODE = "spontaneous_running"
 
 # imports - general
 import os
@@ -50,10 +50,15 @@ def main():
 
         # Calculate spike metrics for each segment
         for i_seg, segment in enumerate(block.segments):
-            # loop through brain structures in block
+            # get brain structures and ensure it is a list
             brain_structures = block.annotations['spike_brain_structures']
             if isinstance(brain_structures, str):
                 brain_structures = [brain_structures]
+
+            # FIX: remove whitespace from brain structure names
+            brain_structures = [structure.strip() for structure in brain_structures]
+
+            # loop through brain structures
             for structure in brain_structures:
                 # filter for spikes in structure
                 spikes = segment.filter(objects=neo.SpikeTrain,targdict={'brain_structure': structure})
