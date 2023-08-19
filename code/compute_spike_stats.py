@@ -7,7 +7,7 @@ over a set of loaded epochs.
 PROJECT_PATH = r"G:\Shared drives\visual_encoding"
 
 # settings - data of interest
-STIM_CODE = "spontaneous_running"
+STIM_CODE = "spontaneous_stationary"
 
 # imports - general
 import os
@@ -28,14 +28,15 @@ def main():
     dir_input = f"{PROJECT_PATH}/data/blocks/segmented/{STIM_CODE}"
     files = os.listdir(dir_input)
     
-    dir_output = f"{PROJECT_PATH}/data/spike_stats" 
-    if not os.path.exists(dir_output): 
-        os.makedirs(dir_output)
+    dir_output = f"{PROJECT_PATH}/data/spike_stats"
+    for folder in ['region_metrics', 'unit_rates']:
+        if not os.path.exists(f"{dir_output}/{folder}"): 
+            os.makedirs(f"{dir_output}/{folder}")
 
     # initialize data frame
     columns = ['session', 'brain_structure', 'epoch_idx', 'epoch_times', 'running',
                'mean_firing_rate', 'coefficient_of_variation', 
-               'spike_distance','spike_synchrony']
+               'spike_distance','spike_synchrony', 'unit_rates', 'unit_index']
     df = pd.DataFrame(columns=columns)
 
     # loop through files
@@ -58,26 +59,36 @@ def main():
 
             # loop through brain structures
             for structure in brain_structures:
+        
                 # filter for spikes in structure
-                spikes = segment.filter(objects=neo.SpikeTrain,targdict={'brain_structure': structure})
+                spiketrains = segment.filter(objects=neo.SpikeTrain,targdict={'brain_structure': structure})
 
-                # ensure there re spikes in structure
-                if len(spikes) == 0:
+                # ensure there are spikes in structure
+                if len(spiketrains) == 0:
                     metrics = [np.nan] * (len(columns)-5)
 
+                # calculate metrics
                 else:
-                    # calculate metrics
-                    metrics = list(calculate_spike_metrics(spikes))
+                    metrics = list(calculate_spike_metrics(spiketrains))
+                    unit_rates = [len(spiketrain)/float(spiketrain.duration) for spiketrain in spiketrains]
+                    unit_index = range(len(spiketrains))
                 
                 # add to data frame
                 info = [session, structure, i_seg, [segment.t_start, segment.t_stop], 
                         segment.annotations['running']]
                 info.extend(metrics)
+                info.extend([unit_rates, unit_index])
                 df = df.append(pd.DataFrame([info], columns=columns), ignore_index=True)
 
-    # save data frame
-    df.to_csv(f'{dir_output}/{STIM_CODE}.csv', index=False)
+    # save region data frame
+    df_region = df.drop(columns=['unit_rates', 'unit_index'])
+    df_region.to_csv(f'{dir_output}/region_metrics/{STIM_CODE}.csv', index=False)
 
+    # save unit data frame
+    df_units = df.drop(columns=['mean_firing_rate', 'coefficient_of_variation', 
+                                'spike_distance','spike_synchrony'])
+    df_units = df_units.explode(['unit_rates', 'unit_index']).reset_index(drop=True)
+    df_units.to_csv(f'{dir_output}/unit_rates/{STIM_CODE}.csv', index=False)
 
 def calculate_spike_metrics(spiketrains):
     """
@@ -105,12 +116,14 @@ def calculate_spike_metrics(spiketrains):
     # combine spiketrains
     region_spiketrain = combine_spiketrains(spiketrains, t_stop=spiketrains[0].t_stop)
     
-    # compute mean firing rate
+    # compute mean firing rate and coefficient of variation
     mean_firing_rate = len(region_spiketrain) / region_spiketrain.duration / len(spiketrains)
-
-    # compute synchrony metrics
     coeff_of_var = compute_cv(region_spiketrain)
+
+    # compute spike-synchrony and spike-distance (suppress print statements. bug?)
+    sys.stdout = open(os.devnull, 'w')
     spike_sync, spike_dist = compute_pyspike_metrics(spiketrains)
+    sys.stdout = sys.__stdout__
 
     return mean_firing_rate, coeff_of_var, spike_dist, spike_sync
 
