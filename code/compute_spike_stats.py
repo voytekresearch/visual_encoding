@@ -15,8 +15,6 @@ import numpy as np
 import pandas as pd
 import neo
 import quantities as pq
-from elephant.spike_train_correlation import correlation_coefficient
-from elephant.conversion import BinnedSpikeTrain
 
 # Import custom functions
 import sys
@@ -37,7 +35,7 @@ def main():
     # initialize data frame
     columns = ['session', 'brain_structure', 'epoch_idx', 'epoch_times', 'running',
                'mean_firing_rate', 'unit_firing_rates', 'coefficient_of_variation', 
-               'spike_distance','spike_synchrony','correlation_coefficient']
+               'spike_distance','spike_synchrony']
     df = pd.DataFrame(columns=columns)
 
     # loop through files
@@ -84,7 +82,7 @@ def main():
 def calculate_spike_metrics(spiketrains):
     """
     calculate spike metrics (mean firing rate, coefficient of variance, 
-    SPIKE-distance, SPIKE-synchrony, and correlation coefficient).
+    SPIKE-distance, and SPIKE-synchrony).
 
     Parameters
     ----------
@@ -104,9 +102,6 @@ def calculate_spike_metrics(spiketrains):
         SPIKE-distance (pyspike) over all units during specified epoch.
     spike_sync: float
         SPIKE-synchrony (pyspike) over all units during specified epoch.
-    corr_coeff:
-        correlation coefficient (elephant) over all units during 
-        specified epoch. 
     """
 
     # compute rate metrics
@@ -116,9 +111,8 @@ def calculate_spike_metrics(spiketrains):
     # compute synchrony metrics
     coeff_of_var = compute_cv(combine_spiketrains(spiketrains, t_stop=spiketrains[0].t_stop))
     spike_sync, spike_dist = compute_pyspike_metrics(spiketrains)
-    corr_coeff = correlation_coefficient(BinnedSpikeTrain(spiketrains, bin_size=1 * pq.s))
 
-    return mean_firing_rate, unit_firing_rates, coeff_of_var, spike_dist, spike_sync, corr_coeff
+    return mean_firing_rate, unit_firing_rates, coeff_of_var, spike_dist, spike_sync
 
 
 if __name__ == '__main__':
