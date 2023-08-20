@@ -36,7 +36,7 @@ def main():
     # initialize data frame
     columns = ['session', 'brain_structure', 'epoch_idx', 'epoch_times', 'running',
                'mean_firing_rate', 'coefficient_of_variation', 
-               'spike_distance','spike_synchrony', 'unit_rates', 'unit_index']
+               'spike_distance','spike_synchrony', 'firing_rate', 'unit_index']
     df = pd.DataFrame(columns=columns)
 
     # loop through files
@@ -70,24 +70,24 @@ def main():
                 # calculate metrics
                 else:
                     metrics = list(calculate_spike_metrics(spiketrains))
-                    unit_rates = [len(spiketrain)/float(spiketrain.duration) for spiketrain in spiketrains]
+                    firing_rate = [len(spiketrain)/float(spiketrain.duration.item()) for spiketrain in spiketrains]
                     unit_index = range(len(spiketrains))
                 
                 # add to data frame
-                info = [session, structure, i_seg, [segment.t_start, segment.t_stop], 
+                info = [session, structure, i_seg, [segment.t_start.item(), segment.t_stop.item()],
                         segment.annotations['running']]
                 info.extend(metrics)
-                info.extend([unit_rates, unit_index])
+                info.extend([firing_rate, unit_index])
                 df = df.append(pd.DataFrame([info], columns=columns), ignore_index=True)
 
     # save region data frame
-    df_region = df.drop(columns=['unit_rates', 'unit_index'])
+    df_region = df.drop(columns=['firing_rate', 'unit_index'])
     df_region.to_csv(f'{dir_output}/region_metrics/{STIM_CODE}.csv', index=False)
 
     # save unit data frame
-    df_units = df.drop(columns=['mean_firing_rate', 'coefficient_of_variation', 
-                                'spike_distance','spike_synchrony'])
-    df_units = df_units.explode(['unit_rates', 'unit_index']).reset_index(drop=True)
+    df_units = df[['session', 'brain_structure', 'epoch_idx', 'unit_index', 'epoch_times', 
+                   'running', 'firing_rate']]
+    df_units = df_units.explode(['firing_rate', 'unit_index']).reset_index(drop=True)
     df_units.to_csv(f'{dir_output}/unit_rates/{STIM_CODE}.csv', index=False)
 
 def calculate_spike_metrics(spiketrains):
@@ -117,7 +117,7 @@ def calculate_spike_metrics(spiketrains):
     region_spiketrain = combine_spiketrains(spiketrains, t_stop=spiketrains[0].t_stop)
     
     # compute mean firing rate and coefficient of variation
-    mean_firing_rate = len(region_spiketrain) / region_spiketrain.duration / len(spiketrains)
+    mean_firing_rate = len(region_spiketrain) / region_spiketrain.duration.item() / len(spiketrains)
     coeff_of_var = compute_cv(region_spiketrain)
 
     # compute spike-synchrony and spike-distance (suppress print statements. bug?)
