@@ -45,8 +45,13 @@ class SessionResults:
         
         # load spike results
         try:
-            all_spike_stats = pd.read_csv(f"{path}/data/spike_stats/{stim_code}.csv")
+            # load region metrics
+            all_spike_stats = pd.read_csv(f"{path}/data/spike_stats/region_metrics/{stim_code}.csv")
             self.spike_stats = all_spike_stats.loc[all_spike_stats['session'] == session_id]
+
+            # load unit rates
+            all_unit_rates = pd.read_csv(f"{path}/data/spike_stats/unit_rates/{stim_code}.csv")
+            self.unit_rates = all_unit_rates.loc[all_unit_rates['session'] == session_id]
             print(f"\tSpike stats loaded...")
         except:
             self.spike_stats = None
