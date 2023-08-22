@@ -71,7 +71,7 @@ def plot_epochs(signal, time, epochs, threshold=None):
 
     return fig, ax
 
-def sync_plot(df, metrics, condition, markersize=5):
+def sync_plot(df, metrics, condition, markersize=5, fname_out=None):
     """
     Plot violin plots for each spike statistic in the given dataframe (df) for the given condition.
 
@@ -85,6 +85,8 @@ def sync_plot(df, metrics, condition, markersize=5):
         Condition to be plotted.
     markersize : int, optional
         Size of the markers in the swarm plot. Default is 5.
+    fname_out : str, optional
+        File path for figure to be saved out to.
 
     Returns
     -------
@@ -94,30 +96,48 @@ def sync_plot(df, metrics, condition, markersize=5):
     # imports
     import seaborn as sns
 
+    regions = df['brain_structure'].unique()
+
     # plot violin plots for each spike statistic
-    for metric in metrics:
-        # set plotting parameters
-        plotting_params = {
-            'data':    df,
-            'x':       'brain_structure',
-            'hue':     condition,
-            'y':       metric,
-            'split':   True
-        }
+    fig, ax = plt.subplots(len(regions), len(metrics), figsize=(12,8), sharex=True, sharey=True)
+    plt.xlabel('region')
 
-        # create figure
-        fig, ax = plt.subplots(figsize=(15,10))
-        vp = sns.violinplot(**plotting_params, ax=ax, palette='Blues')
-        sp = sns.swarmplot(**plotting_params, ax=ax, color=[0,0,0], size=markersize)
+    for j, region in enumerate(regions):
+        # segment data by region
+        region_df = df[df['brain_structure'] == region]
 
-        # add legend
-        handles, _ = vp.get_legend_handles_labels()
-        labels = df[condition].unique().tolist()
-        vp.legend(handles=handles, labels=labels)
+        # plot each metric
+        for i, metric in enumerate(metrics):
+            # set plotting parameters
+            plotting_params = {
+                'data':    region_df,
+                'x':       'block',
+                'hue':     condition,
+                'y':       metric#,
+                #'split':   False
+            }
 
-        # label figure
-        plt.ylabel(' '.join(metric.split('_')))
-        plt.xlabel('brain structure')
+            # add data
+            vp = sns.violinplot(**plotting_params, ax=ax[i,j], palette='Blues')
+            sp = sns.swarmplot(**plotting_params, dodge=True, ax=ax[i,j], color=[0,0,0], size=markersize)
+            ax[i,j].get_legend().remove()
+            ax[i,j].set(xlabel=None, ylabel=None)
+
+            # add legend on final plot only
+            if i==len(metrics)-1 and j==len(regions)-1:
+                handles, _ = vp.get_legend_handles_labels()
+                labels = region_df[condition].unique().tolist()
+                vp.legend(handles=handles, labels=labels)
+
+            # label figure on edges only
+            if j==0:
+                ax[i,j].set_ylabel(' '.join(metric.split('_')))
+            if i==len(metrics)-1:
+                ax[i,j].set_xlabel(region)
+
+    # save figure
+    if not fname_out is None:
+        fig.savefig(fname_out)
 
 
 def scatter_2_conditions(x1, y1, x2, y2, conditions=['cond 1', 'cond 2'],
