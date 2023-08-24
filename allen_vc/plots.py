@@ -439,7 +439,7 @@ def plot_segment(block, i_seg):
 
 
 
-def plot_linregress(df, x_data, y_data, group=None, title=None, fname_out=None, show=False):
+def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, fname_out=None, show=False):
     """
     Calculate and plot the linear regression of two columns in a dataframe.
 
@@ -449,6 +449,10 @@ def plot_linregress(df, x_data, y_data, group=None, title=None, fname_out=None, 
         column with x-values of dataset
     y_data : str
         column with y-values of dataset
+    group: str, optional
+        column to color/section data by
+    multireg: bool, optional
+        whether or not to plot regression lines for each group
     title : str, optional
         Title of the plot
     fname_out : str, optional
@@ -460,9 +464,6 @@ def plot_linregress(df, x_data, y_data, group=None, title=None, fname_out=None, 
     -------
     None
     """
-
-    # imports
-    from scipy.stats import linregress
     
     # create figure
     fig, ax = plt.subplots(figsize=(8,6), constrained_layout=True)
@@ -471,29 +472,20 @@ def plot_linregress(df, x_data, y_data, group=None, title=None, fname_out=None, 
     # plot data
     if group is not None:
         groups = df[group].unique()
-        for g in groups:
+        for i, g in enumerate(groups):
             gdf = df[df[group] == g]
             ax.scatter(gdf[x_data], gdf[y_data], label=g, alpha=0.6)
+
+            if multireg:
+                # run regression and plot results
+                plot_regression_line(gdf[x_data], gdf[y_data], ax=ax, text_height=0.9-i*0.2)
+
     else:
         ax.scatter(df[x_data], df[y_data])
 
-    # run regression and plot results
-    results = linregress(df[x_data], df[y_data])
-    t_lin = np.linspace(np.nanmin(df[x_data]), np.nanmax(df[x_data]), 100)
-    lin = results.slope * t_lin + results.intercept
-    ax.plot(t_lin, lin, color='red')
-
-    # add regression results text
-    if results.pvalue < 0.001:
-        pval = f"{results.pvalue:.2e}"
-    else:
-        pval = f"{results.pvalue:.3f}"
-    plt.text(1.05, 0.9, 
-             f"Regression \n" +
-             f"    Slope: {results.slope:.3f}\n" +
-             f"    Intercept: {results.intercept:.3f}\n" +
-             f"    R: {results.rvalue:.3f}\n" +
-             f"    p: {pval}", transform = ax.transAxes)
+    if not multireg:
+        # run regression and plot results
+        plot_regression_line(df[x_data], df[y_data], ax=ax)
 
     # label figure
     ax.legend()
@@ -509,6 +501,49 @@ def plot_linregress(df, x_data, y_data, group=None, title=None, fname_out=None, 
         plt.show()
     else:
         plt.close()
+
+
+def plot_regression_line(x, y, ax, text_height=0.9):
+    """
+    Plot the linear regression of two columns in a dataframe on existing axis.
+
+    Parameters
+    ----------
+    x : array-like
+        x-values of dataset
+    y : array-like
+        y-values of dataset
+    ax : matplotlib.axis.Axis
+        axis which to plot the data on
+    text_height : float, optional
+        height of regression report on the right of plot
+
+    Returns
+    -------
+    None
+    """
+
+    # imports
+    from scipy.stats import linregress
+
+    results = linregress(x, y)
+    t_lin = np.linspace(np.nanmin(x), np.nanmax(x), 100)
+    lin = results.slope * t_lin + results.intercept
+    ax.plot(t_lin, lin, linewidth=5, color='black')
+    ax.plot(t_lin, lin, linewidth=3)
+
+    # add regression results text
+    if results.pvalue < 0.001:
+        pval = f"{results.pvalue:.2e}"
+    else:
+        pval = f"{results.pvalue:.3f}"
+    plt.text(1.05, text_height, 
+             f"Regression \n" +
+             f"    Slope: {results.slope:.3f}\n" +
+             f"    Intercept: {results.intercept:.3f}\n" +
+             f"    R: {results.rvalue:.3f}\n" +
+             f"    p: {pval}", transform = ax.transAxes, fontsize=12)
+
 
 
 def plot_analog_signal(signal, ax=None, title=None, y_label=None, fname=None):
@@ -559,6 +594,22 @@ def plot_analog_signal(signal, ax=None, title=None, y_label=None, fname=None):
 
 
 def plot_time_resolved_params(df, window_size, title=None):
+    """
+    Plot normalized time resolved aperiodic parameters.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        dataframe containing lfp parameter data.
+    window_size: float
+        window size used in time resolved parameter calculation
+    title : str, optional
+        title of the produced plot
+
+    Returns
+    -------
+    None
+    """
 
     sessions = df['session'].unique()
 
