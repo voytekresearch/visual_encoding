@@ -99,7 +99,7 @@ def sync_plot(df, metrics, condition, markersize=5, fname_out=None):
     regions = df['brain_structure'].unique()
 
     # plot violin plots for each spike statistic
-    fig, ax = plt.subplots(len(regions), len(metrics), figsize=(12,8), sharex=True, sharey=True)
+    fig, ax = plt.subplots(len(regions), len(metrics), figsize=(10,10), sharex=True, sharey='row')
     plt.xlabel('region')
 
     for j, region in enumerate(regions):
@@ -120,6 +120,7 @@ def sync_plot(df, metrics, condition, markersize=5, fname_out=None):
             # add data
             vp = sns.violinplot(**plotting_params, ax=ax[i,j], palette='Blues')
             sp = sns.swarmplot(**plotting_params, dodge=True, ax=ax[i,j], color=[0,0,0], size=markersize)
+
             ax[i,j].get_legend().remove()
             ax[i,j].set(xlabel=None, ylabel=None)
 
@@ -468,24 +469,33 @@ def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, 
     # create figure
     fig, ax = plt.subplots(figsize=(8,6), constrained_layout=True)
     fig.patch.set_facecolor('white') # set background color to white for text legibility
+    markers = ['.', 'v']
     
     # plot data
-    if group is not None:
-        groups = df[group].unique()
-        for i, g in enumerate(groups):
-            gdf = df[df[group] == g]
-            ax.scatter(gdf[x_data], gdf[y_data], label=g, alpha=0.6)
+    h = 0
+    for r, region in enumerate(df['brain_structure'].unique()):
+        region_df = df[df['brain_structure'] == region]
 
-            if multireg:
-                # run regression and plot results
-                plot_regression_line(gdf[x_data], gdf[y_data], ax=ax, text_height=0.9-i*0.2)
+        if group is not None:
+            groups = region_df[group].unique()
+            for i, g in enumerate(groups):
+                gdf = region_df[region_df[group] == g]
+                ax.scatter(gdf[x_data], gdf[y_data], label=region + ' ' + g, 
+                    alpha=0.6, marker=markers[r])
 
-    else:
-        ax.scatter(df[x_data], df[y_data])
+                if multireg:
+                    # run regression and plot results
+                    plot_regression_line(gdf[x_data], gdf[y_data], ax=ax, 
+                        text_height=0.9-r*0.4-i*0.2, label=region + ' ' + g)
 
-    if not multireg:
-        # run regression and plot results
-        plot_regression_line(df[x_data], df[y_data], ax=ax)
+        else:
+            ax.scatter(region_df[x_data], region_df[y_data], label=region, 
+                alpha=0.6, marker=markers[r])
+
+        if not multireg:
+            # run regression and plot results
+            plot_regression_line(region_df[x_data], region_df[y_data], ax=ax, 
+                text_height=0.9-r*0.2, label=region)
 
     # label figure
     ax.legend()
@@ -503,7 +513,7 @@ def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, 
         plt.close()
 
 
-def plot_regression_line(x, y, ax, text_height=0.9):
+def plot_regression_line(x, y, ax, text_height=0.9, label=''):
     """
     Plot the linear regression of two columns in a dataframe on existing axis.
 
@@ -517,6 +527,8 @@ def plot_regression_line(x, y, ax, text_height=0.9):
         axis which to plot the data on
     text_height : float, optional
         height of regression report on the right of plot
+    label : str, optional
+        test label to use on regression report
 
     Returns
     -------
@@ -538,7 +550,7 @@ def plot_regression_line(x, y, ax, text_height=0.9):
     else:
         pval = f"{results.pvalue:.3f}"
     plt.text(1.05, text_height, 
-             f"Regression \n" +
+             f"Regression {label}\n" +
              f"    Slope: {results.slope:.3f}\n" +
              f"    Intercept: {results.intercept:.3f}\n" +
              f"    R: {results.rvalue:.3f}\n" +
