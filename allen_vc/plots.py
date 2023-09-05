@@ -440,7 +440,7 @@ def plot_segment(block, i_seg):
 
 
 
-def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, fname_out=None, show=False):
+def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, legend=False, fname_out=None, show=False):
     """
     Calculate and plot the linear regression of two columns in a dataframe.
 
@@ -495,10 +495,11 @@ def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, 
         if not multireg:
             # run regression and plot results
             plot_regression_line(region_df[x_data], region_df[y_data], ax=ax, 
-                text_height=0.9-r*0.2, label=region)
+                text_height=0.9-r*0.2, label=region, colored=(group is None))
 
     # label figure
-    ax.legend()
+    if legend:
+        ax.legend()
     if title is not None:
         plt.title(title)
     plt.xlabel(x_data)
@@ -513,7 +514,7 @@ def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, 
         plt.close()
 
 
-def plot_regression_line(x, y, ax, text_height=0.9, label=''):
+def plot_regression_line(x, y, ax, text_height=0.9, label='', colored=True):
     """
     Plot the linear regression of two columns in a dataframe on existing axis.
 
@@ -542,7 +543,8 @@ def plot_regression_line(x, y, ax, text_height=0.9, label=''):
     t_lin = np.linspace(np.nanmin(x), np.nanmax(x), 100)
     lin = results.slope * t_lin + results.intercept
     ax.plot(t_lin, lin, linewidth=5, color='black')
-    ax.plot(t_lin, lin, linewidth=3)
+    if colored:
+        ax.plot(t_lin, lin, linewidth=3)
 
     # add regression results text
     if results.pvalue < 0.001:
@@ -605,7 +607,7 @@ def plot_analog_signal(signal, ax=None, title=None, y_label=None, fname=None):
         plt.savefig(fname)
 
 
-def plot_time_resolved_params(df, window_size, title=None):
+def plot_time_resolved_params(df, session, window, fs, title=None):
     """
     Plot normalized time resolved aperiodic parameters.
 
@@ -613,8 +615,12 @@ def plot_time_resolved_params(df, window_size, title=None):
     ----------
     df : pd.DataFrame
         dataframe containing lfp parameter data.
-    window_size: float
-        window size used in time resolved parameter calculation
+    session: str
+        session from which to draw data.
+    window: tuple of ints
+        window indices corresponding to the window of data to plot.
+    fs: int
+        sampling frequency of data.
     title : str, optional
         title of the produced plot
 
@@ -623,19 +629,18 @@ def plot_time_resolved_params(df, window_size, title=None):
     None
     """
 
-    sessions = df['session'].unique()
+    sdf = df[df['session'] == session]
+    wdf = sdf[(sdf['window_idx'] >= window[0]) & (sdf['window_idx'] < window[1])]
+    t = np.linspace(window[0]/fs, window[1]/fs, (window[1]-window[0]))
 
-    for session in sessions:
-        sdf = df[df['session'] == session]
-        t = np.linspace(0, len(sdf)*window_size, len(sdf))
+    fig, ax = plt.subplots()
+    plt.set_cmap('Blues')
+    for i, series in enumerate(['avg_pupil_area', 'inst_spike_rate', 'exponent', 'offset']):
+        ax.plot(t, np.array((wdf[series] - wdf[series].mean())/wdf[series].std()) + (3-i)*4, alpha=(1-0.2*i), label=series)
 
-        fig, ax = plt.subplots()
-        plt.set_cmap('Blues')
-        for i, series in enumerate(['avg_pupil_area', 'inst_spike_rate', 'exponent', 'offset']):
-            ax.plot(t, np.array((sdf[series] - sdf[series].mean())/sdf[series].std()) + (3-i)*4, alpha=(1-0.2*i), label=series)
+    ax.set(xlabel=f"time (s)", ylabel="normalized parameters (AU)", yticklabels=[])
+    ax.tick_params(left=False)
+    ax.set_title(str(session))
+    ax.legend()
 
-        ax.set(xlabel=f"time (s)", ylabel="normalized parameters (AU)")
-        ax.set_title(str(session))
-        ax.legend()
-
-        plt.show()
+    plt.show()
