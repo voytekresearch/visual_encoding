@@ -71,7 +71,7 @@ def plot_epochs(signal, time, epochs, threshold=None):
 
     return fig, ax
 
-def sync_plot(df, metrics, condition, markersize=5, fname_out=None):
+def sync_plot(df, metrics, conditions, fname_out=None):
     """
     Plot violin plots for each spike statistic in the given dataframe (df) for the given condition.
 
@@ -81,8 +81,8 @@ def sync_plot(df, metrics, condition, markersize=5, fname_out=None):
         Dataframe containing the data to be plotted.
     metrics : list
         List of spike statistics to be plotted.
-    condition : str
-        Condition to be plotted.
+    conditions : str
+        Conditions to be plotted.
     markersize : int, optional
         Size of the markers in the swarm plot. Default is 5.
     fname_out : str, optional
@@ -94,9 +94,10 @@ def sync_plot(df, metrics, condition, markersize=5, fname_out=None):
     """
 
     # imports
-    import seaborn as sns
+    import matplotlib.patches as mpatches
 
     regions = df['brain_structure'].unique()
+    colors = ['C0', 'C1', 'C2', 'C3']
 
     # plot violin plots for each spike statistic
     fig, ax = plt.subplots(len(regions), len(metrics), figsize=(10,10), sharex=True, sharey='row')
@@ -108,27 +109,17 @@ def sync_plot(df, metrics, condition, markersize=5, fname_out=None):
 
         # plot each metric
         for i, metric in enumerate(metrics):
-            # set plotting parameters
-            plotting_params = {
-                'data':    region_df,
-                'x':       'block',
-                'hue':     condition,
-                'y':       metric#,
-                #'split':   False
-            }
 
-            # add data
-            vp = sns.violinplot(**plotting_params, ax=ax[i,j], palette='Blues')
-            sp = sns.swarmplot(**plotting_params, dodge=True, ax=ax[i,j], color=[0,0,0], size=markersize)
+            plot_connected_scatter(region_df, metric, conditions, ax=ax[i,j], line_color='black')
 
-            ax[i,j].get_legend().remove()
-            ax[i,j].set(xlabel=None, ylabel=None)
+            # ax[i,j].set(xlabel=None, ylabel=None)
 
             # add legend on final plot only
             if i==len(metrics)-1 and j==len(regions)-1:
-                handles, _ = vp.get_legend_handles_labels()
-                labels = region_df[condition].unique().tolist()
-                vp.legend(handles=handles, labels=labels)
+                labels = []
+                for ic, color in enumerate(colors):
+                    labels.append((mpatches.Patch(color=color, alpha=0.3), conditions[ic]))
+                ax[i,j].legend(*zip(*labels))
 
             # label figure on edges only
             if j==0:
@@ -644,3 +635,185 @@ def plot_time_resolved_params(df, session, window, fs, title=None):
     ax.legend()
 
     plt.show()
+
+
+
+def plot_connected_scatter(df, metric, conditions, ax, paired=True,
+                           scatter_jit=.05, scatter_alpha=.5,
+                           line_color=None, line_alpha=.1, colors=None, **kwargs):
+    """Plot connected violin scattter plots.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        pandas DataFrame from which to draw data.
+    metric : str
+        metric to plot (column from dataframe).
+    conditions: list of str
+        conditions which to split the data based on.
+    ax : AxesSubplot
+        Subplot to plot onto.
+    paired : bool, optional, default: True
+        Plot lines connected pairs of points from dist0 and dist1.
+    scatter_jit : float, optional, default: .05
+        Scatter random jit standard deviation.
+    scatter_alpha : float, optional, default: .05
+        Transparency of scatter points.
+    line_color : str, optional, default: None
+        Color of paired lines
+    line_alpha : float, optional, default: .1
+        Transparency of paired lines.
+    colors : list, optional, default: None
+        Colors of the two violin and scatter plots.
+    **kwargs : optional
+        Additional plotting arguments.
+
+    Returns
+    -------
+    ax0 : AxesSubplot
+        Drawn subplot.
+    ax1 : AxesSubplot, optional
+        Drawn twin subplot.
+    """
+
+    # Pop kwargs
+    violin_locs = (1,2,4,5)
+    colors = ['C0', 'C1', 'C2', 'C3'] if colors is None else colors
+    title = kwargs.pop('title', '')
+    ylabel = kwargs.pop('ylabel', '')
+    xlim = kwargs.pop('xlim', None)
+    ylim = kwargs.pop('ylim', None)
+
+    # Separate data based on condition
+    condition='state'
+    g0 = df[df[condition] == conditions[0]][metric]
+    g1 = df[df[condition] == conditions[1]][metric]
+    g2 = df[df[condition] == conditions[2]][metric]
+    g3 = df[df[condition] == conditions[3]][metric]
+
+    # Violinplots
+    vp = ax.violinplot([g0,g1,g2,g3], positions=violin_locs, showextrema=False)
+    vp = _set_vp_colors(vp, colors)  # Comment out coloring for now
+
+    # Scatterplots
+
+    if isinstance(scatter_jit, (tuple, list)):
+        scatter_jit0, scatter_jit1, scatter_jit2, scatter_jit3 = scatter_jit
+    else:
+        scatter_jit0, scatter_jit1, scatter_jit2, scatter_jit3 = scatter_jit, scatter_jit, scatter_jit, scatter_jit
+
+    xs_a = _weight_scatter_points(g0, violin_locs[0], scatter_jit0)
+    xs_a = np.abs(xs_a - violin_locs[0]) + violin_locs[0]
+
+    xs_b = _weight_scatter_points(g1, violin_locs[1], scatter_jit1)
+    xs_b = np.abs(xs_b - violin_locs[1]) + violin_locs[1]
+    xs_b = -(xs_b - violin_locs[1]) + violin_locs[1]
+
+    xs_c = _weight_scatter_points(g2, violin_locs[2], scatter_jit2)
+    xs_c = np.abs(xs_c - violin_locs[2]) + violin_locs[2]
+
+    xs_d = _weight_scatter_points(g3, violin_locs[3], scatter_jit3)
+    xs_d = np.abs(xs_d - violin_locs[3]) + violin_locs[3]
+    xs_d = -(xs_d - violin_locs[3]) + violin_locs[3]
+
+    ax.scatter(xs_a, g0, alpha=scatter_alpha, color='gray', s=10)
+    ax.scatter(xs_b, g1, alpha=scatter_alpha, color='gray', s=10)
+    ax.scatter(xs_c, g2, alpha=scatter_alpha, color='gray', s=10)
+    ax.scatter(xs_d, g3, alpha=scatter_alpha, color='gray', s=10)
+
+
+    # Create connected lines between averages
+    avg0 = df[df[condition] == conditions[0]].groupby('session')[metric].mean().tolist()
+    avg1 = df[df[condition] == conditions[1]].groupby('session')[metric].mean().tolist()
+    avg2 = df[df[condition] == conditions[2]].groupby('session')[metric].mean().tolist()
+    avg3 = df[df[condition] == conditions[3]].groupby('session')[metric].mean().tolist()
+
+    xs_e = _weight_scatter_points(avg0, violin_locs[0], scatter_jit0)
+    xs_e = np.abs(xs_e - violin_locs[0]) + violin_locs[0]
+
+    xs_f = _weight_scatter_points(avg1, violin_locs[1], scatter_jit1)
+    xs_f = np.abs(xs_f - violin_locs[1]) + violin_locs[1]
+    xs_f = -(xs_f - violin_locs[1]) + violin_locs[1]
+
+    xs_g = _weight_scatter_points(avg2, violin_locs[2], scatter_jit2)
+    xs_g = np.abs(xs_g - violin_locs[2]) + violin_locs[2]
+
+    xs_h = _weight_scatter_points(avg3, violin_locs[3], scatter_jit3)
+    xs_h = np.abs(xs_h - violin_locs[3]) + violin_locs[3]
+    xs_h = -(xs_h - violin_locs[3]) + violin_locs[3]
+
+    ax.scatter(xs_e, avg0, alpha=scatter_alpha, color='black', s=50)
+    ax.scatter(xs_f, avg1, alpha=scatter_alpha, color='black', s=50)
+    ax.scatter(xs_g, avg2, alpha=scatter_alpha, color='black', s=50)
+    ax.scatter(xs_h, avg3, alpha=scatter_alpha, color='black', s=50)
+
+    if paired:
+
+        line_color = 'C0' if line_color is None else line_color
+
+        for i, (d0, d1) in enumerate(zip(avg0, avg1)):
+            ax.plot([xs_e[i], xs_f[i]], [d0, d1], color=line_color, alpha=line_alpha)
+
+        for i, (d2, d3) in enumerate(zip(avg2, avg3)):
+            ax.plot([xs_g[i], xs_h[i]], [d2, d3], color=line_color, alpha=line_alpha)
+
+    # Axis settings
+    ax.set_title(title)
+    ax.set_ylabel(ylabel)
+    ax.set_xticks((1.5, 4.5))
+    ax.set_xticklabels(['behavior', 'presentation'])
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+
+    return ax
+
+
+def _weight_scatter_points(dist, loc, std, bins=500):
+    """Weight scatter points by density."""
+
+    weights, edges = np.histogram(dist, bins=bins)
+    weights = weights / weights.max()
+
+    bins = np.array([edges[:-1], edges[1:]]).T
+    bins[-1][1] += 1
+
+    inds = np.zeros(len(dist), dtype=int)
+    for i, r in enumerate(dist):
+        inds[i] = np.where((r >= bins[:, 0]) & (r < bins[:, 1]))[0][0]
+
+    weights = weights[inds]
+
+    xs = np.zeros_like(dist)
+
+    for i in range(len(dist)):
+        xs[i] = np.random.normal(loc, weights[i]*std)
+
+    return xs
+
+
+def _set_vp_colors(vp, colors):
+    """Update violin plot colors."""
+
+
+    for i, body in enumerate(vp['bodies']):
+
+        # vp['cmins'].set_color(colors[i])
+        # vp['cmaxes'].set_color(colors[i])
+        # vp['cbars'].set_color(colors[i])
+
+        vp['bodies'][i].set_color(colors[i])
+        vp['bodies'][i].set_facecolor(colors[i])
+        vp['bodies'][i].set_edgecolor(colors[i])
+
+        b = vp['bodies'][i]
+
+        if i%2==0:
+            b.get_paths()[0].vertices[:, 0] = np.clip(b.get_paths()[0].vertices[:, 0], -np.inf,
+                                                  np.mean(b.get_paths()[0].vertices[:, 0]))
+        else:
+            b.get_paths()[0].vertices[:, 0] = np.clip(b.get_paths()[0].vertices[:, 0],
+                                                  np.mean(b.get_paths()[0].vertices[:, 0]),
+                                                  np.inf)
+
+    return vp
+
