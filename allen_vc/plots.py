@@ -431,7 +431,8 @@ def plot_segment(block, i_seg):
 
 
 
-def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, legend=False, fname_out=None, show=False):
+def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, legend=False, 
+                    fname_out=None, show=False, close=False):
     """
     Calculate and plot the linear regression of two columns in a dataframe.
 
@@ -451,6 +452,8 @@ def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, 
         Filename of the output figure
     show : bool, optional
         Whether to show the figure or not
+    close : bool, optional
+        Whether to close the figure or not
 
     Returns
     -------
@@ -501,7 +504,7 @@ def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, 
         fig.savefig(fname_out)
     if show:
         plt.show()
-    else:
+    if close:
         plt.close()
 
 
