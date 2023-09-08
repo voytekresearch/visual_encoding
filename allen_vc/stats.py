@@ -291,7 +291,7 @@ def create_r_matrix(statistics, mat):
     return np.array(r_mat), np.array(p_mat)
 
 
-def mixedLM(df, var, covariates, group):
+def mixedLM(df, var, covariates, group, verbose=True):
     """
     Calculate the results of a Linear Mixed Effect Model.
 
@@ -302,22 +302,28 @@ def mixedLM(df, var, covariates, group):
     var : str
         name of dependent variable of interest.
     covariates: list of str
-        names of covariates that are not the independent variable of interest.
+        names of covariates (independent variables / fixed effects).
     group: str
-        list of groups by which to calculate regression over.
+        group labels (random effect).
+    verbose: bool
+        whether to print results.
 
     Returns
     -------
-    None
+    results : statsmodels.regression.linear_model.RegressionResultsWrapper
+        results of the linear mixed effect model.
     """
 
     # imports
     import statsmodels.regression.mixed_linear_model as smrl
 
-    lm_df = df[[var, group] + covariates]
-    cov_mat = np.asarray(lm_df[covariates])
+    # run model
+    model = smrl.MixedLM(df[var], df[covariates], groups=df[group])
+    results = model.fit()
 
-    model = smrl.MixedLM(np.asarray(lm_df[var]), cov_mat, groups=np.asarray(lm_df[group]))
-    res = model.fit()
-    print(res.summary())
+    # print results
+    if verbose:
+        print(results.summary())
+
+    return results
 
