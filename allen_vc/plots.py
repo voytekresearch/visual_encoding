@@ -97,10 +97,10 @@ def sync_plot(df, metrics, conditions, fname_out=None):
     import matplotlib.patches as mpatches
 
     regions = df['brain_structure'].unique()
-    colors = ['C0', 'C1', 'C2', 'C3']
+    colors = ['red','darkorange','blue','purple']
 
     # plot violin plots for each spike statistic
-    fig, ax = plt.subplots(len(regions), len(metrics), figsize=(10,10), sharex=True, sharey='row')
+    fig, ax = plt.subplots(len(regions), len(metrics), figsize=(10,10), sharex=True)
     plt.xlabel('region')
 
     for j, region in enumerate(regions):
@@ -110,7 +110,7 @@ def sync_plot(df, metrics, conditions, fname_out=None):
         # plot each metric
         for i, metric in enumerate(metrics):
 
-            plot_connected_scatter(region_df, metric, conditions, ax=ax[i,j], line_color='black')
+            plot_connected_scatter(region_df, metric, conditions, ax=ax[i,j], line_color='black', colors=colors)
 
             # ax[i,j].set(xlabel=None, ylabel=None)
 
@@ -126,6 +126,10 @@ def sync_plot(df, metrics, conditions, fname_out=None):
                 ax[i,j].set_ylabel(' '.join(metric.split('_')))
             if i==len(metrics)-1:
                 ax[i,j].set_xlabel(region)
+
+            # share correct axes
+            if j == 0:
+                ax[i,j].sharey(ax[i,j+1])
 
     # save figure
     if not fname_out is None:
@@ -216,6 +220,50 @@ def scatter_2_conditions(x1, y1, x2, y2, conditions=['cond 1', 'cond 2'],
         plt.show()
     else:
         plt.close()
+
+
+def error_scatter_plot(df, x, y, group, **kwargs):
+    """
+    Plot an errorbar scatter plot grouped by region, aggregated over groups.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        dataframe containing data to be aggregated and plotted.
+    x : array-like
+        name of independent variable to be plotted.
+    y : array-like
+        name of dependent variable to be plotted.
+    group : str
+        group variable to separate and aggregate data by.
+    Returns
+    -------
+    None
+
+    """
+
+    regions = df['brain_structure'].unique()
+
+    # create figure
+    fig, ax = plt.subplots(figsize=(8,6), constrained_layout=True)
+    fig.patch.set_facecolor('white') # set background color to white for text legibility
+    markers = ['.', 'v']
+    colors = ['dodgerblue', 'orange']
+
+    for r, region in enumerate(regions):
+
+        region_df = df[df['brain_structure']==region]
+
+        df_mean = region_df.groupby('session')[[x,y]].mean()
+        df_std = region_df.groupby('session')[[x,y]].std()
+
+        ax.errorbar(df_mean[x].to_numpy(), df_mean[y].to_numpy(), xerr=df_std[x], yerr=df_std[y], fmt=markers[r], color=colors[r], alpha=0.3, label=region)
+
+        plot_regression_line(df_mean[x], df_mean[y], ax=ax, label=region, text_height=0.9-r*0.2, color=colors[r])
+
+    ax.legend()
+    ax.set(xlabel=x, ylabel=y)
+
 
 def plot_sa_heat_map(r_mat, xlabels, ylabels, graph_title=None,
                      sig_mask=None, fname_out=None, show_fig=True, vmin=-1, vmax=1):
@@ -508,7 +556,7 @@ def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, 
         plt.close()
 
 
-def plot_regression_line(x, y, ax, text_height=0.9, label='', colored=True):
+def plot_regression_line(x, y, ax, text_height=0.9, label='', color=None):
     """
     Plot the linear regression of two columns in a dataframe on existing axis.
 
@@ -537,8 +585,8 @@ def plot_regression_line(x, y, ax, text_height=0.9, label='', colored=True):
     t_lin = np.linspace(np.nanmin(x), np.nanmax(x), 100)
     lin = results.slope * t_lin + results.intercept
     ax.plot(t_lin, lin, linewidth=5, color='black')
-    if colored:
-        ax.plot(t_lin, lin, linewidth=3)
+    if color:
+        ax.plot(t_lin, lin, linewidth=3, color=color)
 
     # add regression results text
     if results.pvalue < 0.001:
