@@ -480,7 +480,7 @@ def plot_segment(block, i_seg):
 
 
 def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, legend=False, 
-                    fname_out=None, show=False, close=False):
+                    fname_out=None, show=False, close=False, colors=None):
     """
     Calculate and plot the linear regression of two columns in a dataframe.
 
@@ -512,9 +512,10 @@ def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, 
     fig, ax = plt.subplots(figsize=(8,6), constrained_layout=True)
     fig.patch.set_facecolor('white') # set background color to white for text legibility
     markers = ['.', 'v']
+    colors = ['C0', 'C1', 'C2', 'C3'] if colors is None else colors
     
     # plot data
-    h = 0
+    c = 0
     for r, region in enumerate(df['brain_structure'].unique()):
         region_df = df[df['brain_structure'] == region]
 
@@ -523,21 +524,24 @@ def plot_linregress(df, x_data, y_data, group=None, multireg=False, title=None, 
             for i, g in enumerate(groups):
                 gdf = region_df[region_df[group] == g]
                 ax.scatter(gdf[x_data], gdf[y_data], label=region + ' ' + g, 
-                    alpha=0.6, marker=markers[r])
+                    alpha=0.6, marker=markers[r], color=colors[c])
 
                 if multireg:
                     # run regression and plot results
                     plot_regression_line(gdf[x_data], gdf[y_data], ax=ax, 
-                        text_height=0.9-r*0.4-i*0.2, label=region + ' ' + g)
+                        text_height=0.9-r*0.4-i*0.2, label=region + ' ' + g, color=colors[c])
+                    c += 1
+
 
         else:
             ax.scatter(region_df[x_data], region_df[y_data], label=region, 
-                alpha=0.6, marker=markers[r])
+                alpha=0.6, marker=markers[r], color=colors[c])
 
-        if not multireg:
             # run regression and plot results
             plot_regression_line(region_df[x_data], region_df[y_data], ax=ax, 
-                text_height=0.9-r*0.2, label=region, colored=(group is None))
+                text_height=0.9-r*0.2, label=region, color=colors[c])
+            c += 1
+
 
     # label figure
     if legend:
