@@ -5,13 +5,13 @@ font.family:	sans-serif
 font.sans-serif:		arial
 
 # Font size
-figure.titlesize:	32
-axes.titlesize:	28
-axes.labelsize:	24
-xtick.labelsize:	18
-ytick.labelsize:	18
-legend.fontsize:	18
-font.size:          18
+figure.titlesize:	25
+axes.titlesize:	20
+axes.labelsize:	16
+xtick.labelsize:	16
+ytick.labelsize:	16
+legend.fontsize:	16
+font.size:          16
 
 # Figure appearance
 figure.constrained_layout.use:  True
