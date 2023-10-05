@@ -19,7 +19,7 @@ import quantities as pq
 # Import custom functions
 import sys
 sys.path.append('allen_vc')
-from analysis import compute_pyspike_metrics, compute_cv
+from analysis import compute_pyspike_metrics, compute_dispersion
 from neo_utils import combine_spiketrains
 
 
@@ -118,7 +118,7 @@ def calculate_spike_metrics(spiketrains):
     
     # compute mean firing rate and coefficient of variation
     mean_firing_rate = len(region_spiketrain) / region_spiketrain.duration.item() / len(spiketrains)
-    coeff_of_var = compute_cv(region_spiketrain)
+    coeff_of_var, _ = compute_dispersion(region_spiketrain)
 
     # compute spike-synchrony and spike-distance (suppress print statements. bug?)
     sys.stdout = open(os.devnull, 'w')

@@ -48,9 +48,9 @@ def compute_psd(signal, fs, fmin=0, fmax=np.inf, bandwidth=None,
     return spectra, freq
 
 
-def compute_cv(spiketrain):
-    """Compute the coefficient of variation (CV) of the interspike interval (ISI)
-     of a spike train.
+def compute_dispersion(spiketrain):
+    """Compute the coefficient of variation and fano factor of 
+    the interspike interval (ISI) of a spike train.
 
     Parameters
     ----------
@@ -59,21 +59,24 @@ def compute_cv(spiketrain):
 
     Returns
     -------
-    cov : float
-        Coefficient of variation (CV) of the interspike interval (ISI) distribution.
+    coef_variation : float
+        Coefficient of variation of the ISI distribution.
+    fano_factor : float
+        Fano factor of the ISI distribution.
     """
 
     # check if there are any spikes
     if len(spiketrain)==0:
-        return np.nan
+        return np.nan, np.nan
     
     # compute interspike intervals
-    isi = np.diff(spiketrain.times)
+    isi = np.diff(spiketrain.times.magnitude)
 
     # compute coefficient of variation
-    cv = np.float(np.std(isi) / np.mean(isi))
+    coef_variation = np.std(isi) / np.mean(isi)
+    fano_factor = np.var(isi) / np.mean(isi)
     
-    return cv
+    return coef_variation, fano_factor
 
 
 def compute_pyspike_metrics(spiketrains, interval=None):
