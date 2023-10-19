@@ -48,8 +48,8 @@ def compute_psd(signal, fs, fmin=0, fmax=np.inf, bandwidth=None,
     return spectra, freq
 
 
-def compute_dispersion(spiketrain):
-    """Compute the coefficient of variation and fano factor of 
+def compute_cv(spiketrain):
+    """Compute the coefficient of variation of 
     the interspike interval (ISI) of a spike train.
 
     Parameters
@@ -61,8 +61,6 @@ def compute_dispersion(spiketrain):
     -------
     coef_variation : float
         Coefficient of variation of the ISI distribution.
-    fano_factor : float
-        Fano factor of the ISI distribution.
     """
 
     # check if there are any spikes
@@ -74,10 +72,31 @@ def compute_dispersion(spiketrain):
 
     # compute coefficient of variation
     coef_variation = np.std(isi) / np.mean(isi)
-    fano_factor = np.var(isi) / np.mean(isi)
     
-    return coef_variation, fano_factor
+    return coef_variation
 
+def compute_fano_factor(spiketrain, bin_size):
+    """ Compute the Fano factor of a spike train.
+
+    Parameters
+    ----------
+    spiketrain : neo.SpikeTrain
+        Neo SpikeTrain objects
+    bin_size : pq.Quantity
+        Bin size for binning spike train.
+
+    """
+    # imports
+    from elephant.statistics import time_histogram
+
+    # bin data
+    spike_histogram = time_histogram(spiketrain, binsize=bin_size)
+    spikes_binned = spike_histogram.magnitude.flatten()
+    
+    # compute Fano Factor
+    fano_factor = np.var(spikes_binned) / np.mean(spikes_binned)
+    
+    return fano_factor
 
 def compute_pyspike_metrics(spiketrains, interval=None):
     """
