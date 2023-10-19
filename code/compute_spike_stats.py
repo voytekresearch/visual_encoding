@@ -19,24 +19,24 @@ import quantities as pq
 # Import custom functions
 import sys
 sys.path.append('allen_vc')
-from analysis import compute_pyspike_metrics, compute_dispersion
+from analysis import compute_pyspike_metrics, compute_cv, compute_fano_factor
 from neo_utils import combine_spiketrains
-
 
 def main():
     # Define/create directories for inputs/outputs
     dir_input = f"{PROJECT_PATH}/data/blocks/segmented/{STIM_CODE}"
     files = os.listdir(dir_input)
     
-    dir_output = f"{PROJECT_PATH}/data/spike_stats"
+    dir_output = f"{PROJECT_PATH}/data/spike_stats_temp"
     for folder in ['region_metrics', 'unit_rates']:
         if not os.path.exists(f"{dir_output}/{folder}"): 
             os.makedirs(f"{dir_output}/{folder}")
 
     # initialize data frame
     columns = ['session', 'brain_structure', 'epoch_idx', 'epoch_times', 'running',
-               'mean_firing_rate', 'coefficient_of_variation', 
-               'spike_distance','spike_synchrony', 'firing_rate', 'unit_index']
+               'region_cv', 'spike_distance', 'spike_synchrony', 
+               'mean_firing_rate', 'mean_fano_factor', 'mean_cv',
+               'firing_rate', 'coef_variation', 'fano_factor', 'unit_index']
     df = pd.DataFrame(columns=columns)
 
     # loop through files
@@ -66,34 +66,43 @@ def main():
                 # ensure there are spikes in structure
                 if len(spiketrains) == 0:
                     metrics = [np.nan] * (len(columns)-5)
+                    firing_rate = [np.nan] * len(spiketrains)
+                    coef_variation = [np.nan] * len(spiketrains)
+                    fano_factor = [np.nan] * len(spiketrains)
 
                 # calculate metrics
                 else:
-                    metrics = list(calculate_spike_metrics(spiketrains))
+                    # calculate region metrics
+                    metrics = list(compute_synchrony(spiketrains))
+
+                    # calculate unit metrics
                     firing_rate = [len(spiketrain)/float(spiketrain.duration.item()) for spiketrain in spiketrains]
-                    unit_index = range(len(spiketrains))
+                    coef_variation = [compute_cv(spiketrain) for spiketrain in spiketrains]
+                    fano_factor = [compute_fano_factor(spiketrain, bin_size=1*pq.s) for spiketrain in spiketrains]
                 
                 # add to data frame
-                info = [session, structure, i_seg, [segment.t_start.item(), segment.t_stop.item()],
+                data = [session, structure, i_seg, [segment.t_start.item(), segment.t_stop.item()],
                         segment.annotations['running']]
-                info.extend(metrics)
-                info.extend([firing_rate, unit_index])
-                df = df.append(pd.DataFrame([info], columns=columns), ignore_index=True)
+                data.extend(metrics)
+                data.extend([np.mean(firing_rate), np.mean(fano_factor), np.mean(coef_variation),
+                             firing_rate, coef_variation, fano_factor, range(len(spiketrains))])
+                df_i = pd.DataFrame([data], columns=columns)
+                df = pd.concat([df, df_i], axis=0, ignore_index=True)
 
     # save region data frame
-    df_region = df.drop(columns=['firing_rate', 'unit_index'])
+    df_region = df.drop(columns=['firing_rate', 'coef_variation', 'fano_factor', 'unit_index'])
     df_region.to_csv(f'{dir_output}/region_metrics/{STIM_CODE}.csv', index=False)
 
     # save unit data frame
-    df_units = df[['session', 'brain_structure', 'epoch_idx', 'unit_index', 'epoch_times', 
-                   'running', 'firing_rate']]
-    df_units = df_units.explode(['firing_rate', 'unit_index']).reset_index(drop=True)
+    df_units = df.drop(columns=['region_cv', 'spike_distance', 'spike_synchrony',
+                                'mean_firing_rate', 'mean_fano_factor', 'mean_cv'])
+    df_units = df_units.explode(['firing_rate', 'coef_variation', 'fano_factor', 'unit_index'])
     df_units.to_csv(f'{dir_output}/unit_rates/{STIM_CODE}.csv', index=False)
 
-def calculate_spike_metrics(spiketrains):
+def compute_synchrony(spiketrains):
     """
-    calculate spike metrics (mean firing rate, coefficient of variance, 
-    SPIKE-distance, and SPIKE-synchrony).
+    calculate spike synchrony metrics for a population of spike trains,
+    including coefficient of variance, SPIKE-distance, and SPIKE-synchrony.
 
     Parameters
     ----------
@@ -103,8 +112,6 @@ def calculate_spike_metrics(spiketrains):
 
     Returns
     -------
-    mean_firing_rate: float
-        mean firing rate over all units during specified epoch.
     coeff_of_var: float
         coefficient of variation over all units during specified epoch.
     spike_dist: float
@@ -116,16 +123,15 @@ def calculate_spike_metrics(spiketrains):
     # combine spiketrains
     region_spiketrain = combine_spiketrains(spiketrains, t_stop=spiketrains[0].t_stop)
     
-    # compute mean firing rate and coefficient of variation
-    mean_firing_rate = len(region_spiketrain) / region_spiketrain.duration.item() / len(spiketrains)
-    coeff_of_var, _ = compute_dispersion(region_spiketrain)
+    # compute coefficient of variation
+    coeff_of_var = compute_cv(region_spiketrain)
 
     # compute spike-synchrony and spike-distance (suppress print statements. bug?)
     sys.stdout = open(os.devnull, 'w')
     spike_sync, spike_dist = compute_pyspike_metrics(spiketrains)
     sys.stdout = sys.__stdout__
 
-    return mean_firing_rate, coeff_of_var, spike_dist, spike_sync
+    return coeff_of_var, spike_dist, spike_sync
 
 
 if __name__ == '__main__':
