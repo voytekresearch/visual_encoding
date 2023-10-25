@@ -27,8 +27,8 @@ def main():
     dir_input = f"{PROJECT_PATH}/data/blocks/segmented/{STIM_CODE}"
     files = os.listdir(dir_input)
     
-    dir_output = f"{PROJECT_PATH}/data/spike_stats_temp"
-    for folder in ['region_metrics', 'unit_rates']:
+    dir_output = f"{PROJECT_PATH}/data/spike_stats"
+    for folder in ['region_metrics', 'unit_metrics']:
         if not os.path.exists(f"{dir_output}/{folder}"): 
             os.makedirs(f"{dir_output}/{folder}")
 
@@ -97,7 +97,7 @@ def main():
     df_units = df.drop(columns=['region_cv', 'spike_distance', 'spike_synchrony',
                                 'mean_firing_rate', 'mean_fano_factor', 'mean_cv'])
     df_units = df_units.explode(['firing_rate', 'coef_variation', 'fano_factor', 'unit_index'])
-    df_units.to_csv(f'{dir_output}/unit_rates/{STIM_CODE}.csv', index=False)
+    df_units.to_csv(f'{dir_output}/unit_metrics/{STIM_CODE}.csv', index=False)
 
 def compute_synchrony(spiketrains):
     """
