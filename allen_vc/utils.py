@@ -167,19 +167,3 @@ def ellipse_area(a, b):
         Area of the ellipse
     """
     return np.pi*a*b
-
-
-def create_long_region_df(df, shared_metrics, state, merge='inner'):
-
-    v = df[df['brain_structure'] == 'VISp'].copy()
-    l = df[df['brain_structure'] == 'LGd'][shared_metrics + ['session', 
-    'epoch_idx', state]].copy()
-
-    for metric in shared_metrics:
-        v['VISp_' + metric] = v[metric]
-        l['LGd_' + metric] = l[metric]
-        
-    v = v.drop(columns=shared_metrics + ['brain_structure'])
-    l = l.drop(columns=shared_metrics)
-        
-    return v.merge(l, on=['session', 'epoch_idx', state], how=merge)
