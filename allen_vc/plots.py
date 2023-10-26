@@ -712,95 +712,8 @@ def plot_segment(block, i_seg):
     fig.subplots_adjust(hspace=0)
 
 
-
-def plot_linregress(df, x_data, y_data, group=None, multireg=False, singlereg=False, legend=False, 
-                    fname_out=None, show=False, close=False, scatter_alpha=0.6, colors=None, **kwargs):
-    """
-    Calculate and plot the linear regression of two columns in a dataframe.
-
-    Parameters
-    ----------
-    x_data : str
-        column with x-values of dataset
-    y_data : str
-        column with y-values of dataset
-    group: str, optional
-        column to color/section data by
-    multireg: bool, optional
-        whether or not to plot regression lines for each group
-    title : str, optional
-        Title of the plot
-    fname_out : str, optional
-        Filename of the output figure
-    show : bool, optional
-        Whether to show the figure or not
-    close : bool, optional
-        Whether to close the figure or not
-
-    Returns
-    -------
-    None
-    """
-    
-    # create figure
-    fig, ax = plt.subplots(figsize=(8,6), constrained_layout=True)
-    fig.patch.set_facecolor('white') # set background color to white for text legibility
-    markers = ['.', 'v']
-    ylabel = kwargs.pop('ylabel', '')
-    xlabel = kwargs.pop('xlabel', '')
-    title = kwargs.pop('title', '')
-    colors = ['C0', 'C1', 'C2', 'C3'] if colors is None else colors
-    
-    # plot data
-    c = 0
-    for r, region in enumerate(df['brain_structure'].unique()):
-        region_df = df[df['brain_structure'] == region]
-
-        if group is not None:
-            groups = region_df[group].unique()
-            for i, g in enumerate(groups):
-                gdf = region_df[region_df[group] == g]
-                ax.scatter(gdf[x_data], gdf[y_data], label=region + ' ' + g, 
-                    alpha=scatter_alpha, marker=markers[r], color=colors[c])
-
-                if multireg:
-                    # run regression and plot results
-                    plot_regression_line(gdf[x_data], gdf[y_data], ax=ax, 
-                        text_height=0.9-r*0.4-i*0.2, label=region + ' ' + g, color=colors[c])
-                    c += 1
-
-            if singlereg:
-                plot_regression_line(region_df[x_data], region_df[y_data], ax=ax, 
-                        text_height=0.9-r*0.4, label=region, color='black')
-
-
-        else:
-            ax.scatter(region_df[x_data], region_df[y_data], label=region, 
-                alpha=scatter_alpha, color=colors[c])
-
-            # run regression and plot results
-            plot_regression_line(region_df[x_data], region_df[y_data], ax=ax, 
-                text_height=0.9-r*0.2, label=region, color=colors[c])
-            c += 1
-
-
-    # label figure
-    if legend:
-        ax.legend(prop={'size':10})
-    plt.title(title)
-    plt.xlabel(xlabel, fontweight='bold')
-    plt.ylabel(ylabel, fontweight='bold')
-        
-    # save/show figure
-    if not fname_out is None:
-        fig.savefig(fname_out)
-    if show:
-        plt.show()
-    if close:
-        plt.close()
-
-
-def plot_regression_line(x, y, ax, text_height=0.9, label='', xlims=None, color=None):
+def plot_regression_line(x, y, ax, print_stats=True, text_height=0.9, label='', 
+                         xlims=None, color=None):
     """
     Plot the linear regression of two columns in a dataframe on existing axis.
 
@@ -835,17 +748,17 @@ def plot_regression_line(x, y, ax, text_height=0.9, label='', xlims=None, color=
         ax.plot(t_lin, lin, linewidth=3, color=color)
 
     # add regression results text
-    if results.pvalue < 0.001:
-        pval = f"{results.pvalue:.2e}"
-    else:
-        pval = f"{results.pvalue:.3f}"
-    plt.text(1.05, text_height, 
-             f"Regression {label}\n" +
-             f"    Slope: {results.slope:.3f}\n" +
-             f"    Intercept: {results.intercept:.3f}\n" +
-             f"    R: {results.rvalue:.3f}\n" +
-             f"    p: {pval}", transform = ax.transAxes, fontsize=12)
-
+    if print_stats:
+        if results.pvalue < 0.001:
+            pval = f"{results.pvalue:.2e}"
+        else:
+            pval = f"{results.pvalue:.3f}"
+        plt.text(1.05, text_height, 
+                f"Regression {label}\n" +
+                f"    Slope: {results.slope:.3f}\n" +
+                f"    Intercept: {results.intercept:.3f}\n" +
+                f"    R: {results.rvalue:.3f}\n" +
+                f"    p: {pval}", transform = ax.transAxes, fontsize=12)
 
 
 def plot_analog_signal(signal, ax=None, title=None, y_label=None, fname=None):
