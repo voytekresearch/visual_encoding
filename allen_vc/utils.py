@@ -167,3 +167,24 @@ def ellipse_area(a, b):
         Area of the ellipse
     """
     return np.pi*a*b
+
+
+def knee_freq(knee, exponent):
+    """
+    Convert specparam knee parameter to Hz.
+
+    Parameters
+    ----------
+    knee, exponent : 1D array
+        Knee and exponent parameters from specparam.
+
+    Returns
+    -------
+    knee_hz : 1D array
+        Knee in Hz.
+    """
+    knee_hz = np.zeros_like(knee)
+    for ii in range(len(knee)):
+        knee_hz[ii] = knee[ii]**(1/exponent[ii])
+    
+    return knee_hz
