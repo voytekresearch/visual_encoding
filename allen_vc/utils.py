@@ -183,8 +183,14 @@ def knee_freq(knee, exponent):
     knee_hz : 1D array
         Knee in Hz.
     """
-    knee_hz = np.zeros_like(knee)
-    for ii in range(len(knee)):
-        knee_hz[ii] = knee[ii]**(1/exponent[ii])
     
+    # check if input is float or array
+    if isinstance(knee, float):
+        knee_hz = knee**(1/exponent)
+
+    else:
+        knee_hz = np.zeros_like(knee)
+        for ii in range(len(knee)):
+            knee_hz[ii] = knee[ii]**(1/exponent[ii])
+        
     return knee_hz
