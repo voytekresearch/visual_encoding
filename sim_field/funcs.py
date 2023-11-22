@@ -7,8 +7,6 @@ from scipy import linalg
 from neurodsp.spectral import compute_spectrum
 from neurodsp.sim.aperiodic import sim_synaptic_current
 from neurodsp.sim.transients import sim_synaptic_kernel
-from aperiodic import sim_random_walk
-# from neurodsp.sim import sim_random_walk
 from fooof import FOOOFGroup
 
 ##########################################################################
@@ -225,7 +223,6 @@ def gen_spikes_mixture(n_seconds, covariances, firing_rates_array, fs, tau_c, va
 
     rand_processes = np.zeros((n_neurons, int(n_seconds * fs)))
     for i_neuron in range(n_neurons):
-        # rand_processes[i_neuron] = sim_random_walk(n_seconds, fs, theta=1/tau_c, mu=0, sigma=sigma)
         rand_processes[i_neuron], _ = sim_ou_process(n_seconds, fs, tau_c, mu=firing_rates_array[i_neuron], sigma=variance**0.5)
 
     # compute cholesky
