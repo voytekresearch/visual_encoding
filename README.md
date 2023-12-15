@@ -19,11 +19,11 @@ For an exploratory data analysis of the dataset, check `notebooks/explore_datase
 
 Our data organization and analysis methodology can be be performed via the following commands:
 
-Clone the respository
-`git clone https://github.com/voytekresearch/visual_encoding.git`
-Travel to the main directory
-`cd visual_encoding`
-Run the code!
+Clone the respository \
+`git clone https://github.com/voytekresearch/visual_encoding.git`\
+Travel to the main directory \
+`cd visual_encoding` \
+Run the code! \
 1. `python code/step1_create_session_blocks.py`
 2. `python code/step2_create_spontaneous_segments.py`
 3. `python code/step2_create_stimulus_segments.py`
@@ -41,7 +41,7 @@ Figures, methods, and materials relevant to our SfN 2023 poster can be found in 
 1. Buzsáki G, Anastassiou CA, Koch C. The origin of extracellular elds and currents-EEG, ECoG, LFP and spikes. Nat Rev Neurosci. 2012;13(6):407-420. doi:10.1038/nrn3241
 2. Miller KJ, Sorensen LB, Ojemann JG, Den Nijs M. Power-law scaling in the brain surface electric potential. PLoS Comput Biol. 2009;5(12). doi:10.1371/journal.pcbi.1000609
 3. Gao R, Peterson EJ, Voytek B. Inferring synaptic excitation/inhibition balance from eld potentials. NeuroImage. 2017;158:70-78. doi:10.1016/j.neuroimage.2017.06.078
-4. Kelly RC, Smith MA, Kass RE, Lee TS. Local eld potentials indicate network state and account for neuronal response variability. J Comput Neurosci. 2010;29(3):567-579. doi:10.1007/s10827-009-0208-9
+4. Kelly RC, Smith MA, Kass RE, Lee TS. Local field potentials indicate network state and account for neuronal response variability. J Comput Neurosci. 2010;29(3):567-579. doi:10.1007/s10827-009-0208-9
 5. Poulet JFA, Crochet S. The Cortical States of Wakefulness. Front Syst Neurosci. 2019;12:64. doi:10.3389/fnsys.2018.00064
 6. Dataset: Allen Institute MindScope Program (2019). Allen Brain Observatory -- Neuropixels Visual Coding [dataset]. Available from brain-map.org/explore/circuits. Siegle JH, Jia X, Durand S, et al. Survey of spiking in the mouse visual system reveals functional hierarchy. Nature. Published online January 20, 2021. doi:10.1038/s41586-020-03171-x
 7. Jun JJ, Steinmetz NA, Siegle JH, et al. Fully integrated silicon probes for high-density recording of neural activity. Nature. 2017;551(7679):232-236. doi:10.1038/nature24636
