@@ -4,16 +4,7 @@
 ------------------------------------------------
 ## Abstract
 
-Electrical brain activity can be measured at various temporal and spatial scales. For instance, mesoscopic signals such as electroencephalography (EEG) and local field potentials (LFP) 
-reflect activity across populations of neurons. Notably oscillations in EEG and LFP have been associated with mechanisms of memory and cognition. However, emerging research has shown that non-oscillatory, 
-aperiodic activity also serves as a biomarker of disease, age, cortical region, and cognitive state. Although the significance of aperiodic activity is strongly supported, the underlying mechanisms and 
-physiological origin have not been fully characterized. In this study, we leveraged an open dataset (Allen Institute for Brain Science: Visual Coding - Neuropixels dataset) to investigate the relationship 
-between population spiking activity and aperiodic LFP activity. Here we show that aperiodic LFP activity indexes the rate and synchrony of population spiking activity within and between cognitive and behavioral states.  
-Our current results support previous findings that broadband LFP power reflects the firing rate of a population. Specifically, we found a strong negative correlation between rate and low frequency power with a 
-concomitant strong positive correlation at high frequency ranges, indicative of a singular, aperiodic process. Surprisingly, spike synchrony was found to be negatively correlated with the aperiodic exponent of the LFP, 
-contrary to the predictions of previous models i.e. greater spike synchrony was associated with flatter power spectra. These findings support the idea that aperiodic EEG and LFP activity is a physiologically meaningful signal, 
-providing information about the underlying population spiking statistics.  Further investigation into the aperiodic components of electrical brain waves has the potential to provide valuable information surrounding 
-cognition not present in oscillatory activity. More specifically, characterizing the physiological origin of aperiodic activity will advance our understanding of its functional role in cognition and disease.
+Electrical brain activity can be measured at various temporal and spatial scales. For instance, mesoscopic signals such as electroencephalography (EEG) and local field potentials (LFP) reflect activity across populations of neurons. Notably oscillations in EEG and LFP have been associated with mechanisms of memory and cognition. However, emerging research has shown that non-oscillatory, aperiodic activity also serves as a biomarker of disease, age, cortical region, and cognitive state. Although the significance of aperiodic activity is strongly supported, the underlying mechanisms and physiological origin have not been fully characterized. In this study, we leveraged an open dataset (Allen Institute for Brain Science: Visual Coding - Neuropixels dataset) to investigate the relationship between population spiking activity and aperiodic LFP activity. Here we show that aperiodic LFP activity indexes the rate and synchrony of population spiking activity within and between cognitive and behavioral states.  Our current results support previous findings that broadband LFP power reflects the firing rate of a population. Specifically, we found a strong negative correlation between rate and low frequency power with a concomitant strong positive correlation at high frequency ranges, indicative of a singular, aperiodic process. Surprisingly, spike synchrony was found to be negatively correlated with the aperiodic exponent of the LFP, contrary to the predictions of previous models i.e. greater spike synchrony was associated with flatter power spectra. These findings support the idea that aperiodic EEG and LFP activity is a physiologically meaningful signal, providing information about the underlying population spiking statistics.  Further investigation into the aperiodic components of electrical brain waves has the potential to provide valuable information surrounding cognition not present in oscillatory activity. More specifically, characterizing the physiological origin of aperiodic activity will advance our understanding of its functional role in cognition and disease.
 
 ------------------------------------------------
 ## Dataset
@@ -29,10 +20,10 @@ For an exploratory data analysis of the dataset, check `notebooks/explore_datase
 Our data organization and analysis methodology can be be performed via the following commands in the main directory:
 
 `
->>> python code/step1_create_session_blocks.py
->>> python code/step2_create_spontaneous_segments.py
->>> python code/step2_create_stimulus_segments.py
->>> python code/step3_add_lfp_to_stimulus_segments.py
+\>>> python code/step1_create_session_blocks.py
+\>>> python code/step2_create_spontaneous_segments.py
+\>>> python code/step2_create_stimulus_segments.py
+\>>> python code/step3_add_lfp_to_stimulus_segments.py
 `
 
 \* Note Python version 3.7 is required along with installation of the AllenSDK API
