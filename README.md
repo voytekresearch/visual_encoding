@@ -17,14 +17,17 @@ For an exploratory data analysis of the dataset, check `notebooks/explore_datase
 ------------------------------------------------
 ## Use
 
-Our data organization and analysis methodology can be be performed via the following commands in the main directory:
+Our data organization and analysis methodology can be be performed via the following commands:
 
-`
-\>>> python code/step1_create_session_blocks.py
-\>>> python code/step2_create_spontaneous_segments.py
-\>>> python code/step2_create_stimulus_segments.py
-\>>> python code/step3_add_lfp_to_stimulus_segments.py
-`
+Clone the respository
+`git clone https://github.com/voytekresearch/visual_encoding.git`
+Travel to the main directory
+`cd visual_encoding`
+Run the code!
+1. `python code/step1_create_session_blocks.py`
+2. `python code/step2_create_spontaneous_segments.py`
+3. `python code/step2_create_stimulus_segments.py`
+4. `python code/step3_add_lfp_to_stimulus_segments.py`
 
 \* Note Python version 3.7 is required along with installation of the AllenSDK API
 
