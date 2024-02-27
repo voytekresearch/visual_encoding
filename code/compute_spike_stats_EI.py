@@ -9,6 +9,9 @@ PROJECT_PATH = r"D:/visual_encoding"
 # settings - data of interest
 STIM_CODE = "spontaneous_stationary"
 
+# data frame (session_id, unit_id, cell_type)
+UNIT_LABELS = f'{PROJECT_PATH}/data/optotagging_data/concat/cell_type_id_units.csv'
+
 # imports - general
 import os
 import numpy as np
@@ -32,78 +35,88 @@ def main():
         if not os.path.exists(f"{dir_output}/{folder}"): 
             os.makedirs(f"{dir_output}/{folder}")
 
+    if not os.path.exists(f"{PROJECT_PATH}/data/blocks/segmented/by_cell_type"):
+        os.makedirs(f"{PROJECT_PATH}/data/blocks/segmented/by_cell_type")
+
     # load cell class data
-    cell_type_df = pd.read_csv('../') # load unit cell type classification
+    cell_type_df = pd.read_csv(UNIT_LABELS) # load unit cell type classification
 
     # initialize data frame
     columns = ['session', 'epoch_idx', 'epoch_times', 'running',
-               'region_cv', 'spike_distance', 'spike_synchrony', 
+               'cell_type_cv', 'spike_distance', 'spike_synchrony', 
                'mean_firing_rate', 'mean_fano_factor', 'mean_cv', 'cell_type', # include cell type column
-               'firing_rate', 'coef_variation', 'fano_factor', 'unit_index']
+               'firing_rate', 'coef_variation', 'fano_factor', 'unit_index', 'unit_count']
     df = pd.DataFrame(columns=columns)
 
     # loop through files
     for i_file, fname in enumerate(files):
+
         session = fname.split('_')[1].split('.')[0]
         print(f"\nAnalyzing Session: {session} ({i_file+1}/{len(files)})")
 
         # load block
         block = neo.io.NeoMatlabIO(f"{dir_input}/{fname}").read_block()
 
-        # filter the block based on unit id
+        # filter unit labels for session
+        ses_df = cell_type_df[cell_type_df['session_id'] == int(session)]
+
+        # loop over cell types
         for cell_type in cell_type_df['cell_type'].unique():
             
-            units = cell_type_df[cell_type_df['cell_type'] == cell_type]['unit_id']
+            unit_ids = ses_df[ses_df['cell_type'] == cell_type]['unit_id']
 
             # Calculate spike metrics for each segment
             for i_seg, segment in enumerate(block.segments):
-                # get brain structures and ensure it is a list
-                brain_structures = block.annotations['spike_brain_structures']
-                if isinstance(brain_structures, str):
-                    brain_structures = [brain_structures]
-            
-                # filter for spikes in structure
-                spiketrains = segment.filter(objects=neo.SpikeTrain,targdict={'brain_structure': structure})
 
-                # filter/annotate the spikes based on unit_id
-                spiketrains.filter(unit_id in units).annotate(cell_type=cell_type)
-                cell_type_trains = spiketrains.filter(cell_type=cell_type)
+                # label each spike train
+                for unit_id in unit_ids:
+                    spks = segment.filter(unit_id=unit_id)
+                    for spk in spks:
+                        spk.annotate(cell_type=cell_type)
+
+                # extract labeled trains
+                spiketrains = segment.filter(cell_type=cell_type)
 
                 # ensure there are spikes in structure
-                if len(cell_type_trains) == 0:
-                    metrics = [np.nan] * (len(columns)-5)
-                    firing_rate = [np.nan] * len(cell_type_trains)
-                    coef_variation = [np.nan] * len(cell_type_trains)
-                    fano_factor = [np.nan] * len(cell_type_trains)
+                if len(spiketrains) == 0:
+                    metrics = [np.nan] * (3)
+                    firing_rate = [np.nan] * len(spiketrains)
+                    coef_variation = [np.nan] * len(spiketrains)
+                    fano_factor = [np.nan] * len(spiketrains)
 
                 # calculate metrics
                 else:
                     # calculate region metrics
-                    metrics = list(compute_synchrony(cell_type_trains))
+                    metrics = list(compute_synchrony(spiketrains))
 
                     # calculate unit metrics
-                    firing_rate = [len(spiketrain)/float(spiketrain.duration.item()) for spiketrain in cell_type_trains]
+                    firing_rate = [len(spiketrain)/float(spiketrain.duration.item()) for spiketrain in spiketrains]
                     coef_variation = [compute_cv(spiketrain) for spiketrain in spiketrains]
-                    fano_factor = [compute_fano_factor(spiketrain, bin_size=1*pq.s) for spiketrain in cell_type_trains]
+                    fano_factor = [compute_fano_factor(spiketrain, bin_size=1*pq.s) for spiketrain in spiketrains]
                 
                 # add to data frame
                 data = [session, i_seg, [segment.t_start.item(), segment.t_stop.item()],
                         segment.annotations['running']]
                 data.extend(metrics)
                 data.extend([np.mean(firing_rate), np.mean(fano_factor), np.mean(coef_variation), cell_type,
-                            firing_rate, coef_variation, fano_factor, range(len(spiketrains))])
+                            firing_rate, coef_variation, fano_factor, range(len(spiketrains)), len(spiketrains)])
                 df_i = pd.DataFrame([data], columns=columns)
                 df = pd.concat([df, df_i], axis=0, ignore_index=True)
+
+        # save out annotated block
+        block_out = f"block_{session}.mat"
+        neo.io.NeoMatlabIO(f"{PROJECT_PATH}/data/blocks/segmented/by_cell_type/{block_out}").write_block(block)
 
     # save region data frame
     df_region = df.drop(columns=['firing_rate', 'coef_variation', 'fano_factor', 'unit_index'])
     df_region.to_csv(f'{dir_output}/pop_metrics/{STIM_CODE}.csv', index=False)
 
     # save unit data frame
-    df_units = df.drop(columns=['region_cv', 'spike_distance', 'spike_synchrony',
-                                'mean_firing_rate', 'mean_fano_factor', 'mean_cv'])
+    df_units = df.drop(columns=['cell_type_cv', 'spike_distance', 'spike_synchrony',
+                                'mean_firing_rate', 'mean_fano_factor', 'mean_cv', 'unit_count'])
     df_units = df_units.explode(['firing_rate', 'coef_variation', 'fano_factor', 'unit_index'])
     df_units.to_csv(f'{dir_output}/unit_metrics/{STIM_CODE}.csv', index=False)
+
 
 def compute_synchrony(spiketrains):
     """
