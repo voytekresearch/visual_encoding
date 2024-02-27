@@ -65,7 +65,7 @@ def compute_cv(spiketrain):
 
     # check if there are any spikes
     if len(spiketrain)==0:
-        return np.nan, np.nan
+        return np.nan
     
     # compute interspike intervals
     isi = np.diff(spiketrain.times.magnitude)
@@ -117,6 +117,8 @@ def compute_pyspike_metrics(spiketrains, interval=None):
     spike_sync: float
         SPIKE-synchrony (pyspike) over all units (during specified interval).
     """
+    if len(spiketrains) <= 1:
+        return np.nan, np.nan
 
     # imports
     import pyspike as spk
