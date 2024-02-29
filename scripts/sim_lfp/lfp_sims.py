@@ -9,7 +9,7 @@ Notes:
 import sys
 
 # from scripts.corr_spikes_sims import FIRING_RATE, N_NEURONS
-sys.path.append('../sim_field')
+sys.path.append('sim_field')
 from os.path import join as pjoin
 from funcs import sim_field, batchsim_PSDs, batchfit_PSDs, batchcorr_PSDs
 from funcs import sim_lfp_mixture, sim_lfp_pool, sim_homogeneous_pool

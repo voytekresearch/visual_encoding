@@ -8,7 +8,7 @@ Notes:
 ## IMPORTS
 
 import sys
-sys.path.append('../sim_field')
+sys.path.append('sim_field')
 from os.path import join as pjoin
 import matplotlib.pyplot as plt
 import numpy as np
