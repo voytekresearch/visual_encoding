@@ -165,5 +165,5 @@ cython_debug/
 # custom --------------------------------------------------------------------
 data/
 figures/
-code/untracked
+scripts/untracked
 notebooks/untracked
