@@ -3,7 +3,6 @@ Parametereize PSDs for LFP epochs. Analyzes output of allen_vc.comp_lfp_psd.py.
 
 """
 # Set paths
-PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 STIM_CODE = 'natural_movie_one_more_repeats' # name of input/output folders (stimulus of interest)
 
 # FOOOF is causing some annoying warnings about ragged arrays
@@ -21,6 +20,7 @@ from fooof import FOOOFGroup, fit_fooof_3d
 # imports - custom
 import sys
 sys.path.append("allen_vc")
+from paths import PATH_EXTERNAL
 from utils import hour_min_sec
 
 # settings
@@ -45,7 +45,7 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    dir_results = f'{PROJECT_PATH}/data/lfp_data/params/{INPUT_TYPE}/{STIM_CODE}'
+    dir_results = f'{PATH_EXTERNAL}/data/lfp_data/params/{INPUT_TYPE}/{STIM_CODE}'
     print(f"Saving results to: {dir_results}")
     if not os.path.exists(f"{dir_results}/by_session"):
         os.makedirs(f"{dir_results}/by_session")
@@ -54,7 +54,7 @@ def main():
     params_list = []
 
     # id files of interest and loop through them
-    dir_input = f"{PROJECT_PATH}/data/lfp_data/spectra/{INPUT_TYPE}/{STIM_CODE}"
+    dir_input = f"{PATH_EXTERNAL}/data/lfp_data/spectra/{INPUT_TYPE}/{STIM_CODE}"
     files = os.listdir(dir_input)
     for i_file, fname_in in enumerate(files):
 

@@ -3,7 +3,6 @@ Compute PSD for LFP epochs. Analyzes onput of allen_vc.step3_add_lfp_to_segments
 
 """
 # Set paths
-PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 STIM_CODE = 'natural_movie_one_more_repeats' # name of input/output folders (stimulus of interest)
 
 # settings - analysis details
@@ -24,6 +23,7 @@ import neo
 # imports - custom
 import sys
 sys.path.append("allen_vc")
+from paths import PATH_EXTERNAL
 from utils import hour_min_sec
 from neo_utils import get_analogsignal
 from analysis import compute_psd
@@ -34,12 +34,12 @@ def main():
     t_start = timer()
 
     # Define/create directories for outout
-    dir_results = f'{PROJECT_PATH}/data/lfp_data/spectra/psd/{STIM_CODE}'
+    dir_results = f'{PATH_EXTERNAL}/data/lfp_data/spectra/psd/{STIM_CODE}'
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
     
     # id files of interst and loop through them
-    dir_input = f'{PROJECT_PATH}/data/blocks/lfp/{STIM_CODE}'
+    dir_input = f'{PATH_EXTERNAL}/data/blocks/lfp/{STIM_CODE}'
     files = os.listdir(dir_input)
     for i_file, fname_in in enumerate(files):
         

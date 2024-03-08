@@ -3,14 +3,8 @@ Create a dataframe including information about a set of spike synchrony metrics
 over a set of loaded epochs, filtering by excitatory and inhibitory units.
 """
 
-# SET PATH
-PROJECT_PATH = r"D:/visual_encoding"
-
 # settings - data of interest
 STIM_CODE = "spontaneous_stationary"
-
-# data frame (session_id, unit_id, cell_type)
-UNIT_LABELS = f'{PROJECT_PATH}/data/optotagging_data/concat/cell_type_id_units.csv'
 
 # imports - general
 import os
@@ -22,24 +16,25 @@ import quantities as pq
 # Import custom functions
 import sys
 sys.path.append('allen_vc')
+from paths import PATH_EXTERNAL
 from analysis import compute_pyspike_metrics, compute_cv, compute_fano_factor
 from neo_utils import combine_spiketrains
 
 def main():
     # Define/create directories for inputs/outputs
-    dir_input = f"{PROJECT_PATH}/data/blocks/segmented/{STIM_CODE}"
+    dir_input = f"{PATH_EXTERNAL}/data/blocks/segmented/{STIM_CODE}"
     files = os.listdir(dir_input)
     
-    dir_output = f"{PROJECT_PATH}/data/spike_stats/by_cell_type" # add output dir
+    dir_output = f"{PATH_EXTERNAL}/data/spike_stats/by_cell_type" # add output dir
     for folder in ['pop_metrics', 'unit_metrics']:
         if not os.path.exists(f"{dir_output}/{folder}"): 
             os.makedirs(f"{dir_output}/{folder}")
 
-    if not os.path.exists(f"{PROJECT_PATH}/data/blocks/segmented/by_cell_type"):
-        os.makedirs(f"{PROJECT_PATH}/data/blocks/segmented/by_cell_type")
+    if not os.path.exists(f"{PATH_EXTERNAL}/data/blocks/segmented/by_cell_type"):
+        os.makedirs(f"{PATH_EXTERNAL}/data/blocks/segmented/by_cell_type")
 
-    # load cell class data
-    cell_type_df = pd.read_csv(UNIT_LABELS) # load unit cell type classification
+    # load unit cell type classification. data frame (session_id, unit_id, cell_type)
+    cell_type_df = pd.read_csv(f'{PATH_EXTERNAL}/data/optotagging_data/concat/cell_type_id_units.csv') 
 
     # initialize data frame
     columns = ['session', 'epoch_idx', 'epoch_times', 'running',
@@ -105,7 +100,7 @@ def main():
 
         # save out annotated block
         block_out = f"block_{session}.mat"
-        neo.io.NeoMatlabIO(f"{PROJECT_PATH}/data/blocks/segmented/by_cell_type/{block_out}").write_block(block)
+        neo.io.NeoMatlabIO(f"{PATH_EXTERNAL}/data/blocks/segmented/by_cell_type/{block_out}").write_block(block)
 
     # save region data frame
     df_region = df.drop(columns=['firing_rate', 'coef_variation', 'fano_factor', 'unit_index'])

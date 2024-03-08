@@ -3,9 +3,6 @@ Create a dataframe including information about a set of spike synchrony metrics
 over a set of loaded epochs.
 """
 
-# SET PATH
-PROJECT_PATH = r"G:\Shared drives\visual_encoding"
-
 # settings - data of interest
 STIM_CODE = "spontaneous_stationary"
 
@@ -19,15 +16,16 @@ import quantities as pq
 # Import custom functions
 import sys
 sys.path.append('allen_vc')
+from paths import PATH_EXTERNAL
 from analysis import compute_pyspike_metrics, compute_cv, compute_fano_factor
 from neo_utils import combine_spiketrains
 
 def main():
     # Define/create directories for inputs/outputs
-    dir_input = f"{PROJECT_PATH}/data/blocks/segmented/{STIM_CODE}"
+    dir_input = f"{PATH_EXTERNAL}/data/blocks/segmented/{STIM_CODE}"
     files = os.listdir(dir_input)
     
-    dir_output = f"{PROJECT_PATH}/data/spike_stats"
+    dir_output = f"{PATH_EXTERNAL}/data/spike_stats"
     for folder in ['region_metrics', 'unit_metrics']:
         if not os.path.exists(f"{dir_output}/{folder}"): 
             os.makedirs(f"{dir_output}/{folder}")
