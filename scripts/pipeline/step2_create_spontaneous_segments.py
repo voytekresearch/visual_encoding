@@ -5,10 +5,6 @@ in each session. Then, create segments based on running behavior.
 
 """
 
-# settings - directories
-MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
-PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-
 # settings - smoothing
 SMOOTH = True
 KERNEL_SIZE = 5 # kernel size for median filter (s)
@@ -32,6 +28,7 @@ from scipy.ndimage import median_filter
 # Imports - custom
 import sys
 sys.path.append('allen_vc')
+from paths import PATH_EXTERNAL
 from utils import hour_min_sec
 from epoch_extraction_tools import get_epoch_times, split_epochs
 from neo_utils import get_analogsignal
@@ -58,13 +55,14 @@ def create_spontaneous_block():
     print("\n\nCreating spontaneous blocks...")
 
     # Define/create directories for inputs/outputs
-    dir_results = f"{PROJECT_PATH}/data/blocks/spontaneous" 
+    dir_results = f"{PATH_EXTERNAL}/data/blocks/spontaneous" 
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
 
     # load Allen project cache
-    if os.path.exists(f"{MANIFEST_PATH}/manifest.json"):
-        cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
+    manifest_path = f"{PATH_EXTERNAL}/dataset/manifest.json"
+    if os.path.exists(manifest_path):
+        cache = EcephysProjectCache.from_warehouse(manifest=manifest_path)
         print('Project cache loaded...')
     # stop execution if manifest file not found
     else:
@@ -72,7 +70,7 @@ def create_spontaneous_block():
         return   
     
     # loop through all files
-    dir_input =  f"{PROJECT_PATH}/data/blocks/sessions"
+    dir_input =  f"{PATH_EXTERNAL}/data/blocks/sessions"
     files = os.listdir(dir_input)
     for i_file, fname in enumerate(files):
         session_id = fname.split('_')[1].split('.')[0]
@@ -120,12 +118,12 @@ def create_behavioral_segments():
     print('\n\nCreating behavior segments...')
 
     # Define/create directories for inputs/outputs
-    dir_results = f"{PROJECT_PATH}/data/blocks/segmented/spontaneous"
+    dir_results = f"{PATH_EXTERNAL}/data/blocks/segmented/spontaneous"
     if not os.path.exists(f"{dir_results}_running"): os.makedirs(f"{dir_results}_running")
     if not os.path.exists(f"{dir_results}_stationary"): os.makedirs(f"{dir_results}_stationary") 
     
     # loop through all files
-    dir_input =  f"{PROJECT_PATH}/data/blocks/spontaneous"
+    dir_input =  f"{PATH_EXTERNAL}/data/blocks/spontaneous"
     files = os.listdir(dir_input)
     for i_file, fname in enumerate(files):
         session_id = fname.split('_')[1].split('.')[0]

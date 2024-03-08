@@ -6,8 +6,6 @@ LFP data to each segment.
 """
 
 # settings - directories
-MANIFEST_PATH = "D:/datasets/allen_vc/" # Allen manifest.json
-PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
 STIM_CODES = ['natural_movie_one_shuffled', 
               'spontaneous_running', 'sponteneous_stationary'] # list of results folders
 
@@ -29,6 +27,7 @@ import quantities as pq
 # Imports - custom
 import sys
 sys.path.append('allen_vc')
+from paths import PATH_EXTERNAL
 from utils import hour_min_sec
 from allen_utils import find_probes_in_region, align_lfp
 print('Imports complete...')
@@ -39,8 +38,9 @@ def main():
     t_start = timer()
 
     # load Allen project cache
-    if os.path.exists(f"{MANIFEST_PATH}/manifest.json"):
-        cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
+    manifest_path = f"{PATH_EXTERNAL}/dataset/manifest.json"
+    if os.path.exists(manifest_path):
+        cache = EcephysProjectCache.from_warehouse(manifest=manifest_path)
         print('Project cache loaded...')
     # stop execution if manifest file not found
     else:
@@ -53,12 +53,12 @@ def main():
         print(f"\nAnalyzing stimulus: {stim_code} (stimulus {i_stim+1}/{len(STIM_CODES)})")
         
         # Define/create directories for inputs/outputs
-        dir_results = f"{PROJECT_PATH}/data/blocks/lfp/{stim_code}"
+        dir_results = f"{PATH_EXTERNAL}/data/blocks/lfp/{stim_code}"
         if not os.path.exists(dir_results): 
             os.makedirs(dir_results)
 
         # loop through all files
-        dir_input =  f"{PROJECT_PATH}/data/blocks/segmented/{stim_code}"
+        dir_input =  f"{PATH_EXTERNAL}/data/blocks/segmented/{stim_code}"
         files = os.listdir(dir_input)
         for i_file, fname in enumerate(files):
             session_id = fname.split('_')[1].split('.')[0]

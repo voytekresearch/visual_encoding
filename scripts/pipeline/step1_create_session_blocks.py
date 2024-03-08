@@ -6,10 +6,6 @@ stimulus events.
 
 """
 
-# settings - directories
-MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
-PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-
 # settings - regions of interest for spike data
 BRAIN_STRUCTURES = ['VISp','LGd']
 
@@ -27,6 +23,7 @@ import quantities as pq
 # Imports - custom
 import sys
 sys.path.append('allen_vc')
+from paths import PATH_EXTERNAL
 from utils import hour_min_sec
 from allen_utils import create_neo_spiketrains, compute_running_speed, compute_pupil_area
 print('Imports complete...')
@@ -37,13 +34,14 @@ def main():
     t_start = timer()
 
     # Define/create directories for inputs/outputs
-    dir_results = f"{PROJECT_PATH}/data/blocks/sessions" 
+    dir_results = f"{PATH_EXTERNAL}/data/blocks/sessions" 
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
 
     # load Allen project cache
-    if os.path.exists(f"{MANIFEST_PATH}/manifest.json"):
-        cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
+    manifest_path = f"{PATH_EXTERNAL}/dataset/manifest.json"
+    if os.path.exists(manifest_path):
+        cache = EcephysProjectCache.from_warehouse(manifest=manifest_path)
         print('Project cache loaded...')
     # stop execution if manifest file not found
     else:

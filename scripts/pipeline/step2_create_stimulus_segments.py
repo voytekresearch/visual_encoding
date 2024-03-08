@@ -7,12 +7,8 @@ windows of interest.
 
 """
 
-# settings - directories
-MANIFEST_PATH = "E:/datasets/allen_vc" # Allen manifest.json
-PROJECT_PATH = "G:/Shared drives/visual_encoding" # shared results directory
-STIM_CODE = 'natural_movie_one_shuffled' # this will be used to name output folders and files
-
 # settings - stimulus epoch of interest
+STIM_CODE = 'natural_movie_one_shuffled' # this will be used to name output folders and files
 STIM_PARAMS = dict({
     'stimulus_name' : 'natural_movie_shuffled',
     'frame' : 0
@@ -37,6 +33,7 @@ from scipy.ndimage import median_filter
 # Imports - custom
 import sys
 sys.path.append('allen_vc')
+from paths import PATH_EXTERNAL
 from utils import hour_min_sec
 from neo_utils import get_analogsignal
 print('Imports complete...')
@@ -47,13 +44,14 @@ def main():
     t_start = timer()
 
     # Define/create directories for inputs/outputs
-    dir_results = f"{PROJECT_PATH}/data/blocks/segmented/{STIM_CODE}" 
+    dir_results = f"{PATH_EXTERNAL}/data/blocks/segmented/{STIM_CODE}" 
     if not os.path.exists(dir_results): 
         os.makedirs(dir_results)
 
     # load Allen project cache
-    if os.path.exists(f"{MANIFEST_PATH}/manifest.json"):
-        cache = EcephysProjectCache.from_warehouse(manifest=f"{MANIFEST_PATH}/manifest.json")
+    manifest_path = f"{PATH_EXTERNAL}/dataset/manifest.json"
+    if os.path.exists(manifest_path):
+        cache = EcephysProjectCache.from_warehouse(manifest=manifest_path)
         print('Project cache loaded...')
     # stop execution if manifest file not found
     else:
@@ -61,7 +59,7 @@ def main():
         return   
     
     # loop through all files
-    dir_input =  f"{PROJECT_PATH}/data/blocks/sessions"
+    dir_input =  f"{PATH_EXTERNAL}/data/blocks/sessions"
     files = os.listdir(dir_input)
     for i_file, fname in enumerate(files):
         session_id = fname.split('_')[1].split('.')[0]
