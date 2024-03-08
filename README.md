@@ -1,5 +1,5 @@
 # Visual Encoding
-*Michael Preston, Sawyer Figueroa, Simon Fei*
+*Michael Preston, Sawyer Figueroa, Simon Fei, Bradley Voytek*
 
 ------------------------------------------------
 ## Abstract
@@ -10,7 +10,7 @@ Electrical brain activity can be measured at various temporal and spatial scales
 ## Dataset
 
 Allen Institute MindScope Program (2019). Allen Brain Observatory -- Neuropixels Visual Coding [dataset]. Available from brain-map.org/explore/circuits. Siegle JH, Jia X, Durand S, et al. 
-Survey of spiking in the mouse visual system reveals functional hierarchy. Nature. Published online January 20, 2021. doi:10.1038/s41586-020-03171-x
+Survey of spiking in the mouse visual system reveals functional hierarchy. Nature. Published online January 20, 2021. doi:10.1038/s41586-020-03171-x
 
 For an exploratory data analysis of the dataset, check `notebooks/explore_dataset`.
 
@@ -47,7 +47,7 @@ Figures, methods, and materials relevant to our SfN 2023 poster can be found in 
 3. Gao R, Peterson EJ, Voytek B. Inferring synaptic excitation/inhibition balance from field potentials. NeuroImage. 2017;158:70-78. doi:10.1016/j.neuroimage.2017.06.078
 4. Kelly RC, Smith MA, Kass RE, Lee TS. Local field potentials indicate network state and account for neuronal response variability. J Comput Neurosci. 2010;29(3):567-579. doi:10.1007/s10827-009-0208-9
 5. Poulet JFA, Crochet S. The Cortical States of Wakefulness. Front Syst Neurosci. 2019;12:64. doi:10.3389/fnsys.2018.00064
-6. Dataset: Allen Institute MindScope Program (2019). Allen Brain Observatory -- Neuropixels Visual Coding [dataset]. Available from brain-map.org/explore/circuits. Siegle JH, Jia X, Durand S, et al. Survey of spiking in the mouse visual system reveals functional hierarchy. Nature. Published online January 20, 2021. doi:10.1038/s41586-020-03171-x
+6. Dataset: Allen Institute MindScope Program (2019). Allen Brain Observatory -- Neuropixels Visual Coding [dataset]. Available from brain-map.org/explore/circuits. Siegle JH, Jia X, Durand S, et al. Survey of spiking in the mouse visual system reveals functional hierarchy. Nature. Published online January 20, 2021. doi:10.1038/s41586-020-03171-x
 7. Jun JJ, Steinmetz NA, Siegle JH, et al. Fully integrated silicon probes for high-density recording of neural activity. Nature. 2017;551(7679):232-236. doi:10.1038/nature24636
 8. Siegle JH, Jia X, Durand S, et al. Survey of spiking in the mouse visual system reveals functional hierarchy. Nature. 2021;592(7852):86-92. doi:10.1038/s41586-020-03171-x
 9. Kreuz T, Chicharro D, Houghton C, Andrzejak RG, Mormann F. Monitoring spike train synchrony. J Neurophysiol. 2013;109(5):1457-1472. doi:10.1152/jn.00873.2012
