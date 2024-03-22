@@ -30,8 +30,8 @@ def main():
         if not os.path.exists(f"{dir_output}/{folder}"): 
             os.makedirs(f"{dir_output}/{folder}")
 
-    if not os.path.exists(f"{PATH_EXTERNAL}/data/blocks/segmented/by_cell_type"):
-        os.makedirs(f"{PATH_EXTERNAL}/data/blocks/segmented/by_cell_type")
+    if not os.path.exists(f"{PATH_EXTERNAL}/data/blocks/segmented/by_cell_type/{STIM_CODE}"):
+        os.makedirs(f"{PATH_EXTERNAL}/data/blocks/segmented/by_cell_type/{STIM_CODE}")
 
     # load unit cell type classification. data frame (session_id, unit_id, cell_type)
     cell_type_df = pd.read_csv(f'{PATH_EXTERNAL}/data/optotagging_data/concat/cell_type_id_units.csv') 
@@ -100,7 +100,7 @@ def main():
 
         # save out annotated block
         block_out = f"block_{session}.mat"
-        neo.io.NeoMatlabIO(f"{PATH_EXTERNAL}/data/blocks/segmented/by_cell_type/{block_out}").write_block(block)
+        neo.io.NeoMatlabIO(f"{PATH_EXTERNAL}/data/blocks/segmented/by_cell_type/{STIM_CODE}/{block_out}").write_block(block)
 
     # save region data frame
     df_region = df.drop(columns=['firing_rate', 'coef_variation', 'fano_factor', 'unit_index'])
