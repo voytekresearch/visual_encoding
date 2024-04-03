@@ -22,7 +22,7 @@ from neo_utils import combine_spiketrains
 
 def main():
     # Define/create directories for inputs/outputs
-    dir_input = f"{PATH_EXTERNAL}/data/blocks/segmented/{STIM_CODE}"
+    dir_input = f"{PATH_EXTERNAL}/data/blocks/lfp/{STIM_CODE}"
     files = os.listdir(dir_input)
     
     dir_output = f"{PATH_EXTERNAL}/data/spike_stats/by_cell_type" # add output dir
