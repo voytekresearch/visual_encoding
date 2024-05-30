@@ -1,6 +1,15 @@
 """
 Utility functions for Neo data analysis.
 
+Functions:
+----------
+combine_spiketrains : Combine multiple spiketrains into a single spiketrain.
+get_group_names : Get the names of all groups in a Neo block.
+get_analogsignal_names : Get the names of all analog signals in a Neo block.
+get_analogsignal : Get an analog signal from a Neo block.
+get_spike_times : Extract spike times from a Neo block.
+time_slice_spiketrains : Slice each spiketrain in a list.
+
 """
 
 # imports

@@ -1,5 +1,21 @@
 """
 Ploting utility function
+
+Functions
+---------
+plot_epochs : Plot a signal with annotations for epochs.
+sync_plot : Plot violin plots for each spike statistic in the given dataframe.
+plot_connected_scatter : Plot connected violin scatter plots.
+get_significance : Get the significance value for a given p-value.
+scatter_2_conditions : Plot the linear regression for two datasets.
+error_scatter_plot : Plot an errorbar scatter plot grouped by region.
+running_segment_plot : Plot the running speed of a given block of data.
+plot_segment : Plot the LFP, spike trains, running speed, and pupil area for a given segment.
+plot_regression_line : Plot the linear regression of two columns in a dataframe.
+plot_analog_signal : Plot a Neo AnalogSignal object.
+plot_time_resolved_params : Plot normalized time resolved aperiodic parameters.
+plot_sa_heat_map : Plot a sensitivity analysis heat map with -1 to 1 color map limits.
+
 """
 
 # imports
@@ -8,9 +24,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
 # custom imports
-import sys
-sys.path.append('../')
-from allen_vc.neo_utils import get_analogsignal
+from neo_utils import get_analogsignal
 
 # Matplotlib rcParams ---------------------------------------------------------
 

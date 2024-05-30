@@ -1,6 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-Utility functions for TFR analysis
+Utility functions for TFR analysis. i.e. time-frequency representations of 
+power (spectrograms).
+
+Functions:
+----------
+compute_tfr : Compute time-frequency representation of power using multitaper method.
+zscore_tfr : Normalize time-frequency representation by z-scoring each frequency.
+subtract_baseline : Subtract baseline from signals.
+crop_tfr : Crop time-frequency representation to time range.
+downsample_tfr : Downsample time-frequency representation to n time bins.
+preprocess_tfr : Preprocess time-frequency representation.
+load_tfr_results : Load time-frequency representation results from file.
+
 """
 
 # Imports

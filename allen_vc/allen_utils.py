@@ -1,6 +1,15 @@
 """
 Utility functions for AllenSDK data analysis.
 
+Functions:
+----------
+compute_running_speed : Load running wheel data for a given session.
+compute_pupil_area : Load screen gaze data for a given session.
+create_neo_spiketrains : Load spiking data for a session and reformat as Neo object.
+get_spiking_data : Load and save spiking data of given units.
+find_probes_in_region : Find probes in a given brain region.
+align_lfp : Align LFP data to stimulus presentation times.
+
 """
 
 # imports

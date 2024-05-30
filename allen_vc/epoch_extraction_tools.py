@@ -11,15 +11,16 @@ running wheel (in scripts/pipeline/step2_create_spontaneous_epochs.py).
 
 There are also some other misc functions related to epoching.
 
-The functions in this module are as follows:    
-        - find_segments: Find segments of a signal that are above/below a threshold.
-        - join_epochs_with_gap: Joins together epochs that have a gap shorter than a given minimum duration between them.
-        - drop_short_epochs: Drop epochs shorter than a given duration.
-        - get_inverse_epochs: Get inverse epochs from a given epoch array and signal.
-        - get_epoch_times: Get epoch times based on the signal, threshold, minimum gap, and minimum duration.
-        - get_random_epoch: Get a random epoch of a specified length from a list of epochs.
-        - get_movie_times: Get the start and end times of a natural movie presentation for a given experimental block.
-        - split_epochs: Split a list of epochs into sub-epochs of a specified length.
+Functions:
+----------   
+find_segments : Find segments of a signal that are above/below a threshold.
+join_epochs_with_gap : Joins together epochs that have a gap shorter than a given minimum duration between them.
+drop_short_epochs : Drop epochs shorter than a given duration.
+get_inverse_epochs : Get inverse epochs from a given epoch array and signal.
+get_epoch_times : Get epoch times based on the signal, threshold, minimum gap, and minimum duration.
+get_random_epoch : Get a random epoch of a specified length from a list of epochs.
+get_movie_times : Get the start and end times of a natural movie presentation for a given experimental block.
+split_epochs : Split a list of epochs into sub-epochs of a specified length.
 
 """
 

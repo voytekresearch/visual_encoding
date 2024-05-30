@@ -1,3 +1,20 @@
+"""
+THis module contains general/misc utility functions.
+
+Functions:
+----------
+hour_min_sec : Convert seconds to hours, minutes, and seconds.
+print_time_elapsed : Print time elapsed since start time.
+save_pkl : Save dictionary as pickle.
+params_to_df : Convert peak_params object to dataframe.
+combine_spike_lfp_dfs : Combine spike and LFP dataframes.
+channel_medians : Take median across channels for param data.
+ellipse_area : Calculate the area of an ellipse.
+knee_freq : Convert specparam knee parameter to Hz.
+
+"""
+
+
 # imports
 import numpy as np
 import pandas as pd

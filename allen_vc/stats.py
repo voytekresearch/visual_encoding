@@ -1,3 +1,22 @@
+"""
+This module contains statistical utility functions.
+
+Functions:
+----------
+run_hierarchical_bootstrap : Perform hierarchical bootstrap.
+sync_stats : Computes and prints the mean, standard deviation, and t-test results for two states in a dataframe.
+create_r_matrix : Create a matrix of Pearson correlation coefficients between spike statistics and PSD data.
+mixedLM : Calculate the results of a Linear Mixed Effect Model.
+
+NOTE: The following hidden functions are helper functions for run_hierarchical_bootstrap.
+_split_experimental_conditions : Split dataframe into two groups based on experimental condition.
+_hierarchical_bootstrap : Perform hierarchical bootstrap.
+_compute_p_boot : Compute p-value for difference between two distributions.
+_plot_bootstrap_results : Plot bootstrap results.
+
+"""
+
+
 # imports
 import numpy as np
 import pandas as pd
