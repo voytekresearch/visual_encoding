@@ -1,3 +1,17 @@
+"""
+This module contains functions for analyzing electrophysiological data.
+
+Functions:
+----------
+compute_psd : Compute the power spectral density of a signal using the multitaper method.
+compute_cv : Compute the coefficient of variation of the interspike interval of a spike train.
+compute_fano_factor : Compute the Fano factor of a spike train.
+compute_pyspike_metrics : Compute spike synchrony and spike distance using PySpike.
+avg_psd_over_freq_ranges : Compute the average power spectral density over frequency ranges for a given set of trials.
+
+"""
+
+
 # imports
 import numpy as np
 
@@ -75,6 +89,7 @@ def compute_cv(spiketrain):
     
     return coef_variation
 
+
 def compute_fano_factor(spiketrain, bin_size):
     """ Compute the Fano factor of a spike train.
 
@@ -97,6 +112,7 @@ def compute_fano_factor(spiketrain, bin_size):
     fano_factor = np.var(spikes_binned) / np.mean(spikes_binned)
     
     return fano_factor
+
 
 def compute_pyspike_metrics(spiketrains, interval=None):
     """
